@@ -1,0 +1,32 @@
+{
+  "model": "/home/t-jialianggu/models/DeepSeek-V2-Lite",
+  "shape": {
+    "E": 64,
+    "shard_N": 2816,
+    "hidden": 2048,
+    "topk": 6
+  },
+  "results": [
+    {
+      "batch": 1,
+      "default_us": 41.99,
+      "tuned_us": 37.38,
+      "fallback_us": null,
+      "tuned_over_default": 1.1233
+    },
+    {
+      "batch": 256,
+      "default_us": 438.93,
+      "tuned_us": 298.22,
+      "fallback_us": null,
+      "tuned_over_default": 1.4718
+    },
+    {
+      "batch": 4096,
+      "default_us": 1753.75,
+      "tuned_us": 1049.54,
+      "fallback_us": null,
+      "tuned_over_default": 1.671
+    }
+  ]
+}

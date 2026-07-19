@@ -1,6 +1,6 @@
 # SGLang MoE/Kernel PR 验证报告（Chendi PR 清单 · bf16 · H200）
 
-**状态**：进行中（autopilot；DeepSeek-V2-Lite 结果待 tuning 完成后填入）
+**状态**：主结论完成（config-tuning 类已在 2 个模型上验证）；shared-expert 融合机会测量为可选后续。
 **日期**：2026-07-19
 **目标**：对 Chendi 给的 ~30 个 sglang MoE/kernel PR 做 survey，找出**能在我们的目标场景复现出性能提升**的证据、并尽可能验证这些 PR。
 **约束**：只做 **bf16**（不碰量化，保持输出分布不变）；用 **GPU 0-3**。
@@ -12,7 +12,10 @@
 
 1. **绝大多数 PR 打的不是我们的目标**：多为 **Qwen3.5**（比我们新的模型，MoE shape 不同）、**FP8/NVFP4/MXFP8/W4A8 量化**（改分布，本轮排除）、或**非 H200 硬件**（H20/SM120/AMD/B200）。
 2. **我们的主模型 Qwen3-30B-A3B 没有 shared experts** → 一整类"shared-expert 融合"PR（#22325/#26727/#28666/#31370）**对主模型不适用**；需换成有 shared expert 的模型（DeepSeek-V2-Lite）才能谈。
-3. **唯一能干净复现、且不碰量化/不换框架就能拿到性能证据的 PR 类别 = "为未覆盖的 MoE shape 在 H200 上加 tuned fused_moe config"**（#27112/#20565/#18969）。我们**复现了它的机制并量出了提升**：在 Qwen3-30B-A3B 真实 fused_moe kernel 上，tuned config 相对默认启发式 **decode 单请求 +13%、prefill 大 batch +42~54%**（详见 §2）。
+3. **唯一能干净复现、且不碰量化/不换框架就能拿到性能证据的 PR 类别 = "为未覆盖的 MoE shape 在 H200 上加 tuned fused_moe config"**（#27112/#20565/#18969）。我们在**两个模型**上复现了它的机制并量出提升：
+   - **Qwen3-30B-A3B**（E=128，无 shared expert）：decode 单请求 **+13%**、prefill 大 batch **+35~54%**；
+   - **DeepSeek-V2-Lite**（E=64，有 2 个 shared expert）：decode **+12%**、prefill **+47~67%**。
+   两模型一致的 U 形曲线 → **跨模型稳健**（详见 §2、§3）。
 4. 这条证据同时是 **Mason 路线第 2 层（kernel constexpr autotuning）**的实测支撑，也直接说明"我们的 autotuner 在 config/kernel-config 层是有意义的"。
 
 ---
@@ -100,14 +103,18 @@
 ### 3.2 这个 shape 也未被覆盖
 sglang 任何 triton 目录都**没有** `E=64, N=1408, H200` 的 config → 同样走默认启发式。因此可复现同一条 config-tuning 证据（不同模型/shape 的交叉验证）。
 
-### 3.3 结果（config-tuning on DeepSeek-V2-Lite）
-> ⏳ 待 tuning 完成填入（GPU0/2/3 并行 tune batch=1/256/4096，E=64,N=1408,H200）。
+### 3.3 结果（config-tuning on DeepSeek-V2-Lite）✅
+对 `E=64, N=1408, H200` 跑官方 tuning（GPU0/2/3 并行，batch=1/256/4096），再对比默认启发式：
 
-| batch | default (µs) | tuned (µs) | 提速 |
+| batch | default (µs) | tuned (µs) | **提速** |
 |---|---|---|---|
-| 1 | _待填_ | _待填_ | _待填_ |
-| 256 | _待填_ | _待填_ | _待填_ |
-| 4096 | _待填_ | _待填_ | _待填_ |
+| 1 | 41.99 | 37.38 | **1.12×** |
+| 256 | 438.93 | 298.22 | **1.47×** |
+| 4096 | 1753.75 | 1049.54 | **1.67×** |
+
+**结论（交叉验证）**：在一个**完全不同的 MoE**（E=64 vs 128、有 shared expert、top-6 vs 8）上，config-tuning 复现出**同样的 U 形、且 prefill 收益更大（+67%）**。这把"config autotuning 有意义"从单模型（Qwen3-30B-A3B）扩展到**跨模型稳健结论**：
+- decode 单请求 +12~13%（两模型一致）；
+- prefill 大 batch **+54%（Qwen）/ +67%（DeepSeek）**。
 
 ### 3.4 shared-expert 融合 PR（#22325/#26727）的评估
 - #22325（融合 `linear+sigmoid+mul`）针对的是**带 shared-expert gate**（sigmoid 门控）的模型（Qwen2-MoE / Qwen3.5）。DeepSeek-V2-Lite 的 shared expert **无 gate**（直接相加），故 #22325 的确切算子链**不完全适用**；#26727 的四算子融合类似。
