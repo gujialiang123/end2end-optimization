@@ -1,0 +1,89 @@
+{
+  "model": "/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
+  "shape": {
+    "E": 128,
+    "shard_N": 1536,
+    "hidden": 2048,
+    "topk": 8
+  },
+  "note": "tuned_over_default = kernel speedup of best tuned config vs default heuristic",
+  "results": [
+    {
+      "batch": 1,
+      "default_us": 34.95,
+      "fallback_us": 31.01,
+      "ours_us": null,
+      "tuned_over_default": 1.1268
+    },
+    {
+      "batch": 8,
+      "default_us": 136.76,
+      "fallback_us": 130.51,
+      "ours_us": null,
+      "tuned_over_default": 1.0479
+    },
+    {
+      "batch": 16,
+      "default_us": 206.09,
+      "fallback_us": 199.82,
+      "ours_us": null,
+      "tuned_over_default": 1.0314
+    },
+    {
+      "batch": 32,
+      "default_us": 270.69,
+      "fallback_us": 261.95,
+      "ours_us": 260.6,
+      "tuned_over_default": 1.0387
+    },
+    {
+      "batch": 64,
+      "default_us": 300.5,
+      "fallback_us": 298.84,
+      "ours_us": null,
+      "tuned_over_default": 1.0056
+    },
+    {
+      "batch": 128,
+      "default_us": 311.72,
+      "fallback_us": 301.34,
+      "ours_us": null,
+      "tuned_over_default": 1.0344
+    },
+    {
+      "batch": 256,
+      "default_us": 442.3,
+      "fallback_us": 326.83,
+      "ours_us": null,
+      "tuned_over_default": 1.3533
+    },
+    {
+      "batch": 512,
+      "default_us": 495.65,
+      "fallback_us": 339.38,
+      "ours_us": null,
+      "tuned_over_default": 1.4604
+    },
+    {
+      "batch": 1024,
+      "default_us": 570.2,
+      "fallback_us": 401.87,
+      "ours_us": null,
+      "tuned_over_default": 1.4189
+    },
+    {
+      "batch": 2048,
+      "default_us": 801.66,
+      "fallback_us": 547.81,
+      "ours_us": null,
+      "tuned_over_default": 1.4634
+    },
+    {
+      "batch": 4096,
+      "default_us": 1373.08,
+      "fallback_us": 891.8,
+      "ours_us": null,
+      "tuned_over_default": 1.5397
+    }
+  ]
+}
