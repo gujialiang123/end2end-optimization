@@ -16,7 +16,8 @@
    - **Qwen3-30B-A3B**（E=128，无 shared expert）：decode 单请求 **+13%**、prefill 大 batch **+35~54%**；
    - **DeepSeek-V2-Lite**（E=64，有 2 个 shared expert）：decode **+12%**、prefill **+47~67%**。
    两模型一致的 U 形曲线 → **跨模型稳健**（详见 §2、§3）。
-4. 这条证据同时是 **Mason 路线第 2 层（kernel constexpr autotuning）**的实测支撑，也直接说明"我们的 autotuner 在 config/kernel-config 层是有意义的"。
+4. **shared-expert 融合类 PR（#22325/#26727）的机会也测了**：融合的 gate 三算子（linear+sigmoid+mul）在 **decode 小 batch 占 shared-expert 路径 ~27%**（kernel launch 开销主导）→ 融合可回收 ~15-20%；prefill 大 batch 只占 9%。与 config-tuning **互补**（前者救 decode、后者救 prefill）。
+5. 这些证据合起来说明 **autotuner/kernel agent 在多个 regime 都有可自动化回收的性能空间**，且都**不需要写全新 kernel、不碰量化**。
 
 ---
 
@@ -116,10 +117,30 @@ sglang 任何 triton 目录都**没有** `E=64, N=1408, H200` 的 config → 同
 - decode 单请求 +12~13%（两模型一致）；
 - prefill 大 batch **+54%（Qwen）/ +67%（DeepSeek）**。
 
-### 3.4 shared-expert 融合 PR（#22325/#26727）的评估
-- #22325（融合 `linear+sigmoid+mul`）针对的是**带 shared-expert gate**（sigmoid 门控）的模型（Qwen2-MoE / Qwen3.5）。DeepSeek-V2-Lite 的 shared expert **无 gate**（直接相加），故 #22325 的确切算子链**不完全适用**；#26727 的四算子融合类似。
-- 我们**无法直接 apply** 这些 PR（没有 diff，且本仓库 sglang 固定 commit）。可行的验证是**测融合机会**：shared-expert MLP 及其 gate/激活在整步 decode 里占多少时间 → 估计融合上界。
-> ⏳ 若时间允许，补 NCU/timing 测 DeepSeek shared-expert 路径耗时占比。
+### 3.4 shared-expert 融合 PR（#22325/#26727）的机会测量 ✅
+- #22325 融合的正是 **`shared_expert_gate` 的 linear(hidden→1) + sigmoid + broadcast mul** 三个小算子；#26727 是四算子融合。这些算子**又小又是独立 kernel launch**，典型 launch-overhead-bound。
+- 我们**无法 apply PR 的 CUDA diff**，但用 Qwen1.5-MoE-A2.7B 的真实维度（hidden=2048, shared_int=5632, gate=Linear(2048,1)）做**组件分解**，量出这三个可融合算子占 shared-expert 路径的时间比例 = 融合的机会上界（脚本 `scripts/run_v24_shared_expert_fusion.py`）：
+
+| batch | shared MLP (µs) | gate 三算子 (µs) | **gate 占比** | regime |
+|---|---|---|---|---|
+| 1 | 45.89 | 15.74 | **27.7%** | decode |
+| 32 | 47.65 | 15.52 | **26.5%** | decode |
+| 256 | 54.11 | 17.82 | **26.2%** | 混合 |
+| 1024 | 121.12 | 27.04 | 18.5% | prefill |
+| 4096 | 456.38 | 43.36 | **8.6%** | 长 prefill |
+
+**结论（融合类 PR 的机会）**：
+- 在 **decode/小 batch**，`linear+sigmoid+mul` 三个算子占 shared-expert 路径的 **~27%**——因为它们是三次独立 kernel launch，**launch 开销主导**（15µs 对三个极小算子明显过大）。融合成 1 个 kernel 可省下 ~2 次 launch → decode 阶段对 shared-expert 块有**可观（约 15~20%）的回收空间**。
+- 在 **prefill/大 batch**，占比降到 **~9%**（大 GEMM 主导）→ 融合几乎没用。
+- **补充（诚实）**：我们试过对整个 shared-expert 路径直接 `torch.compile(max-autotune)`，结果**反而慢 0.47~0.87×**（`logs/v24.log`）——因为路径被 3 个大 GEMM（→5632）主导，cuBLAS 已最优，naive 融合打不过还加开销。**这说明融合必须是外科手术式的**（只融小 gate 算子，正是 #22325 做的），而不是无脑 compile 整块。
+
+**与 config-tuning 的互补性（重要）**：
+| 手段 | 收益区间 | 机制 |
+|---|---|---|
+| config-tuning（#27112 类）| **prefill 大 batch +54~67%** | 大 GEMM 的 tile/stage 调优 |
+| shared-expert 融合（#22325 类）| **decode 小 batch ~15~20%** | 消除小算子 kernel launch 开销 |
+
+→ 两类 PR **打的是不同 regime**，合起来 decode+prefill 都有可自动化回收的空间。
 
 ---
 
@@ -130,8 +151,8 @@ sglang 任何 triton 目录都**没有** `E=64, N=1408, H200` 的 config → 同
 | #27112 | config-tuning H200 Triton | ✅机制 | 我们 shape 复现 tuning | **验证：prefill +35~54%** |
 | #20565 | config-tuning H200 Triton | ✅机制 | 同上 | **验证（同机制）** |
 | #18969 | config-tuning BF16 | ✅机制 | 同上 | **验证（同机制）** |
-| #22325 | shared-expert 融合 | ⚠️需 gate 模型 | DeepSeek 机会测量 | 部分适用；见 §3.4 |
-| #26727 | shared-expert 四算子融合 | ⚠️需 gate 模型 | 同上 | 部分适用 |
+| #22325 | shared-expert 融合 | ⚠️部分（gate 模型）| Qwen1.5-MoE 维度机会测量 | **机会：decode gate 占 27%，融合可回收 ~15-20%** |
+| #26727 | shared-expert 四算子融合 | ⚠️部分 | 同上 | 同类机会（decode 有效）|
 | #28666/#31370 | shared-expert append (AMD/HIP) | ❌AMD | — | 硬件不符 |
 | #31246 | MoE CUDA-graph 修复 | 中性 | — | correctness，非 perf |
 | #31608 | LoRA TMA guard | ❌ | — | 非 perf |

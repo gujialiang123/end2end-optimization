@@ -1,0 +1,55 @@
+{
+  "model_dims": "Qwen1.5-MoE-A2.7B (hidden=2048, shared_int=5632)",
+  "note": "gate_ops = the linear(hidden->1)+sigmoid+mul that #22325 fuses; fraction of total shared-expert = fusion opportunity ceiling",
+  "results": [
+    {
+      "batch": 1,
+      "mlp_us": 45.89,
+      "gate_ops_us": 15.74,
+      "total_us": 56.9,
+      "gate_ops_fraction": 0.2767
+    },
+    {
+      "batch": 8,
+      "mlp_us": 45.82,
+      "gate_ops_us": 14.98,
+      "total_us": 56.22,
+      "gate_ops_fraction": 0.2664
+    },
+    {
+      "batch": 32,
+      "mlp_us": 47.65,
+      "gate_ops_us": 15.52,
+      "total_us": 58.56,
+      "gate_ops_fraction": 0.265
+    },
+    {
+      "batch": 128,
+      "mlp_us": 50.34,
+      "gate_ops_us": 16.8,
+      "total_us": 60.22,
+      "gate_ops_fraction": 0.279
+    },
+    {
+      "batch": 256,
+      "mlp_us": 54.11,
+      "gate_ops_us": 17.82,
+      "total_us": 68.0,
+      "gate_ops_fraction": 0.2621
+    },
+    {
+      "batch": 1024,
+      "mlp_us": 121.12,
+      "gate_ops_us": 27.04,
+      "total_us": 146.27,
+      "gate_ops_fraction": 0.1849
+    },
+    {
+      "batch": 4096,
+      "mlp_us": 456.38,
+      "gate_ops_us": 43.36,
+      "total_us": 505.28,
+      "gate_ops_fraction": 0.0858
+    }
+  ]
+}
