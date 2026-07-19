@@ -154,7 +154,24 @@ CUDA_VISIBLE_DEVICES=0 $ENV/bin/python tuning_fused_moe_triton.py \
 ```
 
 ## 6. 产物
-- 脚本：`scripts/run_v23_config_evidence.py`
-- 数据：`results/2026-07-19_v23_config_evidence/fused_moe_config_speedup.json`
-- DeepSeek tuned config：`results/2026-07-19_v23_config_evidence/deepseek_*`（待填）
+- 脚本：`scripts/run_v23_config_evidence.py`（Qwen 三方对比）、`scripts/run_v23_generic.py`（通用 default-vs-tuned）
+- 数据：`results/2026-07-19_v23_config_evidence/fused_moe_config_speedup.json`（Qwen）、`deepseek_config_speedup.json`（DeepSeek）
+- DeepSeek tuned config：`results/2026-07-19_v23_config_evidence/deepseek_E=64,N=1408,H200.json` + `deepseek_tuned_per_batch/`
 - 依赖工具：sglang 官方 `tuning_fused_moe_triton.py`
+
+---
+
+## 7. 这对"证明 agent 有意义"意味着什么
+
+- **正面证据**：在**不写任何 kernel、不碰量化**的前提下，仅靠"对未覆盖 shape 跑官方 tuning 生成 config"，就能在真实 MoE kernel 上拿到 **decode +12~13% / prefill +47~67%** 的稳定提升，且**跨两个结构不同的 MoE 模型一致**。这说明：
+  1. **"config/kernel-config 层的自动调优"本身就有可观、可复现的价值** —— 这正是我们 autotuner agent 能自动做的事（发现未覆盖 shape → 触发 tuning → 落地 config）。
+  2. 收益**最大的区间是 prefill/大 batch**，恰好对齐真实 agent 负载（prefill 主导）。
+- **对应 Mason 的 X 判据**：这是"kernel constexpr autotuning"层（Mason 第 2 层）的实测提升。**手写 kernel（第 3 层）之上还能加多少（X）尚未测**；但即便不写 kernel，第 2 层已有 +47~67%（prefill）的空间可被 agent 自动吃到。
+- **诚实边界**：
+  - "按 triton 版本重调"在中间 batch（8–128）几乎无收益（回退 config 已够好）；价值集中在 **有无 tuned config** 这个大 gap，以及 **prefill 大 batch**。
+  - shared-expert 融合类 PR（#22325/#26727）需要**带 shared-expert gate 的模型**（Qwen2-MoE/Qwen3.5），且需要 PR 的实际 diff 才能测到"融合后"，本轮无法直接验证，只能评估适用性。
+
+## 8. 建议的下一步
+1. **把 config-tuning 接入 serving 端到端**：目前是 kernel micro-benchmark；下一步在真实 serving（prefill-heavy regime）上量端到端 TTFT/吞吐提升，确认 kernel 层的 +50% 能转化为多少端到端收益。
+2. **补齐 batch 覆盖**：给我们的两个 shape 跑全 batch tuning，生成可直接提交上游的 H200/triton3.5.1 config（这本身就是一个 PR 级贡献，等价于 #27112/#20565）。
+3. **（可选）shared-expert 融合机会**：下载 Qwen1.5-MoE-A2.7B（小、带 shared-expert gate），测 gate 链（linear+sigmoid+mul）在整步中的时间占比，估计 #22325/#26727 的上界。
