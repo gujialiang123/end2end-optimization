@@ -1,0 +1,78 @@
+{
+  "model": "/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
+  "note": "achieved bw assumes weight-read-bound (expected touched experts). %HBM near 100 => little lossless headroom",
+  "results": [
+    {
+      "batch": 1,
+      "time_us": 31.26,
+      "touched_experts": 7.8,
+      "GB_weights_read": 0.073,
+      "achieved_TBs": 2.35,
+      "pct_HBM": 49.0
+    },
+    {
+      "batch": 8,
+      "time_us": 129.23,
+      "touched_experts": 50.5,
+      "GB_weights_read": 0.477,
+      "achieved_TBs": 3.689,
+      "pct_HBM": 76.9
+    },
+    {
+      "batch": 32,
+      "time_us": 260.37,
+      "touched_experts": 110.8,
+      "GB_weights_read": 1.046,
+      "achieved_TBs": 4.016,
+      "pct_HBM": 83.7
+    },
+    {
+      "batch": 64,
+      "time_us": 298.59,
+      "touched_experts": 125.7,
+      "GB_weights_read": 1.186,
+      "achieved_TBs": 3.973,
+      "pct_HBM": 82.8
+    },
+    {
+      "batch": 128,
+      "time_us": 301.17,
+      "touched_experts": 128.0,
+      "GB_weights_read": 1.208,
+      "achieved_TBs": 4.01,
+      "pct_HBM": 83.5
+    },
+    {
+      "batch": 256,
+      "time_us": 326.59,
+      "touched_experts": 128.0,
+      "GB_weights_read": 1.208,
+      "achieved_TBs": 3.699,
+      "pct_HBM": 77.1
+    },
+    {
+      "batch": 512,
+      "time_us": 336.42,
+      "touched_experts": 128.0,
+      "GB_weights_read": 1.208,
+      "achieved_TBs": 3.591,
+      "pct_HBM": 74.8
+    },
+    {
+      "batch": 1024,
+      "time_us": 397.9,
+      "touched_experts": 128.0,
+      "GB_weights_read": 1.208,
+      "achieved_TBs": 3.036,
+      "pct_HBM": 63.2
+    },
+    {
+      "batch": 4096,
+      "time_us": 878.02,
+      "touched_experts": 128.0,
+      "GB_weights_read": 1.208,
+      "achieved_TBs": 1.376,
+      "pct_HBM": 28.7
+    }
+  ]
+}
