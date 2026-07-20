@@ -108,3 +108,13 @@
 - **稳健性**：M=1 胜利跨 3 个新 seed 稳定在 **1.225-1.233×**（sglang ~34µs vs custom ~28µs），非测量波动。
 - **端到端粗估**（单请求 decode）：每 MoE 层省 ~5-6µs，Qwen3-30B 有 48 层 → 每 token 省 ~240-290µs。若 MoE 占单请求 decode step 的 ~50-65%（decode 时 MoE 是主导 kernel，attention 在短上下文很快），则端到端 TPOT 约 **1.10-1.15×**（待真实集成确认）。
 - **值不值得工程化**：单请求/低并发场景（交互式单用户、超低延迟 SLA）值得；高并发（b≥8）无收益。可作为 sglang 的一个 "small-batch decode fast path"。
+
+### [6] 额外发现：sglang 里"CPU 有融合、CUDA 没有"的具体空缺（agent 可批量补）
+扫描 `sgl-kernel/csrc/`，确认以下融合 kernel **只有 CPU 实现、缺 CUDA 版**（= agent 自动发现并补 CUDA 融合的具体目标）：
+| kernel | CPU | CUDA | 用途 |
+|---|---|---|---|
+| `fused_linear_sigmoid_mul` | ✅ | ❌ | shared-expert gate（本轮已验证融合 CUDA 版 2-3×，但算子小）|
+| `fused_gdn_gating` | ✅ | ❌ | gated delta-net gating（线性注意力/Mamba 类）|
+| `fused_rmsnorm_gated` | ✅ | ❌ | gated RMSNorm |
+（`fused_add_rmsnorm`、`fused_shared_experts` 已有 CUDA 版。）
+→ **这三个是明确的、可复现的 kernel-level 机会**：为它们写 CUDA 融合 kernel。单个收益可能小，但是"autotuner/kernel agent 自动补 sglang CUDA 覆盖空缺"这一定位的具体落地点，值得后续逐个验证。
