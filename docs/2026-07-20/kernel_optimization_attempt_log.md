@@ -65,3 +65,41 @@
 1. **sglang fused_moe 整体已高度优化**：b≥32 decode 达 74-84% HBM（近内存屋顶），prefill compute-bound 处 config-tuning 已 +50%。**无损 kernel 空间总体很小。**
 2. **但存在一个真实的 kernel-level 胜利点**：**M=1 单请求 decode**，sglang 只有 49% HBM + 6µs 路由/激活/求和开销。特化 kernel（tensor-core + 跳过 align/sort + 融合 act/sum + tuned tiling）拿到 **1.23× 且更准**。
 3. **方法学教训贯穿**：必须对标 sglang 真实 GPU 代码 + cudagraph；朴素重写（v29 scalar）会输，tensor-core + 去开销 + 调 tiling（v31）才赢。
+
+### [4] 胜利的适用范围：M 扫描 crossover（v32）
+泛化 kernel 到多 token（pair→token 映射），扫 M：
+
+| M | sglang(µs) | custom(µs) | 加速 | 触及专家 | 判定 |
+|---|---|---|---|---|---|
+| 1 | 31.7 | 26.7 | **1.19×** | 8 | ✅ 赢 |
+| 2 | 49.6 | 49.4 | 1.00× | 16 | 打平 |
+| 4 | 82.6 | 78.4 | 1.06× | 30 | 小赢 |
+| 8 | 128 | 132 | 0.97× | 50 | ❌ 输 |
+| 16 | 199 | 233 | 0.86× | 82 | ❌ 输 |
+
+**为什么 M 大就输**：我们按 (token,expert) pair 逐个读专家权重；M 大时多个 token 复用同一专家，sglang 的**专家分组**（每个权重只读一次）更省。M=1 时 8 个 pair→8 个不同专家、无复用，我们的"省开销"净赢。
+→ **胜利范围 = M≤4（单请求 / 低并发 decode）**。每 MoE 层省 ~5µs，48 层 → 单 token 省 ~240µs（端到端 TPOT 影响待集成测量）。
+
+## 最终结论（明早看这里）
+**问题：kernel level 能不能再优化 sglang 的性能？答案：能，但空间窄。**
+
+1. **sglang 的 MoE kernel 整体已高度优化**：
+   - decode b≥32：74-84% HBM（近内存屋顶），无损空间 <1.3×。
+   - prefill：compute-bound，config-tuning 已 +50%。
+   - 朴素重写（scalar GEMV）会输；tensor-core + 去开销 + 调 tiling 才可能赢。
+2. **找到一个真实 kernel-level 胜利点**：**M=1 单请求 decode**。
+   - sglang 在此只有 49% HBM + 6µs 路由/激活/求和开销。
+   - 特化 kernel（tl.dot + 跳过 align/sort + 融合 act/sum + tuned tiling）：**1.19-1.23× 且比 sglang 更准**（vs fp32：我们 4-5% err，sglang 10-14%）。
+   - 范围 M≤4；M≥8 sglang 专家分组反超。
+3. **另一类真实空缺**（上一份报告）：shared-expert gate 在 sglang **CUDA 路径未融合**（融合版只有 CPU）→ 融合 kernel 2-3×（但算子小）。
+
+### 后续要做的事（优先级排序）
+1. **端到端集成**：把 M=1 特化 MoE kernel 挂进 sglang decode 路径，测单请求 TPOT 真实提升（预计 ~1.05-1.1× 端到端）。判断值不值得工程化。
+2. **扩大胜利范围**：研究能否在 M=2-8 也赢（如：混合策略——小专家用 pair、大专家用 group；或 split-K 减少 M 大时的权重重读）。
+3. **系统扫 sglang 的"CUDA 未融合"空缺**：像 shared-expert gate（CPU 有融合、CUDA 没有）这类，agent 可自动发现并补 CUDA 融合 kernel（单个收益小但可批量）。
+4. **prefill kernel**：b4096 是 compute-bound，config-tuning 已 +50%；研究 kernel 层是否还有（如更好的 persistent GEMM）——但 sglang 已 tuned，预期难。
+5. **量化方向**（若放开约束）：FP8/NVFP4 的 MoE kernel（那批 PR 的主战场）——但会改分布，需另测精度。
+
+### 诚实的总体判断
+- **kernel-level 无损优化 sglang 的空间总体很小**（它已优化得很好）；真实胜利集中在 **sglang 未覆盖/未融合的边角**（M=1 decode、CUDA 未融合的 gate）。
+- 这**支持"autotuner/kernel agent"的定位是"自动发现并补 sglang 的覆盖空缺"**（config 未覆盖 shape、CUDA 未融合算子、小 M 特化路径），而非"重写 sglang 已 tuned 的核心 GEMM"（那个很难赢）。
