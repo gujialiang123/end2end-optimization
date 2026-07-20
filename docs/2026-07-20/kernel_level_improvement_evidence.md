@@ -10,12 +10,16 @@
 
 ## 0. TL;DR
 
-- **能。** 我们**实际写了两个融合 triton kernel**（复现 shared-expert 融合类 PR 的手法），在真实维度上实测加速：
-  - **gate epilogue 融合**（#22325，linear+sigmoid+mul → 1 kernel）：**2.0–3.1×**，profiler 确认 kernel 数 3→1；
-  - **SwiGLU 激活融合**（silu·mul，带宽级）：**1.4–1.66×，大 batch 也持续**；
-  两者数值均正确（相对误差 <0.8%）。
-- 这是**纯 kernel-code 改动**（不改 config、不碰量化、不换模型精度）拿到的加速 → 直接证明"kernel 层有可回收的性能，且 agent 辅助写 kernel 是有意义的"。
-- 收益机制是**消除 kernel launch 开销**（3 次 launch → 1 次），因此在 **decode/小 batch 最显著**（launch-overhead-bound），与 config-tuning（在 prefill 大 batch 最显著）**正好互补**。
+- **能，但要挑对目标 —— 且必须对标 sglang 的真实 GPU 代码（不是朴素 PyTorch）。**
+- **有效证据（gate 融合 / #22325）**：我们写的融合 triton kernel，**对标 sglang GPU 上真正跑的 3 算子代码**（`F.sigmoid(gate(x))*shared_out`，核实 sglang 的 CUDA 路径确实没融合，融合版只有 CPU 实现）→ 实测 **2.0–3.1×**，profiler 确认 kernel 数 3→1，数值正确。**这是对 sglang 现状的真实 kernel 层改进。**
+- **无效证据（已撤回，SwiGLU）**：sglang GPU 上早已用 `silu_and_mul` CUDA 融合 kernel；我最初拿朴素 PyTorch 当 baseline 得到的 1.4–1.66× **不成立**（见 §2b）。
+- **方法学教训**：kernel 层"有没有提升空间"必须**对标框架的真实 kernel**，否则会得出误导性结论。所有数字均为**我们实测**，非 PR 自称。
+
+### 数据来源与 baseline 声明（回答"baseline 是什么、谁测的"）
+| 项 | baseline | 是否=sglang 真实 GPU 代码 | 结果来源 | 结论 |
+|---|---|---|---|---|
+| gate 融合（#22325）| `F.sigmoid(Linear(x))*shared_out`（3 算子）| ✅ 是（sglang CUDA 路径未融合；融合版仅 CPU）| **我们实测** | **有效，2–3×** |
+| SwiGLU 融合 | `F.silu(gate)*up`（朴素 PyTorch）| ❌ 否（sglang 已有 `silu_and_mul` CUDA 融合）| 我们实测 | **无效，撤回** |
 
 ---
 
@@ -48,6 +52,16 @@ out = g * shared_out            # 每行一个标量，广播乘到 [M,H]
 - **融合（我们写的）**：一个 triton kernel 内完成 GEMV 归约 + sigmoid + 广播乘 = **1 次 launch**。
 - 代码：`scripts/run_v25_kernel_fusion.py`（`fused_gate_kernel`）。
 
+### 2.1b baseline = sglang 的真实 GPU 代码（关键，已核实）
+这一点最重要——我们的 baseline **不是随手写的朴素版本，而是 sglang 在 GPU 上真正跑的代码**：
+- sglang `models/qwen2_moe.py::_forward_shared_experts`（GPU/else 分支）：
+  ```python
+  shared_output = F.sigmoid(self.shared_expert_gate(hidden_states)) * shared_output
+  ```
+  正是 `linear → sigmoid → mul` 三个独立算子。
+- sglang **只有 CPU/Intel-AMX** 分支才调融合的 `torch.ops.sgl_kernel.fused_linear_sigmoid_mul`；核实 `sgl-kernel/csrc/` 后确认该融合 kernel **只有 CPU 实现（`torch::kCPU`），没有 CUDA 版**。
+- **→ 所以 sglang 在 GPU 上确实没有融合这几个算子，我们的融合 kernel 是对 sglang 现状的真实改进，不是打稻草人。** 这也正是 #22325/#28666（把 shared_expert_gate 融进去）这一类 PR 想补的 CUDA 空缺。
+
 ### 2.2 profiler 确认 kernel 数 3→1
 ```
 UNFUSED: 3 kernels  → nvjet_tst_...(GEMV) + sigmoid(vectorized_elementwise) + elementwise(mul)
@@ -68,9 +82,9 @@ FUSED:   1 kernel   → fused_gate_kernel
 | 4096 | 40.00 | 22.59 | **1.77×** | OK |
 
 ### 2.4 结论
-- **kernel-code 改动确实带来加速**：融合 kernel 在 decode~prefill 全程 **1.8–3.1×**（对该 gate epilogue），且数值正确、launch 数从 3 降到 1。
-- 机制 = **省 kernel launch 开销**（在小 batch/decode 尤其明显，因为这几个算子极小、几乎全是 launch 开销）。
-- 这是"**大 X**"方向的直接证据（Mason 的 kernel 层），与 config-tuning 的"小 X"（只调参数）**性质不同**。
+- **kernel-code 改动确实带来加速**：对标 sglang 真实 GPU 代码，融合 kernel 在 decode~prefill 全程 **1.8–3.1×**（对该 gate epilogue），数值正确、launch 数 3→1。
+- 机制 = **省 kernel launch 开销**（小 batch/decode 尤其明显，这几个算子极小、几乎全是 launch 开销）。
+- **定位（诚实）**：这是"kernel 层对 **sglang 未优化部分** 有真实提升"的证据；但该算子小、净收益有限（见 §2.5）。它证明**手法可行**，还**不等于**证明了对 sglang 已 tuned 核心 kernel 的"大 X"（见 §3）。
 
 ### 2.5 端到端语境（诚实标注）
 - 该 gate epilogue 在 shared-expert 路径里占比：**decode ~27% / prefill ~9%**（见 `run_v24_shared_expert_fusion.py`）。所以对 shared-expert 块的净收益约 **decode ~15% / prefill 很小**。
@@ -78,40 +92,31 @@ FUSED:   1 kernel   → fused_gate_kernel
 
 ---
 
-## 2b. 第二个 kernel 融合：SwiGLU 激活（带宽级收益，大 batch 也持续）✅
+## 2b. ⚠️ 撤回：SwiGLU 激活融合证据无效（sglang GPU 已融合）
 
-为回应"gate 融合只是省 launch 开销"的可能质疑，再写一个**省 HBM 带宽**的融合：SwiGLU 激活 `silu(gate)*up`（作用在 shared MLP 中间维 [M, N=5632]）。
-- **未融合**：`F.silu`（读写 M·N）+ `mul`（读 2·M·N、写 M·N）= 2 launch + 多一次中间张量读写。
-- **融合（我们写的）**：一个 triton kernel，gate/up 各读一次、写一次 = 省一整趟中间张量的 HBM 读写。
-- 代码：`scripts/run_v26_swiglu_fusion.py`。
-
-| batch | 未融合 (µs) | 融合 (µs) | **加速** | 数值(相对误差) |
-|---|---|---|---|---|
-| 1 | 8.00 | 5.47 | **1.46×** | OK (<0.8%) |
-| 32 | 8.64 | 6.11 | **1.41×** | OK |
-| 256 | 11.62 | 8.22 | **1.41×** | OK |
-| 1024 | 20.83 | 15.10 | **1.38×** | OK |
-| 4096 | 65.28 | 39.23 | **1.66×** | OK |
-
-**关键差异**：与 gate 融合（launch-overhead-bound，小 batch 最大）不同，SwiGLU 融合的 **1.4–1.66× 在大 batch 也持续**——因为它省的是**真实 HBM 流量**（少读写一趟 M·5632 的中间张量），不是 launch 开销。这是"kernel 改动带来带宽级收益"的更强证据。
-**数值**：融合 kernel 内部用 fp32 算 silu 再回 bf16，实测**比 torch 的 bf16 baseline 更接近 fp32 真值**（fused 误差 0.03–0.05 vs torch-bf16 0.049–0.065），最大相对误差 0.78%。
+**诚实更正**：我最初写了一个 SwiGLU（`silu(gate)*up`）融合 kernel，测得 1.4–1.66× —— 但那个 **baseline 是朴素 PyTorch `F.silu(gate)*up`（2 个算子），不是 sglang 的实际代码**。核实后发现：
+- sglang `layers/activation.py` 的 `SiluAndMul.forward_cuda` 直接调 `sgl_kernel` 的 **`silu_and_mul` CUDA 融合 kernel** —— **sglang 在 GPU 上早就把 silu+mul 融合了**。
+- 所以我的 1.4–1.66× 是打赢了朴素 PyTorch，**不是打赢 sglang 现状**。→ **此证据作废**，不能作为"kernel 层还能提升"的依据。
+- （脚本 `run_v26_swiglu_fusion.py` 保留仅作反面教材：说明选错 baseline 会得出误导性结论。）
 
 ---
 
-## 3. 为什么这回答了"agent 有没有意义"
+## 3. 为什么这回答了"agent 有没有意义"（诚实版）
 
-- **config-tuning（autotuning 故事，小 X）**：只挑现有 kernel 的参数；前一份报告测得 prefill +54~67%，但那是"挑参数"，不是改 kernel。
-- **kernel 融合（kernel 故事，大 X）**：本报告**实际改了 kernel 代码**，对目标算子拿到 **2–3×**。这正是需要 **agent 辅助 + researcher-in-the-loop** 去做的事（Mason 的第 3 层）。
-- **两者互补**：融合救 decode（省 launch），config-tuning 救 prefill（调 tile/stage）。合起来说明 kernel/config agent 在**全 regime**都有可自动化回收的空间。
+- **有效但要清醒**：对标 sglang 真实 GPU 代码，shared-expert gate 确实**没融合**（融合版只有 CPU），我们的 kernel 拿到 **2–3×** —— 这是**真的 kernel 层改进**，证明"手法可行"。
+- **但要承认 sglang 已经优化了大部分热点**：`silu_and_mul`、`fused_moe`、attention 等**都已是融合/tuned 的 CUDA kernel**。所以"随手找个没融合的算子融一下"这种低垂果实**大多已被 sglang 摘走**（我们的 SwiGLU 尝试就撞上了这个）。
+- **真正的"大 X"仍未证明**：要拿到有分量的 kernel 提升，需要**打赢 sglang 现有的 tuned kernel**（例如 `fused_moe` 只有 7% 峰值算力，但它已是 tuned 的）——这比"融合未融合的小算子"难得多，是尚未解决的核心问题。
+- **对 agent 的诚实结论**：本报告证明了 agent 辅助写融合 kernel **能对 sglang 未优化的部分拿到真实加速**（gate 融合 2–3×，虽小但真实）；能否对 sglang **已优化的核心 kernel** 再拿到提升（大 X），仍需后续验证。
 
 ---
 
-## 4. 下一步（把 kernel-level 证据做强）
-1. **扩展到 #26727 的四算子融合**：把 gate 融合再叠加 down_proj 的 epilogue，量更大的净收益。
-2. **接入真实 sglang 前向**：把融合 kernel 挂到 Qwen2-MoE/Qwen1.5-MoE 的 shared-expert 里，测端到端 decode TPOT 提升（把 kernel 微基准的 2–3× 折算成端到端 %）。
-3. **挑一个 NCU headroom 最大的 MoE kernel 做重写**（Mason 第 3 层的正式目标：`fused_moe` 仅 7% 峰值算力）——这才是"大 X"的主战场；本报告的 gate 融合是先证明"手法可行"的最小样例。
+## 4. 下一步（把 kernel-level 证据做强、并回答"大 X"）
+1. **接入真实 sglang 前向**：把 gate 融合 kernel 挂进 sglang 的 `_forward_shared_experts`（GPU 分支），测端到端 decode TPOT 提升（把微基准 2–3× 折算成端到端 %，确认不是无关紧要的小数）。
+2. **正面挑战 sglang 已 tuned 的核心 kernel**：选 `fused_moe`（NCU 显示 7% 峰值算力，但已 tuned）——**目标是 beat 它，而不是融合旁边的小算子**。这才是 Mason 的"大 X"主战场，也是唯一能证明"kernel agent 有独立价值"的硬骨头。
+3. **系统扫描 sglang 未融合的 GPU 算子**：像 gate 这样"CPU 有融合、CUDA 没有"的缺口可能还有——这是 agent 能自动发现并补的低垂果实（虽单个收益小，但可批量化）。
 
 ## 5. 产物
-- kernel + benchmark：`scripts/run_v25_kernel_fusion.py`
-- 数据：`results/2026-07-20_v25_kernel_fusion/shared_expert_gate_fusion.json`
-- 机会分解（占比）：`scripts/run_v24_shared_expert_fusion.py`、`results/2026-07-19_v23_config_evidence/shared_expert_fusion_opportunity.json`
+- **有效**：`scripts/run_v25_kernel_fusion.py` + `results/2026-07-20_v25_kernel_fusion/shared_expert_gate_fusion.json`（gate 融合，对标 sglang 真实 GPU）
+- **已撤回**：`scripts/run_v26_swiglu_fusion.py` + `swiglu_activation_fusion.json`（baseline 选错，仅留作反面教材）
+- 机会分解：`scripts/run_v24_shared_expert_fusion.py`
+- sglang 源码依据：`models/qwen2_moe.py:234-252`（GPU 未融合 gate）、`layers/activation.py:73-77`（silu_and_mul 已融合）、`sgl-kernel/csrc/cpu/gemm.cpp:725`（fused_linear_sigmoid_mul 仅 CPU）
