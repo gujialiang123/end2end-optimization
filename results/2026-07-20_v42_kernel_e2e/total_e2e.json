@@ -1,0 +1,92 @@
+[
+  {
+    "batch": "1",
+    "input_len": "256",
+    "total_default_s": 0.17309870524331927,
+    "total_tuned_s": 0.1659743064083159,
+    "total_gain_pct": 4.292470918647218,
+    "overall_tput_default": 1663.7906077643254,
+    "overall_tput_tuned": 1735.208335749793,
+    "overall_tput_gain_pct": 4.292470918647218
+  },
+  {
+    "batch": "1",
+    "input_len": "2048",
+    "total_default_s": 0.21492695901542902,
+    "total_tuned_s": 0.18665926111862063,
+    "total_gain_pct": 15.14401038952171,
+    "overall_tput_default": 9677.706368379233,
+    "overall_tput_tuned": 11143.29922627399,
+    "overall_tput_gain_pct": 15.144010389521734
+  },
+  {
+    "batch": "1",
+    "input_len": "4096",
+    "total_default_s": 0.2478857240639627,
+    "total_tuned_s": 0.21478080842643976,
+    "total_gain_pct": 15.413349023155876,
+    "overall_tput_default": 16652.834751124432,
+    "overall_tput_tuned": 19219.59429356463,
+    "overall_tput_gain_pct": 15.413349023155876
+  },
+  {
+    "batch": "32",
+    "input_len": "256",
+    "total_default_s": 0.5102216540835798,
+    "total_tuned_s": 0.44990989984944463,
+    "total_gain_pct": 13.405296094688634,
+    "overall_tput_default": 18062.737883112895,
+    "overall_tput_tuned": 20484.101379151674,
+    "overall_tput_gain_pct": 13.405296094688634
+  },
+  {
+    "batch": "32",
+    "input_len": "2048",
+    "total_default_s": 1.6034668823704123,
+    "total_tuned_s": 1.209435080178082,
+    "total_gain_pct": 32.5798224849168,
+    "overall_tput_default": 41510.05594927165,
+    "overall_tput_tuned": 55033.958490934005,
+    "overall_tput_gain_pct": 32.57982248491682
+  },
+  {
+    "batch": "32",
+    "input_len": "4096",
+    "total_default_s": 3.1244860659353435,
+    "total_tuned_s": 2.3686343203298748,
+    "total_gain_pct": 31.910866912550805,
+    "overall_tput_default": 42277.67293961538,
+    "overall_tput_tuned": 55768.844885099556,
+    "overall_tput_gain_pct": 31.910866912550805
+  },
+  {
+    "batch": "64",
+    "input_len": "256",
+    "total_default_s": 0.6315746745094657,
+    "total_tuned_s": 0.5418561869300902,
+    "total_gain_pct": 16.557619852544182,
+    "overall_tput_default": 29184.197441602373,
+    "overall_tput_tuned": 34016.405910998816,
+    "overall_tput_gain_pct": 16.557619852544182
+  },
+  {
+    "batch": "64",
+    "input_len": "2048",
+    "total_default_s": 2.9876582394354045,
+    "total_tuned_s": 2.242239097133279,
+    "total_gain_pct": 33.244409271747614,
+    "overall_tput_default": 44556.63577677361,
+    "overall_tput_tuned": 59369.22613212615,
+    "overall_tput_gain_pct": 33.244409271747614
+  },
+  {
+    "batch": "64",
+    "input_len": "4096",
+    "total_default_s": 6.094107401091605,
+    "total_tuned_s": 4.564694003667682,
+    "total_gain_pct": 33.50527759790811,
+    "overall_tput_default": 43352.04199923958,
+    "overall_tput_tuned": 57877.264015446504,
+    "overall_tput_gain_pct": 33.50527759790809
+  }
+]

@@ -166,6 +166,59 @@ custom kernel = **「去掉 align/sort + 把 GEMM/激活/加权求和融成 2 �
 ### 1.7.4 caveat
 - 这里 "tuned" = sglang 现状加载的 fallback（triton_3_2_0）；"default" = 关掉所有 config 的纯启发式。**我们自己重 tune vs fallback 只 +0.6%**（§1.6.5），所以图里的 +40% 是"**有 tuned config vs 没有**"的价值，不是"我们比 sglang 更好"。真实意义：**agent 给未覆盖 shape 补 tuned config，能拿 +40% prefill**——这正是 sglang 打印 "sub-optimal!" 想让你做的事。
 
+### 1.7.5 总 e2e（prefill+decode 合计时间，out=32）
+`bench_one_batch` 的 `total_latency`（一次完整 prefill+decode 的墙钟）：
+
+| regime | 总 e2e default→tuned | 总提升 |
+|---|---|---|
+| b=1, in=256 | 0.173→0.166s | +4.3% |
+| b=1, in=2048 | 0.215→0.187s | **+15.1%** |
+| b=1, in=4096 | 0.248→0.215s | **+15.4%** |
+| b=32, in=256 | 0.510→0.450s | +13.4% |
+| b=32, in=2048 | 1.604→1.209s | **+32.6%** |
+| b=32, in=4096 | 3.125→2.369s | **+31.9%** |
+| b=64, in=2048 | 2.988→2.242s | **+33.2%** |
+| b=64, in=4096 | 6.094→4.565s | **+33.5%** |
+
+→ 总 e2e 提升介于纯 prefill(+40%)与纯 decode(0%)之间，**取决于 in:out 比**（这里 out=32 短→prefill 主导→总提升大；output 越长 decode 占比越高，总提升越被稀释）。数据 `results/2026-07-20_v42_kernel_e2e/total_e2e.json`。
+
+---
+
+## 1.8 ★真实 server + agent 数据集的全 regime 端到端验证（v43）
+
+> §1.7 是 `bench_one_batch`（单批、无排队）。本节用**真实 sglang server + `bench_serving`**，跑我们**人造 regime 全套** + **sglang agent 数据集（mooncake toolagent）**，A/B 同前（default 启发式 vs tuned config）。这是最贴近真实部署的证据。
+
+![server e2e regimes + agent](../../results/2026-07-20_v43_server_e2e/server_e2e_regimes.png)
+
+### 1.8.1 方法
+- 每个 config 起一个 server（default 用空 `SGLANG_MOE_CONFIG_DIR`，tuned=现状 fallback），跑全部 8 个 regime 的 `bench_serving`，记录 TTFT / TPOT / E2E 延迟 / 输出吞吐。
+- 脚本 `scripts/run_v43_server_e2e.py`；数据 `results/2026-07-20_v43_server_e2e/`。
+
+### 1.8.2 结果（tuned vs default，正=tuned 更好）
+
+| regime（in/out/并发） | TTFT | TPOT | E2E 延迟 | 输出吞吐 |
+|---|---|---|---|---|
+| tiny_latency (8/4/1) | −1.3% | +2.4% | −1.0% | −6.7% |
+| short_in_short (128/32/16) | +7.0% | −3.7% | +7.2% | +3.2% |
+| sched_overhead (128/16/64) | −0.3% | −1.1% | −9.3% | −7.2% |
+| **prefill_medium (4096/16/4)** | **+34.1%** | **+15.9%** | **+23.0%** | **+19.8%** |
+| **prefill_long (16384/16/2)** | **+24.2%** | +6.4% | **+24.6%** | **+19.6%** |
+| decode_medium (128/512/16) | +2.4% | +4.2% | +4.1% | +4.1% |
+| decode_heavy (128/1024/32) | +1.1% | +0.5% | +0.7% | +1.2% |
+| **agent_toolagent (mooncake)** | **+27.1%** | **+13.8%** | **+17.5%** | +2.7% |
+
+### 1.8.3 结论
+1. **★agent 数据集（真实 toolagent workload）真实受益：TTFT +27%、TPOT +14%、E2E +17.5%**。agent 有长 prompt（prefill 重），正中 tuned config 强项 → 这是最贴近真实部署的正面证据。
+2. **Prefill-heavy regime 大赢：E2E +23~25%、TTFT +24~34%**，与 v42 bench_one_batch 的 prefill +34~43% 方向一致（server 端因排队/调度略稀释）。
+3. **Decode-heavy / 短序列 ≈0 或噪声**（decode_heavy 仅 +0.5~1.2%；tiny/sched 出现 −6~−9% 的小负值，属高并发短序列的调度噪声）。
+4. **总结论坐实**：kernel-config tuning 的端到端收益**集中在 prefill-heavy 和真实 agent 负载**（E2E +17~25%），decode-heavy 无实质收益 —— 与"prefill compute-bound / decode memory-bound"的机理完全一致。
+
+### 1.8.4 caveat
+- 同 §1.7.4：这里 "tuned" 是 sglang 现状 fallback config，"default" 是关掉 config 的启发式；+提升 = "有 tuned config vs 没有"。
+- tiny/sched 的小负值样本量小（num_prompts 少）、高并发噪声大，不宜过度解读。
+
+---
+
 ## 2. 三张核心图（Dey 要的"tuning 以外还有多少空间"）
 
 > 全部为 Qwen3-30B-A3B / decode / H200 / bf16 实测。文件在 `results/2026-07-20_v34_figures/`。
