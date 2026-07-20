@@ -103,3 +103,8 @@
 ### 诚实的总体判断
 - **kernel-level 无损优化 sglang 的空间总体很小**（它已优化得很好）；真实胜利集中在 **sglang 未覆盖/未融合的边角**（M=1 decode、CUDA 未融合的 gate）。
 - 这**支持"autotuner/kernel agent"的定位是"自动发现并补 sglang 的覆盖空缺"**（config 未覆盖 shape、CUDA 未融合算子、小 M 特化路径），而非"重写 sglang 已 tuned 的核心 GEMM"（那个很难赢）。
+
+### [5] 稳健性 + 端到端估算
+- **稳健性**：M=1 胜利跨 3 个新 seed 稳定在 **1.225-1.233×**（sglang ~34µs vs custom ~28µs），非测量波动。
+- **端到端粗估**（单请求 decode）：每 MoE 层省 ~5-6µs，Qwen3-30B 有 48 层 → 每 token 省 ~240-290µs。若 MoE 占单请求 decode step 的 ~50-65%（decode 时 MoE 是主导 kernel，attention 在短上下文很快），则端到端 TPOT 约 **1.10-1.15×**（待真实集成确认）。
+- **值不值得工程化**：单请求/低并发场景（交互式单用户、超低延迟 SLA）值得；高并发（b≥8）无收益。可作为 sglang 的一个 "small-batch decode fast path"。
