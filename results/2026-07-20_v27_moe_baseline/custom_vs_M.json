@@ -2,41 +2,41 @@
   "results": [
     {
       "M": 1,
-      "sglang_us": 31.73,
+      "sglang_us": 31.75,
       "custom_us": 26.66,
-      "speedup": 1.1903,
+      "speedup": 1.1908,
       "rel_err": 0.0434,
       "uniq_experts": 8
     },
     {
       "M": 2,
-      "sglang_us": 49.55,
-      "custom_us": 49.43,
-      "speedup": 1.0023,
+      "sglang_us": 49.44,
+      "custom_us": 49.38,
+      "speedup": 1.0013,
       "rel_err": 0.0585,
       "uniq_experts": 16
     },
     {
       "M": 4,
-      "sglang_us": 82.64,
-      "custom_us": 78.36,
-      "speedup": 1.0546,
+      "sglang_us": 82.67,
+      "custom_us": 78.52,
+      "speedup": 1.0529,
       "rel_err": 0.0634,
       "uniq_experts": 30
     },
     {
       "M": 8,
-      "sglang_us": 128.15,
-      "custom_us": 131.87,
-      "speedup": 0.9718,
+      "sglang_us": 128.2,
+      "custom_us": 131.83,
+      "speedup": 0.9724,
       "rel_err": 0.0581,
       "uniq_experts": 50
     },
     {
       "M": 16,
-      "sglang_us": 199.2,
-      "custom_us": 232.93,
-      "speedup": 0.8552,
+      "sglang_us": 199.12,
+      "custom_us": 232.85,
+      "speedup": 0.8551,
       "rel_err": 0.0721,
       "uniq_experts": 82
     }

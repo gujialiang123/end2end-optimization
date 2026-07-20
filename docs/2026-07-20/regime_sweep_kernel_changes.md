@@ -43,3 +43,40 @@
 | Qwen3 custom MoE | 1.23×(b1) | **+1.4%(仅 b1)** | 严格单请求 | ❌ b≥2 变慢 |
 | Qwen1.5 gate 融合 | 2-3×(隔离) | **~0%(全 batch)** | 无 | ❌ |
 **→ 两个"kernel 快很多"的改动，全 regime 端到端复现后都 ≈0（最多单点 +1.4%）。之前的乐观结论被 regime 扫描证伪。**
+
+---
+
+## Task ① agent 数据集 regime（server + bench_serving，真实并发）
+
+方法：sglang server（H200/GPU0，bf16，cudagraph on，mem-frac 0.85），
+`bench_serving --dataset-name random --random-input-len 1024 --random-output-len 512`
+（agent 风格：长 prompt + 中等生成）。custom MoE kernel 通过 `sitecustomize` 注入到
+所有 TP worker（已确认 `[custom_moe_patch] installed` 打印 4 次）。对比 baseline（无 patch）。
+
+| 并发 | decode batch | custom kernel 是否触发 | baseline 中位 TPOT | custom 中位 TPOT | 端到端 |
+|---|---|---|---|---|---|
+| c1  | 1  | **是**（M=1≤4，custom 触发） | 4.26 ms | 4.23 ms | −0.7%（噪声内，无收益） |
+| c32 | 32 | 否（M=32>4，全 fallback） | 16.95 ms | 18.21 ms | +7%（fallback 分支开销/方差，反而慢） |
+
+**结论（agent regime）**：
+- 真实 agent 并发（c32）下 decode batch 远大于 4，custom kernel **永远 fallback**，
+  不可能有收益；反而 patch 的形状检查分支带来 ~几% 开销。
+- 仅严格单请求（c1）时 kernel 才触发，端到端 **−0.7%（噪声内，无收益）**——
+  与 bench_one_batch 的 b1 +1.4% 一致量级（≈0）。
+- **→ custom MoE kernel 在 agent 数据集上 0 收益**，且高并发时因 fallback 开销略负。
+
+## 三改动 × regime 端到端总矩阵（最终）
+
+| 改动 | 隔离/micro | b1 decode | agent c1 | agent c32(真实并发) | 长上下文×并发 | 通用收益? |
+|---|---|---|---|---|---|---|
+| Qwen3 custom MoE | 1.23× | +1.4% | −0.7% | −7%(fallback) | — | ❌ |
+| Qwen1.5 gate 融合 | 2-3× | ~0% | — | — | — | ❌ |
+| **LFM 线性注意力架构(②)** | — | 无(甚至负) | — | — | **ctx scaling +24% vs +57%；Qwen OOM 处 LFM 仍可跑** | ✅（架构级，非 kernel） |
+
+**总诚实结论**：
+1. 成熟 bf16/H200 MoE 上的 **kernel 融合改动全 regime 端到端 ≈0**（隔离层的 1.23×/2-3×
+   不迁移到端到端；MoE/dense 是带宽墙，cudagraph 已吃掉 launch 收益）。
+2. 真正"tuning 之外"的端到端杠杆是 **架构选择**（长上下文并发场景用线性注意力，见
+   `new_architecture_linear_attention_e2e.md`）和 **投机解码**（+23–30%），都不是 bf16
+   MoE kernel 重写。
+3. 方法论教训已固化：**单点端到端会误导，必须扫 regime + 真实并发**。
