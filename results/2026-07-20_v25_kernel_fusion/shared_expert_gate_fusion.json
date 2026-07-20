@@ -1,0 +1,69 @@
+{
+  "kernel": "fused sigmoid(x@w_gate)*shared_out (reproduces #22325)",
+  "dims": "hidden=2048",
+  "results": [
+    {
+      "batch": 1,
+      "unfused_us": 15.07,
+      "fused_us": 6.91,
+      "speedup": 2.1806,
+      "max_err": 0.0
+    },
+    {
+      "batch": 8,
+      "unfused_us": 14.72,
+      "fused_us": 6.82,
+      "speedup": 2.1596,
+      "max_err": 0.0
+    },
+    {
+      "batch": 32,
+      "unfused_us": 15.07,
+      "fused_us": 7.3,
+      "speedup": 2.0658,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 64,
+      "unfused_us": 16.19,
+      "fused_us": 7.33,
+      "speedup": 2.2096,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 128,
+      "unfused_us": 16.48,
+      "fused_us": 7.78,
+      "speedup": 2.1193,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 256,
+      "unfused_us": 16.13,
+      "fused_us": 7.84,
+      "speedup": 2.0571,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 512,
+      "unfused_us": 17.63,
+      "fused_us": 8.8,
+      "speedup": 2.0036,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 1024,
+      "unfused_us": 29.7,
+      "fused_us": 9.63,
+      "speedup": 3.0831,
+      "max_err": 0.01562
+    },
+    {
+      "batch": 4096,
+      "unfused_us": 40.0,
+      "fused_us": 22.59,
+      "speedup": 1.7705,
+      "max_err": 0.03125
+    }
+  ]
+}
