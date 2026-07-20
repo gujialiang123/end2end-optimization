@@ -10,7 +10,10 @@
 
 ## 0. TL;DR
 
-- **能。** 我们**实际写了一个融合 triton kernel**（复现 #22325 的 `linear+sigmoid+mul` 融合），在真实维度上实测 **2.0–3.1× 加速**，数值正确，profiler 确认 **kernel 数 3→1**。
+- **能。** 我们**实际写了两个融合 triton kernel**（复现 shared-expert 融合类 PR 的手法），在真实维度上实测加速：
+  - **gate epilogue 融合**（#22325，linear+sigmoid+mul → 1 kernel）：**2.0–3.1×**，profiler 确认 kernel 数 3→1；
+  - **SwiGLU 激活融合**（silu·mul，带宽级）：**1.4–1.66×，大 batch 也持续**；
+  两者数值均正确（相对误差 <0.8%）。
 - 这是**纯 kernel-code 改动**（不改 config、不碰量化、不换模型精度）拿到的加速 → 直接证明"kernel 层有可回收的性能，且 agent 辅助写 kernel 是有意义的"。
 - 收益机制是**消除 kernel launch 开销**（3 次 launch → 1 次），因此在 **decode/小 batch 最显著**（launch-overhead-bound），与 config-tuning（在 prefill 大 batch 最显著）**正好互补**。
 
@@ -72,6 +75,26 @@ FUSED:   1 kernel   → fused_gate_kernel
 ### 2.5 端到端语境（诚实标注）
 - 该 gate epilogue 在 shared-expert 路径里占比：**decode ~27% / prefill ~9%**（见 `run_v24_shared_expert_fusion.py`）。所以对 shared-expert 块的净收益约 **decode ~15% / prefill 很小**。
 - 但作为**方法学证据**，它证明了"agent 辅助写融合 kernel"这条路能真实拿到 kernel 层加速；同样的手法可推广到更大的融合目标（#26727 四算子、MoE 激活链等）。
+
+---
+
+## 2b. 第二个 kernel 融合：SwiGLU 激活（带宽级收益，大 batch 也持续）✅
+
+为回应"gate 融合只是省 launch 开销"的可能质疑，再写一个**省 HBM 带宽**的融合：SwiGLU 激活 `silu(gate)*up`（作用在 shared MLP 中间维 [M, N=5632]）。
+- **未融合**：`F.silu`（读写 M·N）+ `mul`（读 2·M·N、写 M·N）= 2 launch + 多一次中间张量读写。
+- **融合（我们写的）**：一个 triton kernel，gate/up 各读一次、写一次 = 省一整趟中间张量的 HBM 读写。
+- 代码：`scripts/run_v26_swiglu_fusion.py`。
+
+| batch | 未融合 (µs) | 融合 (µs) | **加速** | 数值(相对误差) |
+|---|---|---|---|---|
+| 1 | 8.00 | 5.47 | **1.46×** | OK (<0.8%) |
+| 32 | 8.64 | 6.11 | **1.41×** | OK |
+| 256 | 11.62 | 8.22 | **1.41×** | OK |
+| 1024 | 20.83 | 15.10 | **1.38×** | OK |
+| 4096 | 65.28 | 39.23 | **1.66×** | OK |
+
+**关键差异**：与 gate 融合（launch-overhead-bound，小 batch 最大）不同，SwiGLU 融合的 **1.4–1.66× 在大 batch 也持续**——因为它省的是**真实 HBM 流量**（少读写一趟 M·5632 的中间张量），不是 launch 开销。这是"kernel 改动带来带宽级收益"的更强证据。
+**数值**：融合 kernel 内部用 fp32 算 silu 再回 bf16，实测**比 torch 的 bf16 baseline 更接近 fp32 真值**（fused 误差 0.03–0.05 vs torch-bf16 0.049–0.065），最大相对误差 0.78%。
 
 ---
 
