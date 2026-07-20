@@ -1,0 +1,120 @@
+<frozen importlib._bootstrap_external>:1241: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+<frozen importlib._bootstrap_external>:1241: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+[custom_moe_patch] installed on fused_experts_impl (SMALL_M_MAX=4, CUSTOM_MOE=1)
+[2026-07-20 16:27:51 TP0] Init torch distributed begin.
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[2026-07-20 16:27:52 TP0] Init torch distributed ends. elapsed=0.24 s, mem usage=0.09 GB
+[2026-07-20 16:27:52 TP0] Ignore import error when loading sglang.srt.models.glm_ocr: No module named 'transformers.models.glm_ocr'
+[2026-07-20 16:27:52 TP0] Ignore import error when loading sglang.srt.models.glm_ocr_nextn: No module named 'transformers.models.glm_ocr'
+[2026-07-20 16:27:52 TP0] Ignore import error when loading sglang.srt.models.glmasr: cannot import name 'GlmAsrConfig' from 'transformers' (/home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/transformers/__init__.py)
+[2026-07-20 16:27:52 TP0] Load weight begin. avail mem=138.99 GB
+Loading safetensors checkpoint shards:   0% Completed | 0/16 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:   6% Completed | 1/16 [00:00<00:02,  5.51it/s]
+Loading safetensors checkpoint shards:  12% Completed | 2/16 [00:00<00:07,  1.87it/s]
+Loading safetensors checkpoint shards:  19% Completed | 3/16 [00:01<00:08,  1.48it/s]
+Loading safetensors checkpoint shards:  25% Completed | 4/16 [00:02<00:08,  1.34it/s]
+Loading safetensors checkpoint shards:  31% Completed | 5/16 [00:03<00:08,  1.28it/s]
+Loading safetensors checkpoint shards:  38% Completed | 6/16 [00:04<00:08,  1.19it/s]
+Loading safetensors checkpoint shards:  44% Completed | 7/16 [00:05<00:07,  1.19it/s]
+Loading safetensors checkpoint shards:  50% Completed | 8/16 [00:06<00:07,  1.14it/s]
+Loading safetensors checkpoint shards:  56% Completed | 9/16 [00:07<00:06,  1.16it/s]
+Loading safetensors checkpoint shards:  62% Completed | 10/16 [00:08<00:05,  1.12it/s]
+Loading safetensors checkpoint shards:  69% Completed | 11/16 [00:08<00:04,  1.15it/s]
+Loading safetensors checkpoint shards:  75% Completed | 12/16 [00:09<00:03,  1.12it/s]
+Loading safetensors checkpoint shards:  81% Completed | 13/16 [00:10<00:02,  1.14it/s]
+Loading safetensors checkpoint shards:  88% Completed | 14/16 [00:11<00:01,  1.11it/s]
+Loading safetensors checkpoint shards:  94% Completed | 15/16 [00:12<00:00,  1.09it/s]
+Loading safetensors checkpoint shards: 100% Completed | 16/16 [00:13<00:00,  1.13it/s]
+Loading safetensors checkpoint shards: 100% Completed | 16/16 [00:13<00:00,  1.20it/s]
+
+[2026-07-20 16:28:06 TP0] Load weight end. elapsed=13.63 s, type=Qwen3MoeForCausalLM, dtype=torch.bfloat16, avail mem=81.96 GB, mem usage=57.02 GB.
+[2026-07-20 16:28:06 TP0] Using KV cache dtype: torch.bfloat16
+[2026-07-20 16:28:06 TP0] KV Cache is allocated. #tokens: 667364, K size: 30.55 GB, V size: 30.55 GB
+[2026-07-20 16:28:06 TP0] Memory pool end. avail mem=18.83 GB
+[2026-07-20 16:28:06 TP0] Capture cuda graph begin. This can take up to several minutes. avail mem=18.74 GB
+[2026-07-20 16:28:06 TP0] Capture cuda graph bs [1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256]
+  0%|          | 0/36 [00:00<?, ?it/s]Capturing batches (bs=256 avail_mem=18.34 GB):   0%|          | 0/36 [00:00<?, ?it/s][2026-07-20 16:28:06 TP0] Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=128,N=768,device_name=NVIDIA_H200.json. Fallback to triton version 3.2.0 and use MoE kernel config from /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_2_0/E=128,N=768,device_name=NVIDIA_H200.json. Performance might be sub-optimal!
+[2026-07-20 16:28:06 TP0] Using MoE kernel config with down_moe=False. Performance might be sub-optimal! Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=128,N=768,device_name=NVIDIA_H200_down.json, you can create them with https://github.com/sgl-project/sglang/tree/main/benchmark/kernels/fused_moe_triton
+Capturing batches (bs=256 avail_mem=18.34 GB):   3%|▎         | 1/36 [00:00<00:18,  1.94it/s]Capturing batches (bs=248 avail_mem=18.17 GB):   3%|▎         | 1/36 [00:00<00:18,  1.94it/s]Capturing batches (bs=240 avail_mem=18.17 GB):   3%|▎         | 1/36 [00:00<00:18,  1.94it/s]Capturing batches (bs=240 avail_mem=18.17 GB):   8%|▊         | 3/36 [00:00<00:06,  4.89it/s]Capturing batches (bs=232 avail_mem=18.17 GB):   8%|▊         | 3/36 [00:00<00:06,  4.89it/s]Capturing batches (bs=224 avail_mem=18.16 GB):   8%|▊         | 3/36 [00:00<00:06,  4.89it/s]Capturing batches (bs=224 avail_mem=18.16 GB):  14%|█▍        | 5/36 [00:00<00:04,  6.76it/s]Capturing batches (bs=216 avail_mem=18.16 GB):  14%|█▍        | 5/36 [00:00<00:04,  6.76it/s]Capturing batches (bs=208 avail_mem=18.16 GB):  14%|█▍        | 5/36 [00:00<00:04,  6.76it/s]Capturing batches (bs=208 avail_mem=18.16 GB):  19%|█▉        | 7/36 [00:01<00:03,  7.93it/s]Capturing batches (bs=200 avail_mem=18.16 GB):  19%|█▉        | 7/36 [00:01<00:03,  7.93it/s]Capturing batches (bs=192 avail_mem=18.15 GB):  19%|█▉        | 7/36 [00:01<00:03,  7.93it/s]Capturing batches (bs=192 avail_mem=18.15 GB):  25%|██▌       | 9/36 [00:01<00:03,  8.74it/s]Capturing batches (bs=184 avail_mem=18.15 GB):  25%|██▌       | 9/36 [00:01<00:03,  8.74it/s]Capturing batches (bs=176 avail_mem=18.15 GB):  25%|██▌       | 9/36 [00:01<00:03,  8.74it/s]Capturing batches (bs=176 avail_mem=18.15 GB):  31%|███       | 11/36 [00:01<00:02,  9.35it/s]Capturing batches (bs=168 avail_mem=18.14 GB):  31%|███       | 11/36 [00:01<00:02,  9.35it/s]Capturing batches (bs=160 avail_mem=18.14 GB):  31%|███       | 11/36 [00:01<00:02,  9.35it/s]Capturing batches (bs=160 avail_mem=18.14 GB):  36%|███▌      | 13/36 [00:01<00:02,  9.64it/s]Capturing batches (bs=152 avail_mem=18.14 GB):  36%|███▌      | 13/36 [00:01<00:02,  9.64it/s]Capturing batches (bs=144 avail_mem=18.14 GB):  36%|███▌      | 13/36 [00:01<00:02,  9.64it/s]Capturing batches (bs=144 avail_mem=18.14 GB):  42%|████▏     | 15/36 [00:01<00:02,  9.91it/s]Capturing batches (bs=136 avail_mem=18.13 GB):  42%|████▏     | 15/36 [00:01<00:02,  9.91it/s]Capturing batches (bs=128 avail_mem=18.13 GB):  42%|████▏     | 15/36 [00:01<00:02,  9.91it/s]Capturing batches (bs=128 avail_mem=18.13 GB):  47%|████▋     | 17/36 [00:02<00:01, 10.08it/s]Capturing batches (bs=120 avail_mem=18.13 GB):  47%|████▋     | 17/36 [00:02<00:01, 10.08it/s]Capturing batches (bs=112 avail_mem=18.13 GB):  47%|████▋     | 17/36 [00:02<00:01, 10.08it/s]Capturing batches (bs=112 avail_mem=18.13 GB):  53%|█████▎    | 19/36 [00:02<00:01, 10.22it/s]Capturing batches (bs=104 avail_mem=18.12 GB):  53%|█████▎    | 19/36 [00:02<00:01, 10.22it/s]Capturing batches (bs=96 avail_mem=18.12 GB):  53%|█████▎    | 19/36 [00:02<00:01, 10.22it/s] Capturing batches (bs=96 avail_mem=18.12 GB):  58%|█████▊    | 21/36 [00:02<00:01, 10.10it/s]Capturing batches (bs=88 avail_mem=18.12 GB):  58%|█████▊    | 21/36 [00:02<00:01, 10.10it/s]Capturing batches (bs=80 avail_mem=18.12 GB):  58%|█████▊    | 21/36 [00:02<00:01, 10.10it/s]Capturing batches (bs=80 avail_mem=18.12 GB):  64%|██████▍   | 23/36 [00:02<00:01, 10.19it/s]Capturing batches (bs=72 avail_mem=18.11 GB):  64%|██████▍   | 23/36 [00:02<00:01, 10.19it/s]Capturing batches (bs=64 avail_mem=18.11 GB):  64%|██████▍   | 23/36 [00:02<00:01, 10.19it/s]Capturing batches (bs=64 avail_mem=18.11 GB):  69%|██████▉   | 25/36 [00:02<00:01, 10.31it/s]Capturing batches (bs=56 avail_mem=18.11 GB):  69%|██████▉   | 25/36 [00:02<00:01, 10.31it/s]Capturing batches (bs=48 avail_mem=18.11 GB):  69%|██████▉   | 25/36 [00:02<00:01, 10.31it/s]Capturing batches (bs=48 avail_mem=18.11 GB):  75%|███████▌  | 27/36 [00:03<00:00, 10.24it/s]Capturing batches (bs=40 avail_mem=18.10 GB):  75%|███████▌  | 27/36 [00:03<00:00, 10.24it/s]Capturing batches (bs=32 avail_mem=18.10 GB):  75%|███████▌  | 27/36 [00:03<00:00, 10.24it/s]Capturing batches (bs=32 avail_mem=18.10 GB):  81%|████████  | 29/36 [00:03<00:00,  7.98it/s]Capturing batches (bs=24 avail_mem=18.10 GB):  81%|████████  | 29/36 [00:03<00:00,  7.98it/s]Capturing batches (bs=24 avail_mem=18.10 GB):  83%|████████▎ | 30/36 [00:03<00:00,  6.80it/s]Capturing batches (bs=16 avail_mem=18.10 GB):  83%|████████▎ | 30/36 [00:03<00:00,  6.80it/s]Capturing batches (bs=16 avail_mem=18.10 GB):  86%|████████▌ | 31/36 [00:03<00:00,  6.37it/s]Capturing batches (bs=12 avail_mem=18.09 GB):  86%|████████▌ | 31/36 [00:03<00:00,  6.37it/s]Capturing batches (bs=12 avail_mem=18.09 GB):  89%|████████▉ | 32/36 [00:03<00:00,  6.68it/s]Capturing batches (bs=8 avail_mem=18.09 GB):  89%|████████▉ | 32/36 [00:03<00:00,  6.68it/s] Capturing batches (bs=8 avail_mem=18.09 GB):  92%|█████████▏| 33/36 [00:04<00:00,  7.00it/s]Capturing batches (bs=4 avail_mem=18.09 GB):  92%|█████████▏| 33/36 [00:04<00:00,  7.00it/s]Capturing batches (bs=4 avail_mem=18.09 GB):  94%|█████████▍| 34/36 [00:04<00:00,  3.89it/s]Capturing batches (bs=2 avail_mem=18.09 GB):  94%|█████████▍| 34/36 [00:04<00:00,  3.89it/s]Capturing batches (bs=1 avail_mem=18.08 GB):  94%|█████████▍| 34/36 [00:04<00:00,  3.89it/s]Capturing batches (bs=1 avail_mem=18.08 GB): 100%|██████████| 36/36 [00:04<00:00,  5.40it/s]Capturing batches (bs=1 avail_mem=18.08 GB): 100%|██████████| 36/36 [00:04<00:00,  7.43it/s]
+[2026-07-20 16:28:11 TP0] Capture cuda graph end. Time elapsed: 5.38 s. mem usage=0.66 GB. avail mem=18.08 GB.
+max_total_num_tokens=667364
+Warmup ...
+Prefill. latency: 0.05243 s, throughput:   4883.09 token/s
+Decode 0. Batch size: 1, latency: 0.06851 s, throughput:     14.60 token/s
+Decode 1. Batch size: 1, latency: 0.00459 s, throughput:    218.02 token/s
+Decode 2. Batch size: 1, latency: 0.00437 s, throughput:    228.69 token/s
+Decode 3. Batch size: 1, latency: 0.00430 s, throughput:    232.40 token/s
+Decode 4. Batch size: 1, latency: 0.00430 s, throughput:    232.51 token/s
+Decode.  median latency: 0.00419 s, median throughput:    238.89 token/s
+Total. latency:  0.248 s, throughput:   1162.58 token/s
+Benchmark ...
+Prefill. latency: 0.03019 s, throughput:   8480.15 token/s
+Decode 0. Batch size: 1, latency: 0.00430 s, throughput:    232.42 token/s
+Decode 1. Batch size: 1, latency: 0.00424 s, throughput:    236.02 token/s
+Decode 2. Batch size: 1, latency: 0.00422 s, throughput:    236.96 token/s
+Decode 3. Batch size: 1, latency: 0.00420 s, throughput:    238.05 token/s
+Decode 4. Batch size: 1, latency: 0.00419 s, throughput:    238.69 token/s
+Decode 5. Batch size: 1, latency: 0.00421 s, throughput:    237.25 token/s
+Decode 6. Batch size: 1, latency: 0.00421 s, throughput:    237.49 token/s
+Decode 7. Batch size: 1, latency: 0.00420 s, throughput:    237.84 token/s
+Decode 8. Batch size: 1, latency: 0.00419 s, throughput:    238.38 token/s
+Decode 9. Batch size: 1, latency: 0.00418 s, throughput:    239.44 token/s
+Decode 10. Batch size: 1, latency: 0.00417 s, throughput:    239.65 token/s
+Decode 11. Batch size: 1, latency: 0.00417 s, throughput:    239.98 token/s
+Decode 12. Batch size: 1, latency: 0.00417 s, throughput:    239.59 token/s
+Decode 13. Batch size: 1, latency: 0.00420 s, throughput:    238.33 token/s
+Decode 14. Batch size: 1, latency: 0.00421 s, throughput:    237.80 token/s
+Decode 15. Batch size: 1, latency: 0.00418 s, throughput:    239.16 token/s
+Decode 16. Batch size: 1, latency: 0.00417 s, throughput:    239.55 token/s
+Decode 17. Batch size: 1, latency: 0.00418 s, throughput:    239.33 token/s
+Decode 18. Batch size: 1, latency: 0.00419 s, throughput:    238.64 token/s
+Decode 19. Batch size: 1, latency: 0.00419 s, throughput:    238.68 token/s
+Decode 20. Batch size: 1, latency: 0.00418 s, throughput:    239.38 token/s
+Decode 21. Batch size: 1, latency: 0.00417 s, throughput:    239.54 token/s
+Decode 22. Batch size: 1, latency: 0.00419 s, throughput:    238.71 token/s
+Decode 23. Batch size: 1, latency: 0.00419 s, throughput:    238.82 token/s
+Decode 24. Batch size: 1, latency: 0.00418 s, throughput:    239.01 token/s
+Decode 25. Batch size: 1, latency: 0.00419 s, throughput:    238.90 token/s
+Decode 26. Batch size: 1, latency: 0.00420 s, throughput:    237.85 token/s
+Decode 27. Batch size: 1, latency: 0.00418 s, throughput:    239.11 token/s
+Decode 28. Batch size: 1, latency: 0.00417 s, throughput:    239.59 token/s
+Decode 29. Batch size: 1, latency: 0.00418 s, throughput:    239.35 token/s
+Decode 30. Batch size: 1, latency: 0.00418 s, throughput:    238.97 token/s
+Decode 31. Batch size: 1, latency: 0.00419 s, throughput:    238.39 token/s
+Decode 32. Batch size: 1, latency: 0.00418 s, throughput:    239.22 token/s
+Decode 33. Batch size: 1, latency: 0.00418 s, throughput:    239.40 token/s
+Decode 34. Batch size: 1, latency: 0.00417 s, throughput:    239.61 token/s
+Decode 35. Batch size: 1, latency: 0.00419 s, throughput:    238.55 token/s
+Decode 36. Batch size: 1, latency: 0.00419 s, throughput:    238.43 token/s
+Decode 37. Batch size: 1, latency: 0.00417 s, throughput:    239.54 token/s
+Decode 38. Batch size: 1, latency: 0.00416 s, throughput:    240.11 token/s
+Decode 39. Batch size: 1, latency: 0.00417 s, throughput:    239.96 token/s
+Decode 40. Batch size: 1, latency: 0.00417 s, throughput:    239.53 token/s
+Decode 41. Batch size: 1, latency: 0.00420 s, throughput:    238.10 token/s
+Decode 42. Batch size: 1, latency: 0.00417 s, throughput:    239.53 token/s
+Decode 43. Batch size: 1, latency: 0.00417 s, throughput:    239.75 token/s
+Decode 44. Batch size: 1, latency: 0.00417 s, throughput:    239.83 token/s
+Decode 45. Batch size: 1, latency: 0.00421 s, throughput:    237.72 token/s
+Decode 46. Batch size: 1, latency: 0.00420 s, throughput:    238.09 token/s
+Decode 47. Batch size: 1, latency: 0.00417 s, throughput:    239.58 token/s
+Decode 48. Batch size: 1, latency: 0.00417 s, throughput:    240.05 token/s
+Decode 49. Batch size: 1, latency: 0.00417 s, throughput:    239.71 token/s
+Decode 50. Batch size: 1, latency: 0.00418 s, throughput:    239.16 token/s
+Decode 51. Batch size: 1, latency: 0.00418 s, throughput:    239.36 token/s
+Decode 52. Batch size: 1, latency: 0.00418 s, throughput:    239.19 token/s
+Decode 53. Batch size: 1, latency: 0.00417 s, throughput:    240.02 token/s
+Decode 54. Batch size: 1, latency: 0.00417 s, throughput:    240.08 token/s
+Decode 55. Batch size: 1, latency: 0.00417 s, throughput:    239.53 token/s
+Decode 56. Batch size: 1, latency: 0.00417 s, throughput:    239.69 token/s
+Decode 57. Batch size: 1, latency: 0.00417 s, throughput:    239.94 token/s
+Decode 58. Batch size: 1, latency: 0.00418 s, throughput:    239.00 token/s
+Decode 59. Batch size: 1, latency: 0.00418 s, throughput:    239.15 token/s
+Decode 60. Batch size: 1, latency: 0.00418 s, throughput:    239.45 token/s
+Decode 61. Batch size: 1, latency: 0.00417 s, throughput:    239.60 token/s
+Decode 62. Batch size: 1, latency: 0.00416 s, throughput:    240.21 token/s
+Decode.  median latency: 0.00418 s, median throughput:    239.22 token/s
+Total. latency:  0.294 s, throughput:   1088.88 token/s
+[custom_moe_patch] stats = {'custom': 432, 'fallback': 4848}
+[rank0]:[W720 16:28:13.302700757 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())

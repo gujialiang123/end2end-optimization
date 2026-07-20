@@ -118,3 +118,29 @@
 | `fused_rmsnorm_gated` | ✅ | ❌ | gated RMSNorm |
 （`fused_add_rmsnorm`、`fused_shared_experts` 已有 CUDA 版。）
 → **这三个是明确的、可复现的 kernel-level 机会**：为它们写 CUDA 融合 kernel。单个收益可能小，但是"autotuner/kernel agent 自动补 sglang CUDA 覆盖空缺"这一定位的具体落地点，值得后续逐个验证。
+
+### [7] ★端到端测试(把 kernel 真正插进 sglang decode 路径)
+把自定义 M≤4 kernel monkeypatch 进 sglang 的 `fused_experts_impl`(实测这才是 Qwen3-MoE 的真实调用路径,不是 moe_runner),cudagraph 会捕获它。跑 Qwen3-30B-A3B batch=1 decode（in=256,out=64,fa3,triton）：
+
+| 配置 | TPOT(median) | 吞吐 | 备注 |
+|---|---|---|---|
+| baseline(CUSTOM_MOE=0) | 4.24-4.26 ms | 236 tok/s | run×2 |
+| **自定义(CUSTOM_MOE=1)** | **4.18 ms** | **239 tok/s** | run×2,稳定 |
+| **端到端提升** | **~1.5%** | +3 tok/s | patch stats: custom 用了 432 次 |
+
+**正确性(就地验证)**：真实模型里同时算自定义和 sglang 原版对比,**max 相对误差 3.95%**（bf16 级别；隔离已证自定义更接近 fp32）→ 集成正确、权重布局/routed_scaling 都对。
+
+**关键诚实结论**：
+- **隔离 MoE 层 1.23× → 端到端只有 ~1.5% TPOT**。差距原因：
+  1. MoE 只是 decode step 的一部分（还有 attention、norm、lm_head、sampling）；
+  2. 每层省 ~5µs × 48 层 ≈ 240µs 的理论值，端到端只实现了 ~60-80µs（cudagraph/overlap/内存状态吃掉了大部分）。
+- **这印证了"kernel 微基准的加速不会等比例转化到端到端"** —— 必须端到端测才知道真实价值。
+- **1.5% 在单请求超低延迟场景是真实但边际的收益**；不足以单独证明工程化价值。
+
+## 端到端后的最终判断
+1. kernel-level 无损优化 sglang 的空间**本来就窄**（sglang 已高度优化），而且**即使拿到隔离层的 1.23×,端到端也只剩 ~1.5%**。
+2. → **"重写/特化单个 kernel"这条路对端到端的杠杆很小**。更值得的方向可能是：
+   - **算法层**（spec decoding 已验证 TPOT −23%，杠杆大得多）；
+   - **serving 层**（多并发回收 idle，已验证利用率 2.5×）；
+   - **config autotuning**（prefill +50%，覆盖面广）。
+3. kernel agent 的价值更可能在**"自动发现并补 sglang 的覆盖空缺"**（未覆盖 shape 的 config、CUDA 未融合算子），而非"重写核心 kernel 追求端到端加速"。
