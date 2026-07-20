@@ -32,12 +32,27 @@
 sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，prefill config-tuning 已 +50%）。**无损 kernel 空间集中在 sglang 未覆盖/未融合的边角**（M=1 decode、CUDA 未融合算子），而非重写已 tuned 的核心 GEMM。**而且即使拿到隔离层 1.23×，端到端也只剩 ~1.5%（kernel 重写对端到端杠杆很小）。**
 → **agent 定位 = "自动发现并补 sglang 的覆盖空缺"**；追端到端加速应优先算法层（spec −23%）/serving 层（并发 2.5×）/config（prefill +50%），而非重写核心 kernel。
 
+## 2026-07-20 autopilot 全 regime 复现结果（已推 main: ad5207f/6ab9d7e/5f04253）
+**① kernel 改动全 regime 端到端**（含 agent 数据集，server+bench_serving 真实并发）：
+- Qwen3 custom MoE：b1 **+1.4%**、b2 −2%、b4 −11%；agent c1(触发) −0.7%(噪声)、c32(全 fallback) −7%。→ **通用收益 ≈0，高并发反而负**。
+- Qwen1.5 gate 融合：全 batch **~1.0×**。
+- **教训固化：单点端到端会误导，必须扫 regime + 真实并发。** 之前的 1.23×/M≤4 结论被证伪。
+- 文档：`docs/2026-07-20/regime_sweep_kernel_changes.md`（含最终 3改动×regime 矩阵）。
+
+**② 新架构端到端 —— 唯一真实正结果 ✅**：线性注意力(LFM2.5-8B-A1B hybrid) vs 全注意力(Qwen3-30B)：
+- decode 随上下文 scaling：**LFM +24% vs Qwen +57%**（bs=32, 512→8192）；bs=64：+16% vs +47%。
+- Qwen 在 bs=32×16k **OOM**，LFM 的 O(1) 递归状态 KV 足迹仍可跑。
+- 线性注意力把 O(context) KV cache 换成 O(1) 状态 = **架构级端到端杠杆，tuning/kernel 重写都够不到**。
+- 图：`results/2026-07-20_v39_ctxscan/ctx_scaling.png`；文档：`docs/2026-07-20/new_architecture_linear_attention_e2e.md`。
+
+**总诚实结论**：成熟 bf16/H200 MoE 的 **kernel 融合全 regime 端到端 ≈0**；真正"tuning 之外"的端到端提升 = **架构选择（长上下文并发用线性注意力）+ 投机解码（+23–30%）**，都不是 bf16 MoE kernel 重写。
+
 ## 下一步（优先级）
-1. **端到端集成**：把 M=1 特化 MoE kernel 挂进 sglang decode 路径，测单请求 TPOT 真实提升（估 ~1.1×）。
-2. **补 CUDA 融合空缺**（agent 可批量）：`fused_linear_sigmoid_mul`、`fused_gdn_gating`、`fused_rmsnorm_gated`（均 CPU-only，缺 CUDA）。
-3. **扩大 M=1 胜利范围**（研究性，payoff 不确定）：M=2-8 的混合分组策略。
-4. **Chendi 广度实验**（另一条线，待新机器）：20 model × regime × config × 3 repeat 的 AutoTuner 普适性 spreadsheet。设计稿：`docs/2026-07-17/breadth_autotuner_experiment_design.md`。
-5. **Mason 深度线**：`docs/2026-07-16/mason_roadmap_qwen3_moe_matrix.md`（regime → config ceiling → kernel autotune → rewrite）。
+1. **（②延伸）served 分页 prefill 下量化 LFM vs Qwen 长上下文优势**：bench_one_batch 单发 prefill 在 16k 两模型都 OOM；server 路径能把 LFM 推得更远（deferred）。
+2. **投机解码作为主端到端杠杆**：在 tuned baseline 上叠 spec 的 A/B（+23–30% 已有 A1b 数据，可做成 stacked headroom 图）。
+3. **补 CUDA 融合空缺**（agent 可批量，低 e2e 杠杆但补覆盖）：`fused_linear_sigmoid_mul`、`fused_rmsnorm_gated`（`fused_gdn_gating` 已有 triton CUDA，非空缺）。
+4. **Chendi 广度实验**（待新机器）：20 model × regime × config × 3 repeat AutoTuner 普适性。设计稿：`docs/2026-07-17/breadth_autotuner_experiment_design.md`。
+5. **Mason 深度线**：`docs/2026-07-16/mason_roadmap_qwen3_moe_matrix.md`。
 
 ## 关键方法学教训
 - 对比 kernel 性能**必须对标 sglang 真实 GPU 代码 + cudagraph**，不能用朴素 PyTorch baseline（否则得出误导性"加速"，如已撤回的 SwiGLU）。
