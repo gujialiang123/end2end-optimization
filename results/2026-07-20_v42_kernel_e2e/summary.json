@@ -1,0 +1,114 @@
+{
+  "N": 3,
+  "batches": [
+    "1",
+    "32",
+    "64"
+  ],
+  "inlens": [
+    "256",
+    "2048",
+    "4096"
+  ],
+  "summary": [
+    {
+      "batch": 1,
+      "input_len": 256,
+      "prefill_M": 256,
+      "prefill_tput_default": 7639.843212591873,
+      "prefill_tput_tuned": 7614.174448330676,
+      "prefill_gain_pct": -0.3359854848708266,
+      "decode_lat_default_ms": 4.465112928301096,
+      "decode_lat_tuned_ms": 4.297302104532719,
+      "decode_gain_pct": 3.905027379652304
+    },
+    {
+      "batch": 1,
+      "input_len": 2048,
+      "prefill_M": 2048,
+      "prefill_tput_default": 28982.654039325396,
+      "prefill_tput_tuned": 41650.57840378034,
+      "prefill_gain_pct": 43.708641545616715,
+      "decode_lat_default_ms": 4.607066046446562,
+      "decode_lat_tuned_ms": 4.40375879406929,
+      "decode_gain_pct": 4.616675478481547
+    },
+    {
+      "batch": 1,
+      "input_len": 4096,
+      "prefill_M": 4096,
+      "prefill_tput_default": 40774.18597735596,
+      "prefill_tput_tuned": 54728.771049995834,
+      "prefill_gain_pct": 34.224067846233844,
+      "decode_lat_default_ms": 4.721913021057844,
+      "decode_lat_tuned_ms": 4.494046326726675,
+      "decode_gain_pct": 5.070412669669566
+    },
+    {
+      "batch": 32,
+      "input_len": 256,
+      "prefill_M": 8192,
+      "prefill_tput_default": 50594.3785684801,
+      "prefill_tput_tuned": 71514.59798007707,
+      "prefill_gain_pct": 41.34890081371631,
+      "decode_lat_default_ms": 9.151728823781013,
+      "decode_lat_tuned_ms": 8.721672929823399,
+      "decode_gain_pct": 4.930887656736771
+    },
+    {
+      "batch": 32,
+      "input_len": 2048,
+      "prefill_M": 65536,
+      "prefill_tput_default": 50041.711067119955,
+      "prefill_tput_tuned": 70612.67488631936,
+      "prefill_gain_pct": 41.10763477213635,
+      "decode_lat_default_ms": 9.37101012095809,
+      "decode_lat_tuned_ms": 8.875740226358175,
+      "decode_gain_pct": 5.580040446982859
+    },
+    {
+      "batch": 32,
+      "input_len": 4096,
+      "prefill_M": 131072,
+      "prefill_tput_default": 46842.018616528636,
+      "prefill_tput_tuned": 64448.53524343993,
+      "prefill_gain_pct": 37.587015134951244,
+      "decode_lat_default_ms": 10.323422960937023,
+      "decode_lat_tuned_ms": 10.454841889441013,
+      "decode_gain_pct": -1.2570149782630158
+    },
+    {
+      "batch": 64,
+      "input_len": 256,
+      "prefill_M": 16384,
+      "prefill_tput_default": 53290.71879204789,
+      "prefill_tput_tuned": 76321.90364500611,
+      "prefill_gain_pct": 43.21800376315239,
+      "decode_lat_default_ms": 10.212530847638845,
+      "decode_lat_tuned_ms": 10.366574861109257,
+      "decode_gain_pct": -1.4859682733620705
+    },
+    {
+      "batch": 64,
+      "input_len": 2048,
+      "prefill_M": 131072,
+      "prefill_tput_default": 50142.64237705576,
+      "prefill_tput_tuned": 70693.33554391397,
+      "prefill_gain_pct": 40.984463906636456,
+      "decode_lat_default_ms": 11.829487979412079,
+      "decode_lat_tuned_ms": 12.397030834108591,
+      "decode_gain_pct": -4.5780547156098255
+    },
+    {
+      "batch": 64,
+      "input_len": 4096,
+      "prefill_M": 262144,
+      "prefill_tput_default": 46808.88037871183,
+      "prefill_tput_tuned": 64421.43885447809,
+      "prefill_gain_pct": 37.62653225898618,
+      "decode_lat_default_ms": 15.800556167960167,
+      "decode_lat_tuned_ms": 15.531898941844702,
+      "decode_gain_pct": 1.7297126843368371
+    }
+  ]
+}

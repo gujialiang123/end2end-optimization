@@ -9,7 +9,7 @@
 
 ## 0. 一句话总结
 
-在**成熟 bf16/H200 上的 Qwen3-30B**，我们验证的**可复现同模型端到端提升 = config 自动调优（prefill +35~54%）+ 开启投机解码（decode c32 +30.6%）**；**自己重写/融合 kernel 在全 regime 端到端 ≈0**（隔离层 1.23× 不迁移）。真正"tuning 之外"的空间在**算法层（spec decoding）**和**架构层（线性注意力，需换模型）**，不在重写 bf16 MoE kernel。
+在**成熟 bf16/H200 上的 Qwen3-30B**，我们验证的**可复现同模型端到端提升 = MoE kernel-config 自动调优（★e2e 实测 prefill +34~43%，v42 §1.7）+ 开启投机解码（decode c32 +30.6%）**；**自己重写/融合 kernel 在全 regime 端到端 ≈0**（隔离层 1.23× 不迁移，b1 仅 +1.17%）。真正"tuning 之外"的空间在**算法层（spec decoding）**和**架构层（线性注意力，需换模型）**，不在重写 bf16 MoE kernel。
 
 ---
 
@@ -68,10 +68,16 @@ custom kernel = **「去掉 align/sort + 把 GEMM/激活/加权求和融成 2 �
 - 工具：sglang 官方 `benchmark/kernels/fused_moe_triton/tuning_fused_moe_triton.py`（CUDA-graph 计时、flush L2、100 iters）。
 - 脚本 / 数据：`scripts/run_v23_config_evidence.py`、`results/2026-07-19_v23_config_evidence/fused_moe_config_speedup.json`。
 
+> ★**Triton 版本（关键，复现必读）**：我们的 tuning 基于 **Triton 3.5.1**（当前 `sglang-dev` 环境；autotune 日志显示 `target=cuda:90`=H200/SM90）。
+> **但存在版本错配**：sglang 的 config 目录 `configs/triton_3_5_1/` **没有**我们 shape 的 config → 运行时虽是 3.5.1，却**回退加载为 triton 3.2.0 tune 的旧 config**（`configs/triton_3_2_0/E=128,N=768,H200.json`，覆盖全 batch），并打印 "Fallback to triton version 3.2.0 ... Performance might be sub-optimal!"。
+> - config 加载机制：`get_moe_configs` 按 `triton.__version__` 找 `configs/triton_{ver}/`，找不到则遍历其他版本目录回退；支持 `SGLANG_MOE_CONFIG_DIR` 环境变量覆盖目录（见 `fused_moe_triton_config.py:76-115`）。
+> - **迁移影响**：新机器若也是 triton 3.5.1，需把 tuned config 放进 `configs/triton_3_5_1/` 才会被优先加载；若 triton 版本不同，最优 block/stages 会变，**必须在新机器重新 tune**。
+
 ### 1.6.2 对标的 baseline（三个 config）
 - **default**：`get_default_config` 启发式（没有任何 tuned JSON 时 sglang 用的）。
 - **fallback**：旧 `triton_3_2_0/E=128,N=768,H200.json`（**sglang 今天实际加载的**——因为 triton 3.5.1 没有我们 shape 的 config，回退并打印 "Performance might be sub-optimal!"）。
-- **ours**：我们对自己 shape 重新 tune 生成的。
+- **ours**：我们对自己 shape 重新 tune 生成的（仅 batch=32；`results/autotune_qwen3_moe/`）。
+- ⚠️ **注意**：§1.6.3 表里的 "tuned" 列其实是 **fallback（triton_3_2_0）** 的数字（`ours` 只在 b=32 有值，且 vs fallback 仅 +0.6%）。所以这张表实为 **"fallback tuned config vs default 启发式"**。真正 e2e 该验证的正是这个大 gap（见 §1.7）。
 
 ### 1.6.3 结果 —— tuned vs default 启发式（**kernel 时间**，U 形）
 
@@ -115,10 +121,50 @@ custom kernel = **「去掉 align/sort + 把 GEMM/激活/加权求和融成 2 �
 | 对象 | Triton `fused_moe_kernel` 的 meta 参数 | 重写 MoE 计算逻辑 |
 | 手段 | autotuning（block/warps/stages） | 去 align/sort + 融合 + fp32 |
 | kernel 层 | decode +13% / prefill +54% | b1 1.23× |
-| **端到端** | 未单独隔离（混入 config-tuning 故事，e2e < kernel 数字） | b1 **+1.17%**（真信号）、b≥2 真回归 |
-| 结论 | ✅ 有 kernel 层收益，尤其 prefill；属 autotuning | ❌ 通用改动不成立 |
+| **端到端** | **prefill +34~43%（v42 实测，见 §1.7）、decode ≈0** | b1 **+1.17%**（真信号）、b≥2 真回归 |
+| 结论 | ✅ prefill 有真实 e2e 收益；属 autotuning | ❌ 通用改动不成立 |
 
 ---
+
+## 1.7 ★kernel-config tuning 的端到端验证（v42，全 regime，n=3）
+
+> §1.6 只给了**隔离 kernel 时间（µs）**。本节补上**端到端**：那个 kernel 层 +35~54% 的 gap，到底转不转化成端到端 prefill/decode？
+
+![kernel-config tuning e2e](../../results/2026-07-20_v42_kernel_e2e/kernel_config_e2e.png)
+
+### 1.7.1 方法（干净 A/B）
+- 用 sglang config 加载机制做开关（`fused_moe_triton_config.py`）：
+  - **default（启发式）**：`SGLANG_MOE_CONFIG_DIR` 指向空目录 → `get_moe_configs` 返回 None → 用 `get_default_config`。
+  - **tuned**：sglang 现状 → 加载 fallback `triton_3_2_0` tuned config（覆盖全 batch）。
+- `bench_one_batch`（H200/GPU0，cudagraph ON），一次运行同时给 **prefill 吞吐 + decode 中位延迟**；MoE 的 M：prefill≈batch×input_len（大）、decode=batch（小）。
+- 扫 batch∈{1,32,64} × input_len∈{256,2048,4096}，**每配置 3 次重复取中位数**。
+- 脚本 `scripts/run_v42_kernel_e2e.py`；数据 `results/2026-07-20_v42_kernel_e2e/summary.json`。
+
+### 1.7.2 结果 —— tuned config vs default 启发式（**端到端**）
+
+| regime | prefill M | **prefill 吞吐 default→tuned** | **decode 延迟 default→tuned** |
+|---|---:|---|---|
+| b=1, in=256 | 256 | 7640→7614 (**−0.3%**) | 4.47→4.30ms (+3.9%) |
+| b=1, in=2048 | 2048 | 28983→41651 (**+43.7%**) | 4.61→4.40ms (+4.6%) |
+| b=1, in=4096 | 4096 | 40774→54729 (**+34.2%**) | 4.72→4.49ms (+5.1%) |
+| b=32, in=256 | 8192 | 50594→71515 (**+41.3%**) | 9.15→8.72ms (+4.9%) |
+| b=32, in=2048 | 65536 | 50042→70613 (**+41.1%**) | 9.37→8.88ms (+5.6%) |
+| b=32, in=4096 | 131072 | 46842→64449 (**+37.6%**) | 10.32→10.46ms (−1.3%) |
+| b=64, in=256 | 16384 | 53291→76322 (**+43.2%**) | 10.21→10.37ms (−1.5%) |
+| b=64, in=2048 | 131072 | 50143→70693 (**+41.0%**) | 11.83→12.40ms (−4.6%) |
+| b=64, in=4096 | 262144 | 46809→64421 (**+37.6%**) | 15.80→15.53ms (+1.7%) |
+
+（prefill 吞吐越高越好；decode 延迟 gain 正=tuned 更快）
+
+### 1.7.3 结论
+1. **Prefill 端到端真实兑现 +34~43%**（只要 prefill M≥2048）。这是完整 prefill 阶段吞吐，**不是隔离 kernel µs** → §1.6 的 kernel gap **在 prefill 上确实转化为端到端**。
+2. **为什么 prefill e2e ≈ kernel 提升（都 ~+40%）**：prefill 是 compute-bound，MoE grouped GEMM 占算力主导，config 好坏几乎 1:1 传到端到端。
+3. **短 prefill（M=256）无提升（−0.3%）**：M 太小，default 与 tuned 选的 block 差不多。
+4. **Decode 端到端 ≈0（−4.6% ~ +5.6%，噪声带内）**：decode 是 memory-bound、MoE 只占 41%，config 调优对 decode e2e 无实质影响（与 §1.6 预期一致）。
+5. **对我们 agent 负载高度相关**：真实 agent in:out≈13:1，**prefill 主导** → 这条 kernel-config tuning 是**同模型上端到端最实在的杠杆之一**（+40% prefill），且完全属 autotuning，agent 可自动完成。
+
+### 1.7.4 caveat
+- 这里 "tuned" = sglang 现状加载的 fallback（triton_3_2_0）；"default" = 关掉所有 config 的纯启发式。**我们自己重 tune vs fallback 只 +0.6%**（§1.6.5），所以图里的 +40% 是"**有 tuned config vs 没有**"的价值，不是"我们比 sglang 更好"。真实意义：**agent 给未覆盖 shape 补 tuned config，能拿 +40% prefill**——这正是 sglang 打印 "sub-optimal!" 想让你做的事。
 
 ## 2. 三张核心图（Dey 要的"tuning 以外还有多少空间"）
 
