@@ -1,5 +1,13 @@
 # Plan / 项目状态（2026-07-20 更新）
 
+## ★最新汇总文档：`docs/2026-07-20/qwen_optimization_full_report.md`（Qwen 全纪录，含 4 图 + §1.5 kernel 重写 + §1.6 kernel-config 调优）
+
+### 2026-07-20 晚：噪声验证（Chendi 要求）+ kernel 细节入报告
+- **v41 噪声验证**：把 custom MoE kernel 的 b1 "+1.4%" 用 **n=15 交错重复 + Welch t 检验**验证 → **+1.17%，|t|=6.51，真信号（非波动）**；b2 −4.3%(|t|=3.2)、b4 −11.7%(|t|=9.9) 是**真回归**。文档 `docs/2026-07-20/noise_verification_custom_moe_b1.md`（带误差棒图）、脚本 `scripts/run_v41_noise_verify.py`。
+- **报告补充**：§1.5 写清 custom kernel 具体改了什么（去 align/sort + 融合 w1+SwiGLU / w2+加权求和 + fp32 累加）；§1.6 写清 kernel-config 调优（Triton `fused_moe_kernel` meta 参数：decode +13%、prefill +35~54% kernel 时间，U 形；本质是 autotuning，且是隔离时间非 e2e）。
+- **教训固化**：信号 vs 噪声必须多次重复 + t 检验（连 3 次中位数都可能误判方向）。
+
+
 ## 当前主线：证明"kernel/config agent"有意义（能拿到 sglang 之外的性能提升）
 
 ### 复现 kernel PR 技术（2026-07-20，真实模型端到端实测）
