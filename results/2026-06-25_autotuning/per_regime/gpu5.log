@@ -1,0 +1,173 @@
+================================================================
+[Thu Jun 25 18:11:35 UTC 2026] Starting study for R_medium_balanced on GPU 5 port 31201
+Output: results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5
+================================================================
+2026-06-25 18:11:36,022 [INFO] template spec hash: sha256:f7225fbc37de3af7f4c41d9afc20c85c11b543360fd39b000f79ea834c1ed866
+2026-06-25 18:11:36,022 [INFO] study storage: sqlite:///results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/study.db
+[I 2026-06-25 18:11:36,612] A new study created in RDB with name: autotune-R_medium_balanced
+2026-06-25 18:11:36,616 [INFO] existing trials: 0; will run 15 more
+2026-06-25 18:11:36,718 [INFO] trial 0: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 16, 'chunked-prefill-size': 2048, 'schedule-policy': 'lpm'}
+2026-06-25 18:11:36,719 [INFO] trial 0: launching harness
+2026-06-25 18:16:09,288 [INFO] trial 0: harness returned in 272.6s, exit=0
+2026-06-25 18:16:09,345 [INFO] trial 0: R_medium_balanced req/s = 1.203
+[I 2026-06-25 18:16:09,378] Trial 0 finished with value: 1.2034381791480717 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 16, 'chunked_prefill_size': 2048, 'schedule_policy': 'lpm'}. Best is trial 0 with value: 1.2034381791480717.
+2026-06-25 18:16:09,488 [INFO] trial 1: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:16:09,490 [INFO] trial 1: launching harness
+2026-06-25 18:16:10,292 [INFO] trial 1: harness returned in 0.8s, exit=1
+2026-06-25 18:16:10,310 [WARNING] trial 1: ok=false, phase=server_startup
+[I 2026-06-25 18:16:10,339] Trial 1 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 0 with value: 1.2034381791480717.
+2026-06-25 18:16:10,439 [INFO] trial 2: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': 8192, 'schedule-policy': 'lpm'}
+2026-06-25 18:16:10,440 [INFO] trial 2: launching harness
+2026-06-25 18:17:57,126 [INFO] trial 2: harness returned in 106.7s, exit=0
+2026-06-25 18:17:57,175 [INFO] trial 2: R_medium_balanced req/s = 4.652
+[I 2026-06-25 18:17:57,197] Trial 2 finished with value: 4.651782072966643 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': 8192, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:17:57,297 [INFO] trial 3: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 64, 'chunked-prefill-size': 2048, 'schedule-policy': 'fcfs'}
+2026-06-25 18:17:57,298 [INFO] trial 3: launching harness
+2026-06-25 18:17:58,019 [INFO] trial 3: harness returned in 0.7s, exit=1
+2026-06-25 18:17:58,036 [WARNING] trial 3: ok=false, phase=server_startup
+[I 2026-06-25 18:17:58,054] Trial 3 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 64, 'chunked_prefill_size': 2048, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:17:58,150 [INFO] trial 4: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:17:58,151 [INFO] trial 4: launching harness
+2026-06-25 18:19:45,986 [INFO] trial 4: harness returned in 107.8s, exit=3
+2026-06-25 18:19:46,033 [INFO] trial 4: R_medium_balanced req/s = 3.737
+[I 2026-06-25 18:19:46,050] Trial 4 finished with value: 3.7367241517490006 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:19:46,140 [INFO] trial 5: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': True, 'max-running-requests': 16, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:19:46,142 [INFO] trial 5: launching harness
+2026-06-25 18:19:46,871 [INFO] trial 5: harness returned in 0.7s, exit=1
+2026-06-25 18:19:46,884 [WARNING] trial 5: ok=false, phase=server_startup
+[I 2026-06-25 18:19:46,903] Trial 5 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': True, 'max_running_requests': 16, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:19:47,001 [INFO] trial 6: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 16, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:19:47,002 [INFO] trial 6: launching harness
+2026-06-25 18:19:47,737 [INFO] trial 6: harness returned in 0.7s, exit=1
+2026-06-25 18:19:47,752 [WARNING] trial 6: ok=false, phase=server_startup
+[I 2026-06-25 18:19:47,772] Trial 6 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 16, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:19:47,877 [INFO] trial 7: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': 2048, 'schedule-policy': 'lpm'}
+2026-06-25 18:19:47,878 [INFO] trial 7: launching harness
+2026-06-25 18:19:48,632 [INFO] trial 7: harness returned in 0.8s, exit=1
+2026-06-25 18:19:48,650 [WARNING] trial 7: ok=false, phase=server_startup
+[I 2026-06-25 18:19:48,675] Trial 7 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': 2048, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:19:48,785 [INFO] trial 8: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:19:48,786 [INFO] trial 8: launching harness
+2026-06-25 18:19:49,582 [INFO] trial 8: harness returned in 0.8s, exit=1
+2026-06-25 18:19:49,598 [WARNING] trial 8: ok=false, phase=server_startup
+[I 2026-06-25 18:19:49,614] Trial 8 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:19:49,706 [INFO] trial 9: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:19:49,708 [INFO] trial 9: launching harness
+2026-06-25 18:21:21,044 [INFO] trial 9: harness returned in 91.3s, exit=0
+2026-06-25 18:21:21,090 [INFO] trial 9: R_medium_balanced req/s = 4.345
+[I 2026-06-25 18:21:21,106] Trial 9 finished with value: 4.344522524252232 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:21:21,209 [INFO] trial 10: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': True, 'max-running-requests': 8, 'chunked-prefill-size': 8192, 'schedule-policy': 'lpm'}
+2026-06-25 18:21:21,210 [INFO] trial 10: launching harness
+2026-06-25 18:29:22,911 [INFO] trial 10: harness returned in 481.7s, exit=0
+2026-06-25 18:29:22,950 [INFO] trial 10: R_medium_balanced req/s = 0.755
+[I 2026-06-25 18:29:22,967] Trial 10 finished with value: 0.7550600541831234 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': True, 'max_running_requests': 8, 'chunked_prefill_size': 8192, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:29:23,077 [INFO] trial 11: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': -1, 'schedule-policy': 'lpm'}
+2026-06-25 18:29:23,078 [INFO] trial 11: launching harness
+2026-06-25 18:29:23,826 [INFO] trial 11: harness returned in 0.7s, exit=1
+2026-06-25 18:29:23,844 [WARNING] trial 11: ok=false, phase=server_startup
+[I 2026-06-25 18:29:23,864] Trial 11 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': -1, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:29:23,967 [INFO] trial 12: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 64, 'chunked-prefill-size': -1, 'schedule-policy': 'lpm'}
+2026-06-25 18:29:23,968 [INFO] trial 12: launching harness
+2026-06-25 18:29:24,708 [INFO] trial 12: harness returned in 0.7s, exit=1
+2026-06-25 18:29:24,724 [WARNING] trial 12: ok=false, phase=server_startup
+[I 2026-06-25 18:29:24,746] Trial 12 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 64, 'chunked_prefill_size': -1, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:29:24,837 [INFO] trial 13: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': -1, 'schedule-policy': 'lpm'}
+2026-06-25 18:29:24,838 [INFO] trial 13: launching harness
+2026-06-25 18:31:03,138 [INFO] trial 13: harness returned in 98.3s, exit=0
+2026-06-25 18:31:03,183 [INFO] trial 13: R_medium_balanced req/s = 4.634
+[I 2026-06-25 18:31:03,199] Trial 13 finished with value: 4.6343475780061825 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': -1, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:31:03,286 [INFO] trial 14: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': -1, 'schedule-policy': 'lpm'}
+2026-06-25 18:31:03,287 [INFO] trial 14: launching harness
+2026-06-25 18:31:04,064 [INFO] trial 14: harness returned in 0.8s, exit=1
+2026-06-25 18:31:04,081 [WARNING] trial 14: ok=false, phase=server_startup
+[I 2026-06-25 18:31:04,098] Trial 14 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': -1, 'schedule_policy': 'lpm'}. Best is trial 2 with value: 4.651782072966643.
+2026-06-25 18:31:04,098 [INFO] BEST trial #2: value=4.652, params={'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': 8192, 'schedule_policy': 'lpm'}
+2026-06-25 18:31:04,102 [INFO] wrote results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/best.json
+[Thu Jun 25 18:31:04 UTC 2026] Done with R_medium_balanced
+================================================================
+[Thu Jun 25 18:31:04 UTC 2026] Starting study for R_concurrent_decode on GPU 5 port 31201
+Output: results/2026-06-25_autotuning/per_regime/R_concurrent_decode_gpu5
+================================================================
+2026-06-25 18:31:04,416 [INFO] template spec hash: sha256:f7225fbc37de3af7f4c41d9afc20c85c11b543360fd39b000f79ea834c1ed866
+2026-06-25 18:31:04,416 [INFO] study storage: sqlite:///results/2026-06-25_autotuning/per_regime/R_concurrent_decode_gpu5/study.db
+[I 2026-06-25 18:31:04,952] A new study created in RDB with name: autotune-R_concurrent_decode
+2026-06-25 18:31:04,958 [INFO] existing trials: 0; will run 15 more
+2026-06-25 18:31:05,058 [INFO] trial 0: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 16, 'chunked-prefill-size': 2048, 'schedule-policy': 'lpm'}
+2026-06-25 18:31:05,059 [INFO] trial 0: launching harness
+2026-06-25 18:35:21,173 [INFO] trial 0: harness returned in 256.1s, exit=0
+2026-06-25 18:35:21,214 [INFO] trial 0: R_concurrent_decode req/s = 2.579
+[I 2026-06-25 18:35:21,235] Trial 0 finished with value: 2.579259750719623 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 16, 'chunked_prefill_size': 2048, 'schedule_policy': 'lpm'}. Best is trial 0 with value: 2.579259750719623.
+2026-06-25 18:35:21,326 [INFO] trial 1: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:35:21,327 [INFO] trial 1: launching harness
+2026-06-25 18:35:22,043 [INFO] trial 1: harness returned in 0.7s, exit=1
+2026-06-25 18:35:22,060 [WARNING] trial 1: ok=false, phase=server_startup
+[I 2026-06-25 18:35:22,080] Trial 1 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 0 with value: 2.579259750719623.
+2026-06-25 18:35:22,189 [INFO] trial 2: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': 8192, 'schedule-policy': 'lpm'}
+2026-06-25 18:35:22,190 [INFO] trial 2: launching harness
+2026-06-25 18:35:22,904 [INFO] trial 2: harness returned in 0.7s, exit=1
+2026-06-25 18:35:22,917 [WARNING] trial 2: ok=false, phase=server_startup
+[I 2026-06-25 18:35:22,935] Trial 2 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': 8192, 'schedule_policy': 'lpm'}. Best is trial 0 with value: 2.579259750719623.
+2026-06-25 18:35:23,029 [INFO] trial 3: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 64, 'chunked-prefill-size': 2048, 'schedule-policy': 'fcfs'}
+2026-06-25 18:35:23,030 [INFO] trial 3: launching harness
+2026-06-25 18:39:29,735 [INFO] trial 3: harness returned in 246.7s, exit=0
+2026-06-25 18:39:29,784 [INFO] trial 3: R_concurrent_decode req/s = 5.019
+[I 2026-06-25 18:39:29,805] Trial 3 finished with value: 5.0189834148360175 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 64, 'chunked_prefill_size': 2048, 'schedule_policy': 'fcfs'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:29,888 [INFO] trial 4: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:39:29,889 [INFO] trial 4: launching harness
+2026-06-25 18:39:30,588 [INFO] trial 4: harness returned in 0.7s, exit=1
+2026-06-25 18:39:30,603 [WARNING] trial 4: ok=false, phase=server_startup
+[I 2026-06-25 18:39:30,621] Trial 4 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:30,713 [INFO] trial 5: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': True, 'max-running-requests': 16, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:39:30,714 [INFO] trial 5: launching harness
+2026-06-25 18:39:31,413 [INFO] trial 5: harness returned in 0.7s, exit=1
+2026-06-25 18:39:31,429 [WARNING] trial 5: ok=false, phase=server_startup
+[I 2026-06-25 18:39:31,449] Trial 5 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': True, 'max_running_requests': 16, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:31,535 [INFO] trial 6: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 16, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:39:31,536 [INFO] trial 6: launching harness
+2026-06-25 18:39:32,294 [INFO] trial 6: harness returned in 0.8s, exit=1
+2026-06-25 18:39:32,315 [WARNING] trial 6: ok=false, phase=server_startup
+[I 2026-06-25 18:39:32,334] Trial 6 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 16, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:32,431 [INFO] trial 7: flags={'moe-runner-backend': 'triton', 'disable-cuda-graph': False, 'max-running-requests': 8, 'chunked-prefill-size': 2048, 'schedule-policy': 'lpm'}
+2026-06-25 18:39:32,432 [INFO] trial 7: launching harness
+2026-06-25 18:39:33,184 [INFO] trial 7: harness returned in 0.8s, exit=1
+2026-06-25 18:39:33,198 [WARNING] trial 7: ok=false, phase=server_startup
+[I 2026-06-25 18:39:33,213] Trial 7 finished with value: 0.0 and parameters: {'moe_runner_backend': 'triton', 'disable_cuda_graph': False, 'max_running_requests': 8, 'chunked_prefill_size': 2048, 'schedule_policy': 'lpm'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:33,302 [INFO] trial 8: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': 8192, 'schedule-policy': 'fcfs'}
+2026-06-25 18:39:33,303 [INFO] trial 8: launching harness
+2026-06-25 18:39:34,090 [INFO] trial 8: harness returned in 0.8s, exit=1
+2026-06-25 18:39:34,105 [WARNING] trial 8: ok=false, phase=server_startup
+[I 2026-06-25 18:39:34,120] Trial 8 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': 8192, 'schedule_policy': 'fcfs'}. Best is trial 3 with value: 5.0189834148360175.
+2026-06-25 18:39:34,222 [INFO] trial 9: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:39:34,223 [INFO] trial 9: launching harness
+2026-06-25 18:41:05,226 [INFO] trial 9: harness returned in 91.0s, exit=0
+2026-06-25 18:41:05,280 [INFO] trial 9: R_concurrent_decode req/s = 13.978
+[I 2026-06-25 18:41:05,300] Trial 9 finished with value: 13.978128146530954 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:41:05,399 [INFO] trial 10: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 32, 'chunked-prefill-size': -1, 'schedule-policy': 'lpm'}
+2026-06-25 18:41:05,400 [INFO] trial 10: launching harness
+2026-06-25 18:41:06,147 [INFO] trial 10: harness returned in 0.7s, exit=1
+2026-06-25 18:41:06,164 [WARNING] trial 10: ok=false, phase=server_startup
+[I 2026-06-25 18:41:06,181] Trial 10 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 32, 'chunked_prefill_size': -1, 'schedule_policy': 'lpm'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:41:06,265 [INFO] trial 11: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 64, 'chunked-prefill-size': 2048, 'schedule-policy': 'fcfs'}
+2026-06-25 18:41:06,266 [INFO] trial 11: launching harness
+2026-06-25 18:45:26,722 [INFO] trial 11: harness returned in 260.5s, exit=0
+2026-06-25 18:45:26,760 [INFO] trial 11: R_concurrent_decode req/s = 4.616
+[I 2026-06-25 18:45:26,778] Trial 11 finished with value: 4.615926461973942 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 64, 'chunked_prefill_size': 2048, 'schedule_policy': 'fcfs'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:45:26,887 [INFO] trial 12: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 64, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:45:26,888 [INFO] trial 12: launching harness
+2026-06-25 18:45:27,669 [INFO] trial 12: harness returned in 0.8s, exit=1
+2026-06-25 18:45:27,683 [WARNING] trial 12: ok=false, phase=server_startup
+[I 2026-06-25 18:45:27,704] Trial 12 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 64, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:45:27,821 [INFO] trial 13: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': True, 'max-running-requests': 64, 'chunked-prefill-size': -1, 'schedule-policy': 'fcfs'}
+2026-06-25 18:45:27,822 [INFO] trial 13: launching harness
+2026-06-25 18:45:28,627 [INFO] trial 13: harness returned in 0.8s, exit=1
+2026-06-25 18:45:28,734 [WARNING] trial 13: ok=false, phase=server_startup
+[I 2026-06-25 18:45:28,753] Trial 13 finished with value: 0.0 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': True, 'max_running_requests': 64, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:45:28,847 [INFO] trial 14: flags={'moe-runner-backend': 'flashinfer_cutlass', 'disable-cuda-graph': False, 'max-running-requests': 32, 'chunked-prefill-size': 2048, 'schedule-policy': 'fcfs'}
+2026-06-25 18:45:28,848 [INFO] trial 14: launching harness
+2026-06-25 18:47:00,586 [INFO] trial 14: harness returned in 91.7s, exit=0
+2026-06-25 18:47:00,630 [INFO] trial 14: R_concurrent_decode req/s = 13.922
+[I 2026-06-25 18:47:00,650] Trial 14 finished with value: 13.921747118014723 and parameters: {'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': 2048, 'schedule_policy': 'fcfs'}. Best is trial 9 with value: 13.978128146530954.
+2026-06-25 18:47:00,651 [INFO] BEST trial #9: value=13.978, params={'moe_runner_backend': 'flashinfer_cutlass', 'disable_cuda_graph': False, 'max_running_requests': 32, 'chunked_prefill_size': -1, 'schedule_policy': 'fcfs'}
+2026-06-25 18:47:00,655 [INFO] wrote results/2026-06-25_autotuning/per_regime/R_concurrent_decode_gpu5/best.json
+[Thu Jun 25 18:47:00 UTC 2026] Done with R_concurrent_decode
+[Thu Jun 25 18:47:00 UTC 2026] All studies on GPU 5 complete.

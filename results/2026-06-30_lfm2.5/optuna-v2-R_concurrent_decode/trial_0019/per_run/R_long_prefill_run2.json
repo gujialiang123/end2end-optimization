@@ -1,0 +1,41 @@
+{
+  "regime": "R_long_prefill",
+  "run": 2,
+  "elapsed_wall_s": 0.29456311801914126,
+  "wall_s": 0.29449508897960186,
+  "req_per_s": 13.582569454246686,
+  "tokens_per_s": 434.64222253589395,
+  "total_out_tokens": 128,
+  "completion_rate": 1.0,
+  "errors": [],
+  "records": [
+    {
+      "idx": 3,
+      "ok": true,
+      "e2e_s": 0.2903428730205633,
+      "output_tokens": 32,
+      "error": null
+    },
+    {
+      "idx": 0,
+      "ok": true,
+      "e2e_s": 0.2937423110124655,
+      "output_tokens": 32,
+      "error": null
+    },
+    {
+      "idx": 2,
+      "ok": true,
+      "e2e_s": 0.291623764031101,
+      "output_tokens": 32,
+      "error": null
+    },
+    {
+      "idx": 1,
+      "ok": true,
+      "e2e_s": 0.2928914289805107,
+      "output_tokens": 32,
+      "error": null
+    }
+  ]
+}

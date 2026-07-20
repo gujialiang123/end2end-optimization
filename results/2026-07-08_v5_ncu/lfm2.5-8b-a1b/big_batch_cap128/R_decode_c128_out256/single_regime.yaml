@@ -1,0 +1,6 @@
+regimes:
+  R_decode_c128_out256:
+    concurrency: 128
+    max_new: 256
+    num_prompts: 128
+    prompt_words: 200

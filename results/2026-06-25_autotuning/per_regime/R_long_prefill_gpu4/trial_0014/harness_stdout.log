@@ -1,0 +1,12 @@
+[run_bench] spec_hash = sha256:8bebd0b67ce0e82541e6d09ec7dffb4404e562fedeaed088e2d09f050c20de4e
+[run_bench] submission_id = autotune-R_long_prefill-trial-0014
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/server_config_used.yaml --log results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/server.log --pidfile results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/models/Qwen3-30B-A3B-Instruct-2507 --served-model-name qwen3-30b-a3b-moe --host 127.0.0.1 --port 31200 --tensor-parallel-size 1 --mem-fraction-static 0.85 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 64 --chunked-prefill-size -1 --max-prefill-tokens 16384 --trust-remote-code --moe-runner-backend triton
+[launch_server] CUDA_VISIBLE_DEVICES=4
+[launch_server] log: results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/server.log
+[launch_server] pid=4116799 pgid=4116799
+[lifecycle] healthy after 40.1s (attempt 14)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31200 --backend sglang --tag autotune-R_long_prefill-trial-0014 --num-runs 3 --regimes-file results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/regimes_resolved.yaml --out-dir results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014
+[e2e-bench-runner] wrote results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/bench_summary.json
+[run_bench] OK → results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0014/summary.json
+[lifecycle] killing pgid=4116799 (SIGTERM)...

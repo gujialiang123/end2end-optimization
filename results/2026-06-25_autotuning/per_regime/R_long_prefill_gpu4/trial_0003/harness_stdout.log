@@ -1,0 +1,4 @@
+[run_bench] spec_hash = sha256:24ddc3f65aa97623a85079abf252c4ea901e656a317ee00dc88acf9cd5fec5e1
+[run_bench] submission_id = autotune-R_long_prefill-trial-0003
+[run_bench] server startup failed: Port 127.0.0.1:31200 is already in use. Harness will not start a competing server. Identify the existing process with `lsof -i :31200` and stop it (if yours) or change the spec's server.overrides.port to a free port.
+[run_bench] failure recorded → results/2026-06-25_autotuning/per_regime/R_long_prefill_gpu4/trial_0003/summary.json

@@ -1,0 +1,41 @@
+{
+  "regime": "R_decode_c1_out2k",
+  "run": 2,
+  "elapsed_wall_s": 14.410556149901822,
+  "wall_s": 14.410464816959575,
+  "req_per_s": 0.27757605676205727,
+  "tokens_per_s": 568.4757642486933,
+  "total_out_tokens": 8192,
+  "completion_rate": 1.0,
+  "errors": [],
+  "records": [
+    {
+      "idx": 0,
+      "ok": true,
+      "e2e_s": 3.6022025540005416,
+      "output_tokens": 2048,
+      "error": null
+    },
+    {
+      "idx": 1,
+      "ok": true,
+      "e2e_s": 3.6045686419820413,
+      "output_tokens": 2048,
+      "error": null
+    },
+    {
+      "idx": 2,
+      "ok": true,
+      "e2e_s": 3.600776856066659,
+      "output_tokens": 2048,
+      "error": null
+    },
+    {
+      "idx": 3,
+      "ok": true,
+      "e2e_s": 3.6022380519425496,
+      "output_tokens": 2048,
+      "error": null
+    }
+  ]
+}

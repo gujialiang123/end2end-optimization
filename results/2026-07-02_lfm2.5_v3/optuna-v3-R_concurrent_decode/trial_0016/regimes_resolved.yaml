@@ -1,0 +1,41 @@
+regimes:
+  R_concurrent_decode:
+    concurrency: 32
+    max_new: 256
+    num_prompts: 32
+    prompt_words: 200
+  R_long_prefill:
+    concurrency: 4
+    max_new: 32
+    num_prompts: 4
+    prompt_words: 4000
+  R_medium_balanced:
+    concurrency: 8
+    max_new: 256
+    num_prompts: 16
+    prompt_words: 800
+  R_prompt_16k_c2_out128:
+    concurrency: 2
+    max_new: 128
+    num_prompts: 4
+    prompt_words: 16000
+  R_prompt_32k_c1_out128:
+    concurrency: 1
+    max_new: 128
+    num_prompts: 2
+    prompt_words: 32000
+  R_prompt_50k_c1_out64:
+    concurrency: 1
+    max_new: 64
+    num_prompts: 2
+    prompt_words: 50000
+  R_prompt_8k_c4_out128:
+    concurrency: 4
+    max_new: 128
+    num_prompts: 8
+    prompt_words: 8000
+  R_short_decode:
+    concurrency: 1
+    max_new: 256
+    num_prompts: 8
+    prompt_words: 100

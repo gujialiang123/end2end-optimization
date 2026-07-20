@@ -1,0 +1,13 @@
+[run_bench] spec_hash = sha256:8d7e4ae35181b927cc31df92b06be0a1c8ab6edfdf3c9d51c82cb4065ab54513
+[run_bench] submission_id = v4-lfm2.5-8b-a1b-cookbook_baseline
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/server_config_used.yaml --log /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/server.log --pidfile /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B --served-model-name lfm2.5-8b-a1b --host 127.0.0.1 --port 32100 --tensor-parallel-size 1 --mem-fraction-static 0.85 --context-length 8192 --max-prefill-tokens 16384 --schedule-policy lpm --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size -1 --log-requests --trust-remote-code --show-time-cost --log-requests-level 2 --moe-runner-backend auto
+[launch_server] CUDA_VISIBLE_DEVICES=6
+[launch_server] log: /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/server.log
+[launch_server] pid=3382059 pgid=3382059
+[lifecycle] healthy after 25.1s (attempt 9)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:32100 --backend sglang --tag v4-lfm2.5-8b-a1b-cookbook_baseline --num-runs 3 --regimes-file /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/regimes_resolved.yaml --out-dir /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline
+[e2e-bench-runner] wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/bench_summary.json
+[run_bench] MFU annotated (model=LFM2.5-8B-A1B, hw=h200)
+[run_bench] OK → /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/lfm2.5-8b-a1b/cookbook_baseline/summary.json
+[lifecycle] killing pgid=3382059 (SIGTERM)...

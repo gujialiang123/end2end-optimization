@@ -1,0 +1,9 @@
+{
+  "mem-fraction-static": 0.75,
+  "max-running-requests": 32,
+  "chunked-prefill-size": -1,
+  "schedule-policy": "lpm",
+  "attention-backend": "fa3",
+  "disable-cuda-graph": true,
+  "moe-runner-backend": "flashinfer_cutlass"
+}

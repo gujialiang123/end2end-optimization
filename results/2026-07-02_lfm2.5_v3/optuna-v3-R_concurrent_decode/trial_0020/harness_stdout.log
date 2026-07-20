@@ -1,0 +1,13 @@
+[run_bench] spec_hash = sha256:cf9abce1e7d658f71c8cabf035dba0947cd7fbde0e1d575e98cd0127c3c709bc
+[run_bench] submission_id = autotune-v3-R_concurrent_decode-trial-0020
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/server_config_used.yaml --log results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/server.log --pidfile results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B --served-model-name lfm2.5-8b-a1b --host 127.0.0.1 --port 31700 --tensor-parallel-size 1 --mem-fraction-static 0.75 --context-length 73728 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size 8192 --max-prefill-tokens 96000 --trust-remote-code --attention-backend fa3 --moe-runner-backend auto
+[launch_server] CUDA_VISIBLE_DEVICES=6
+[launch_server] log: results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/server.log
+[launch_server] pid=1499211 pgid=1499211
+[lifecycle] healthy after 25.1s (attempt 9)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31700 --backend sglang --tag autotune-v3-R_concurrent_decode-trial-0020 --num-runs 3 --regimes-file results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/regimes_resolved.yaml --out-dir results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020
+[e2e-bench-runner] wrote results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/bench_summary.json
+[run_bench] MFU annotated (model=LFM2.5-8B-A1B, hw=h200)
+[run_bench] OK → results/2026-07-02_lfm2.5_v3/optuna-v3-R_concurrent_decode/trial_0020/summary.json
+[lifecycle] killing pgid=1499211 (SIGTERM)...

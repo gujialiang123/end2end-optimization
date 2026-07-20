@@ -1,0 +1,33 @@
+submission_id: autotune-v2-R_concurrent_decode-trial-0009
+description: 'Optuna v2 trial: {''mem-fraction-static'': 0.75, ''max-running-requests'':
+  8, ''chunked-prefill-size'': 2048, ''schedule-policy'': ''fcfs'', ''attention-backend'':
+  ''fa3'', ''disable-cuda-graph'': True, ''moe-runner-backend'': ''triton''}'
+tags:
+- autotune-v2
+- trial
+- lfm2.5
+server:
+  config: configs/lfm2.5_8b_a1b.yaml
+  overrides:
+    _gpu_id: 4
+    port: 31500
+    mem-fraction-static: 0.75
+    max-running-requests: 8
+    chunked-prefill-size: 2048
+    schedule-policy: fcfs
+    attention-backend: fa3
+    disable-cuda-graph: true
+    moe-runner-backend: triton
+  conda_env: sglang-dev
+  health_url: http://127.0.0.1:31500/health
+  base_url: http://127.0.0.1:31500
+  startup_timeout_s: 600
+regimes:
+  file: regimes/qwen3_30b_moe_sglang_perf_sweep.yaml
+bench:
+  num_runs: 3
+  reliable_stddev_pct: 8.0
+  per_request_timeout_s: 600
+  backend: sglang
+quality_gate:
+  type: sanity

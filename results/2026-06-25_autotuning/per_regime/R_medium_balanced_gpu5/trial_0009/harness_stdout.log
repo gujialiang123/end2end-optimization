@@ -1,0 +1,12 @@
+[run_bench] spec_hash = sha256:a60ba18ef7e2a522ead727c9d11c6bf9cb0939a064f93b576756cb7a79f9d4d5
+[run_bench] submission_id = autotune-R_medium_balanced-trial-0009
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/server_config_used.yaml --log results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/server.log --pidfile results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/models/Qwen3-30B-A3B-Instruct-2507 --served-model-name qwen3-30b-a3b-moe --host 127.0.0.1 --port 31201 --tensor-parallel-size 1 --mem-fraction-static 0.85 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size -1 --max-prefill-tokens 16384 --trust-remote-code --moe-runner-backend flashinfer_cutlass
+[launch_server] CUDA_VISIBLE_DEVICES=5
+[launch_server] log: results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/server.log
+[launch_server] pid=4057927 pgid=4057927
+[lifecycle] healthy after 40.1s (attempt 14)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31201 --backend sglang --tag autotune-R_medium_balanced-trial-0009 --num-runs 3 --regimes-file results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/regimes_resolved.yaml --out-dir results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009
+[e2e-bench-runner] wrote results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/bench_summary.json
+[run_bench] OK → results/2026-06-25_autotuning/per_regime/R_medium_balanced_gpu5/trial_0009/summary.json
+[lifecycle] killing pgid=4057927 (SIGTERM)...

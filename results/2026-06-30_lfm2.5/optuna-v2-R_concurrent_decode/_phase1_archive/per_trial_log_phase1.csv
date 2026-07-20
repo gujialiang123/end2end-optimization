@@ -1,0 +1,12 @@
+trial,wall_s,ok,target_req_per_s,reliable,warnings,moe_runner_backend,attention_backend,disable_cuda_graph,max_running_requests,chunked_prefill_size,schedule_policy,mem_fraction_static,R_short_decode_rps,R_medium_balanced_rps,R_long_prefill_rps,R_concurrent_decode_rps,spec_hash,server_startup_s
+0,33.8,False,0.0,False,,flashinfer_cutlass,flashinfer,False,32,-1,fcfs,0.9,,,,,sha256:7fe5bda134fade20320be81f796a7f4e592569d4b48b55b6aeaa9bc29b8ccb89,0.0
+1,53.1,True,23.6797,True,unreliable stddev_pct on regimes: ['R_long_prefill'] (threshold=8.0%),triton,fa3,False,64,8192,fcfs,0.75,1.6952,7.3214,16.3647,23.6797,sha256:3e238f013935f728e1e077df946abcc3ea89a04e8182a95b6f97f0f61214c691,25.1
+2,18.7,False,0.0,False,,flashinfer_cutlass,flashinfer,True,8,8192,lpm,0.9,,,,,sha256:ad825f4c38db24f06df2e8abee180168405b3ec713c2b1f9e821293dcea5ac5b,0.0
+3,18.7,False,0.0,False,,flashinfer_cutlass,flashinfer,True,8,-1,lpm,0.9,,,,,sha256:c19963c54de949f03560cea6a1b1abebe529ae9c161cf173e40b3d56c0982b32,0.0
+4,127.1,True,9.2959,False,unreliable stddev_pct on regimes: ['R_concurrent_decode'] (threshold=8.0%),flashinfer_cutlass,fa3,True,32,-1,fcfs,0.9,0.3579,2.7371,6.8809,9.2959,sha256:4e910ce69460531d4398eff7db7b5469514a56be8ecbf8666887902f0e6dbb8a,25.1
+5,0.7,False,0.0,False,,flashinfer_cutlass,fa3,True,32,-1,lpm,0.75,,,,,sha256:2b917847fe38d92f05742579cd2a6d8b5de14d315abffe4694920b3facf7c980,0.0
+6,21.8,False,0.0,False,,flashinfer_cutlass,triton,True,16,8192,lpm,0.75,,,,,sha256:dd59acf2d7832444c6af91a2a80d4d8339438dd2f47ff8f50e86ba9f207f6dae,0.0
+7,21.8,False,0.0,False,,triton,triton,True,8,-1,fcfs,0.75,,,,,sha256:1a6d59296675579cd86276ba0b6e800f567873fcb268484e5ac28c249dea359b,0.0
+8,18.8,False,0.0,False,,triton,triton,False,64,2048,fcfs,0.75,,,,,sha256:ec20292475931fdcd5ef0609ce936d983d9b9676f33832ededd87a236a9099b2,0.0
+9,21.8,False,0.0,False,,triton,flashinfer,False,16,-1,lpm,0.85,,,,,sha256:583a1e5e69b755c5d6367dc665de35f2085c3d201d85bd399c5cba145e2d2e9c,0.0
+10,53.2,True,23.636,True,,triton,fa3,False,64,8192,fcfs,0.85,1.6949,7.3637,14.1953,23.636,sha256:f8b7199cc23ad096fc375e01dd3018fedf0f6b057010e40c04b47b08f71e5760,25.1

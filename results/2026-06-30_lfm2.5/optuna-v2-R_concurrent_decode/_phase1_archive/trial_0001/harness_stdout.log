@@ -1,0 +1,12 @@
+[run_bench] spec_hash = sha256:3e238f013935f728e1e077df946abcc3ea89a04e8182a95b6f97f0f61214c691
+[run_bench] submission_id = autotune-v2-R_concurrent_decode-trial-0001
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/server_config_used.yaml --log results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/server.log --pidfile results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B --served-model-name lfm2.5-8b-a1b --host 127.0.0.1 --port 31500 --tensor-parallel-size 1 --mem-fraction-static 0.75 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 64 --chunked-prefill-size 8192 --max-prefill-tokens 16384 --trust-remote-code --attention-backend fa3 --moe-runner-backend triton
+[launch_server] CUDA_VISIBLE_DEVICES=4
+[launch_server] log: results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/server.log
+[launch_server] pid=3563205 pgid=3563205
+[lifecycle] healthy after 25.1s (attempt 9)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31500 --backend sglang --tag autotune-v2-R_concurrent_decode-trial-0001 --num-runs 3 --regimes-file results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/regimes_resolved.yaml --out-dir results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001
+[e2e-bench-runner] wrote results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/bench_summary.json
+[run_bench] OK → results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0001/summary.json
+[lifecycle] killing pgid=3563205 (SIGTERM)...

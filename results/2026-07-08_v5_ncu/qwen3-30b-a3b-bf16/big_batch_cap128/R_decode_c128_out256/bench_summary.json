@@ -1,0 +1,54 @@
+{
+  "schema_version": 0,
+  "ok": true,
+  "captured_at": "2026-07-08T18:55:30.410740+00:00",
+  "tag": "R_decode_c128_out256",
+  "url": "http://127.0.0.1:33511",
+  "backend": "sglang",
+  "num_runs_total": 3,
+  "num_runs_used": 2,
+  "regimes_source": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-08_v5_ncu/qwen3-30b-a3b-bf16/big_batch_cap128/R_decode_c128_out256/single_regime.yaml",
+  "regimes": {
+    "R_decode_c128_out256": {
+      "concurrency": 128,
+      "max_new": 256,
+      "num_prompts": 128,
+      "prompt_words": 200,
+      "req_per_s": {
+        "mean": 35.093183683847215,
+        "stddev": 0.42121094362594036,
+        "stddev_pct": 1.2002642661908627,
+        "runs": [
+          34.67197274022127,
+          35.51439462747315
+        ]
+      },
+      "tokens_per_s": {
+        "mean": 8983.855023064887,
+        "stddev": 107.83000156824073,
+        "stddev_pct": 1.2002642661908627,
+        "runs": [
+          8876.025021496645,
+          9091.685024633127
+        ]
+      },
+      "wall_s": {
+        "mean": 3.6479575044941157,
+        "stddev": 0.04378513037227094,
+        "stddev_pct": 1.2002642661908665,
+        "runs": [
+          3.6917426348663867,
+          3.6041723741218448
+        ]
+      },
+      "e2e_ms": {
+        "p50": 3569.1027310676873,
+        "p99": 3672.1598168369383,
+        "count": 256
+      },
+      "completion_rate": 1.0,
+      "reliable": true
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 0,
+  "ok": true,
+  "captured_at": "2026-07-08T18:43:56.912138+00:00",
+  "tag": "R_conc_ref",
+  "url": "http://127.0.0.1:33504",
+  "backend": "sglang",
+  "num_runs_total": 3,
+  "num_runs_used": 2,
+  "regimes_source": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-08_v5_ncu/lfm2.5-8b-a1b/big_batch_cap128/R_conc_ref/single_regime.yaml",
+  "regimes": {
+    "R_conc_ref": {
+      "concurrency": 32,
+      "max_new": 256,
+      "num_prompts": 32,
+      "prompt_words": 200,
+      "req_per_s": {
+        "mean": 22.482275462512472,
+        "stddev": 1.0038205844073538,
+        "stddev_pct": 4.464942109979705,
+        "runs": [
+          21.47845487810512,
+          23.486096046919826
+        ]
+      },
+      "tokens_per_s": {
+        "mean": 5755.462518403193,
+        "stddev": 256.97806960828257,
+        "stddev_pct": 4.464942109979705,
+        "runs": [
+          5498.48444879491,
+          6012.4405880114755
+        ]
+      },
+      "wall_s": {
+        "mean": 1.4261866754386574,
+        "stddev": 0.06367840943858027,
+        "stddev_pct": 4.46494210997971,
+        "runs": [
+          1.4898650848772377,
+          1.3625082660000771
+        ]
+      },
+      "e2e_ms": {
+        "p50": 1451.5011680778116,
+        "p99": 1482.5195840094239,
+        "count": 64
+      },
+      "completion_rate": 1.0,
+      "reliable": true
+    }
+  },
+  "warnings": []
+}

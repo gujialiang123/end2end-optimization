@@ -1,0 +1,4 @@
+[run_bench] spec_hash = sha256:3716a3d3d844a288e773109481b7448b958a213f26be1c98e6ed644aed62ce25
+[run_bench] submission_id = autotune-v2-R_concurrent_decode-trial-0002
+[run_bench] server startup failed: Port 127.0.0.1:31500 is already in use. Harness will not start a competing server. Identify the existing process with `lsof -i :31500` and stop it (if yours) or change the spec's server.overrides.port to a free port.
+[run_bench] failure recorded → results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0002/summary.json

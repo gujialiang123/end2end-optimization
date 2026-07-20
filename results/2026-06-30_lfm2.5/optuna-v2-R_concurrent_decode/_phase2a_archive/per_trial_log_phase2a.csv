@@ -1,0 +1,8 @@
+trial,wall_s,ok,target_req_per_s,reliable,warnings,moe_runner_backend,attention_backend,disable_cuda_graph,max_running_requests,chunked_prefill_size,schedule_policy,mem_fraction_static,R_short_decode_rps,R_medium_balanced_rps,R_long_prefill_rps,R_concurrent_decode_rps,spec_hash,server_startup_s
+0,57.6,True,22.0393,True,,flashinfer_cutlass,fa3,False,32,-1,fcfs,0.9,1.6444,7.0899,9.2181,22.0393,sha256:920f25648c4099866dadd864720ff494b53b1f011d6c356d7e885b23d4ce4337,28.1
+1,0.7,False,0.0,False,,triton,fa3,False,8,8192,lpm,0.9,,,,,sha256:72b145606041d70ce0b0018e3c7d6cf43e31cf86c0909df16da9461e9cc40782,0.0
+2,0.7,False,0.0,False,,flashinfer_cutlass,fa3,True,16,2048,fcfs,0.75,,,,,sha256:3716a3d3d844a288e773109481b7448b958a213f26be1c98e6ed644aed62ce25,0.0
+3,216.1,True,1.8007,True,,triton,fa3,True,8,2048,fcfs,0.75,0.2254,1.7707,5.9816,1.8007,sha256:8b47f94e262926d8aee7d42c51f772ef81a9a0253d9569f880b3c4351f269e67,25.1
+4,60.5,True,8.4821,True,unreliable stddev_pct on regimes: ['R_long_prefill'] (threshold=8.0%),triton,fa3,False,8,2048,fcfs,0.75,1.6919,7.3861,17.4677,8.4821,sha256:8ebf1548acd18ebd8e6c12e692f7ae166fe5056178212e11bd4f47cafbb3a89e,25.1
+5,0.7,False,0.0,False,,flashinfer_cutlass,fa3,True,8,2048,fcfs,0.85,,,,,sha256:3b3dc69b039c61f26cbf80b9e7f978f85ceec3e6da990930ba3d1d9ff492abbe,0.0
+6,0.7,False,0.0,False,,triton,fa3,True,64,8192,fcfs,0.75,,,,,sha256:1e8f7e756a298e1706d721b44cef893eaa27f43dab8544c68ccf0bac0a01e938,0.0

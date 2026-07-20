@@ -1,0 +1,26 @@
+regimes:
+  R_conc_ref:
+    concurrency: 32
+    max_new: 256
+    num_prompts: 32
+    prompt_words: 200
+  R_decode_c128_out256:
+    concurrency: 128
+    max_new: 256
+    num_prompts: 128
+    prompt_words: 200
+  R_decode_c1_out2k:
+    concurrency: 1
+    max_new: 2048
+    num_prompts: 4
+    prompt_words: 100
+  R_decode_c32_out1k:
+    concurrency: 32
+    max_new: 1024
+    num_prompts: 32
+    prompt_words: 200
+  R_decode_c64_out512:
+    concurrency: 64
+    max_new: 512
+    num_prompts: 64
+    prompt_words: 200

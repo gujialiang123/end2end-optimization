@@ -1,0 +1,12 @@
+[run_bench] spec_hash = sha256:e01af20ad8b05ed48acf25aef9d79629574e518f71644304c108491a74347bc9
+[run_bench] submission_id = autotune-v2-R_concurrent_decode-trial-0009
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/server_config_used.yaml --log results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/server.log --pidfile results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B --served-model-name lfm2.5-8b-a1b --host 127.0.0.1 --port 31500 --tensor-parallel-size 1 --mem-fraction-static 0.75 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 8 --chunked-prefill-size 2048 --max-prefill-tokens 16384 --disable-cuda-graph --trust-remote-code --attention-backend fa3 --moe-runner-backend triton
+[launch_server] CUDA_VISIBLE_DEVICES=4
+[launch_server] log: results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/server.log
+[launch_server] pid=3621824 pgid=3621824
+[lifecycle] healthy after 22.1s (attempt 8)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31500 --backend sglang --tag autotune-v2-R_concurrent_decode-trial-0009 --num-runs 3 --regimes-file results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/regimes_resolved.yaml --out-dir results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009
+[e2e-bench-runner] wrote results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/bench_summary.json
+[run_bench] OK → results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0009/summary.json
+[lifecycle] killing pgid=3621824 (SIGTERM)...

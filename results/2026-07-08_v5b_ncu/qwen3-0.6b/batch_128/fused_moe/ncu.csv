@@ -1,0 +1,27 @@
+==PROF== Connected to process 2288763 (/home/t-jialianggu/.conda/envs/sglang-dev/bin/python3.11)
+input shape: torch.Size([128, 201])
+Warmup done
+Profiled section done
+==PROF== Disconnected from process 2288763
+==WARNING== No kernels were profiled.
+Available Kernels:
+1. CatArrayBatchedCopy
+2. CatArrayBatchedCopy_alignedK_contig
+3. Kernel2
+4. elementwise_kernel
+5. elementwise_kernel_with_index
+6. flash_fwd_kernel
+7. nvjet_tst_128x160_64x5_2x1_v_bz_TNT
+8. nvjet_tst_192x128_64x5_2x1_v_bz_coopB_TNT
+9. nvjet_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+10. nvjet_tst_24x64_64x16_4x2_h_bz_TNN
+11. nvjet_tst_24x64_64x16_4x2_v_bz_TNN
+12. nvjet_tst_256x128_64x4_1x2_h_bz_coopA_TNT
+13. nvjet_tst_48x64_64x15_4x2_h_bz_TNN
+14. nvjet_tst_64x32_64x16_1x2_h_bz_splitK_TNT
+15. nvjet_tst_64x64_64x13_4x2_v_bz_TNT
+16. reduce_kernel
+17. splitKreduce_kernel
+18. unrolled_elementwise_kernel
+19. vectorized_elementwise_kernel
+20. vectorized_gather_kernel

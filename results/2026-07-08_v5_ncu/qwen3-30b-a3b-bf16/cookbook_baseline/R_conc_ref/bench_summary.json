@@ -1,0 +1,54 @@
+{
+  "schema_version": 0,
+  "ok": true,
+  "captured_at": "2026-07-08T18:48:50.326878+00:00",
+  "tag": "R_conc_ref",
+  "url": "http://127.0.0.1:33507",
+  "backend": "sglang",
+  "num_runs_total": 3,
+  "num_runs_used": 2,
+  "regimes_source": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-08_v5_ncu/qwen3-30b-a3b-bf16/cookbook_baseline/R_conc_ref/single_regime.yaml",
+  "regimes": {
+    "R_conc_ref": {
+      "concurrency": 32,
+      "max_new": 256,
+      "num_prompts": 32,
+      "prompt_words": 200,
+      "req_per_s": {
+        "mean": 14.618722702958944,
+        "stddev": 0.005410778386997883,
+        "stddev_pct": 0.037012661755344047,
+        "runs": [
+          14.613311924571947,
+          14.624133481345943
+        ]
+      },
+      "tokens_per_s": {
+        "mean": 3742.3930119574898,
+        "stddev": 1.385159267071458,
+        "stddev_pct": 0.037012661755344047,
+        "runs": [
+          3741.0078526904185,
+          3743.7781712245614
+        ]
+      },
+      "wall_s": {
+        "mean": 2.188974032411352,
+        "stddev": 0.0008101975545287132,
+        "stddev_pct": 0.03701266175534333,
+        "runs": [
+          2.1897842299658805,
+          2.188163834856823
+        ]
+      },
+      "e2e_ms": {
+        "p50": 2170.7939540501684,
+        "p99": 2185.6710358988494,
+        "count": 64
+      },
+      "completion_rate": 1.0,
+      "reliable": true
+    }
+  },
+  "warnings": []
+}

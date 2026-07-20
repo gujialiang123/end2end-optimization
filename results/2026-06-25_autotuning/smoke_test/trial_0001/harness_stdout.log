@@ -1,0 +1,12 @@
+[run_bench] spec_hash = sha256:0a06dfd7fcf7586ed8d1522d0dde65ae2b5343a4d4dbc3006b3a695446dd3eea
+[run_bench] submission_id = autotune-R_medium_balanced-trial-0001
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-25_autotuning/smoke_test/trial_0001/server_config_used.yaml --log results/2026-06-25_autotuning/smoke_test/trial_0001/server.log --pidfile results/2026-06-25_autotuning/smoke_test/trial_0001/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/models/Qwen3-30B-A3B-Instruct-2507 --served-model-name qwen3-30b-a3b-moe --host 127.0.0.1 --port 31200 --tensor-parallel-size 1 --mem-fraction-static 0.85 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size 8192 --max-prefill-tokens 16384 --trust-remote-code --moe-runner-backend triton
+[launch_server] CUDA_VISIBLE_DEVICES=5
+[launch_server] log: results/2026-06-25_autotuning/smoke_test/trial_0001/server.log
+[launch_server] pid=3992753 pgid=3992753
+[lifecycle] healthy after 40.1s (attempt 14)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:31200 --backend sglang --tag autotune-R_medium_balanced-trial-0001 --num-runs 3 --regimes-file results/2026-06-25_autotuning/smoke_test/trial_0001/regimes_resolved.yaml --out-dir results/2026-06-25_autotuning/smoke_test/trial_0001
+[e2e-bench-runner] wrote results/2026-06-25_autotuning/smoke_test/trial_0001/bench_summary.json
+[run_bench] OK → results/2026-06-25_autotuning/smoke_test/trial_0001/summary.json
+[lifecycle] killing pgid=3992753 (SIGTERM)...

@@ -1,0 +1,54 @@
+{
+  "schema_version": 0,
+  "ok": true,
+  "captured_at": "2026-07-08T18:49:59.468629+00:00",
+  "tag": "R_decode_c128_out256",
+  "url": "http://127.0.0.1:33508",
+  "backend": "sglang",
+  "num_runs_total": 3,
+  "num_runs_used": 2,
+  "regimes_source": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-08_v5_ncu/qwen3-30b-a3b-bf16/cookbook_baseline/R_decode_c128_out256/single_regime.yaml",
+  "regimes": {
+    "R_decode_c128_out256": {
+      "concurrency": 128,
+      "max_new": 256,
+      "num_prompts": 128,
+      "prompt_words": 200,
+      "req_per_s": {
+        "mean": 14.784948637733667,
+        "stddev": 0.08625500141165698,
+        "stddev_pct": 0.5833973693457397,
+        "runs": [
+          14.69869363632201,
+          14.871203639145325
+        ]
+      },
+      "tokens_per_s": {
+        "mean": 3784.9468512598187,
+        "stddev": 22.081280361384188,
+        "stddev_pct": 0.5833973693457397,
+        "runs": [
+          3762.8655708984347,
+          3807.028131621203
+        ]
+      },
+      "wall_s": {
+        "mean": 8.657747808028944,
+        "stddev": 0.0505090729566291,
+        "stddev_pct": 0.5833973693457373,
+        "runs": [
+          8.708256880985573,
+          8.607238735072315
+        ]
+      },
+      "e2e_ms": {
+        "p50": 6386.769638862461,
+        "p99": 8620.034486986697,
+        "count": 256
+      },
+      "completion_rate": 1.0,
+      "reliable": true
+    }
+  },
+  "warnings": []
+}

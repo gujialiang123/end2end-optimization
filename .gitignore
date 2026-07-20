@@ -51,3 +51,9 @@ models/
 results/4way_bench/nsys/*.log
 .hf_cache/
 logs/
+
+# large profiling artifacts (>50MB, regenerable; excluded to avoid GitHub 100MB limit)
+*.ncu-rep
+*.nsys-rep
+*.sqlite
+*.trace.json.gz

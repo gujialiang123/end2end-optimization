@@ -1,0 +1,4 @@
+[run_bench] spec_hash = sha256:f10db3ed6b334c3fe15713d62dcba171d7d88e543036cba458da3bf6dfacbc5b
+[run_bench] submission_id = autotune-R_concurrent_decode-trial-0007
+[run_bench] server startup failed: Port 127.0.0.1:31201 is already in use. Harness will not start a competing server. Identify the existing process with `lsof -i :31201` and stop it (if yours) or change the spec's server.overrides.port to a free port.
+[run_bench] failure recorded → results/2026-06-25_autotuning/per_regime/R_concurrent_decode_gpu5/trial_0007/summary.json

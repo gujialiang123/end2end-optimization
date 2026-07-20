@@ -1,0 +1,10 @@
+[run_bench] spec_hash = sha256:7fe5bda134fade20320be81f796a7f4e592569d4b48b55b6aeaa9bc29b8ccb89
+[run_bench] submission_id = autotune-v2-R_concurrent_decode-trial-0000
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/server_config_used.yaml --log results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/server.log --pidfile results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B --served-model-name lfm2.5-8b-a1b --host 127.0.0.1 --port 31500 --tensor-parallel-size 1 --mem-fraction-static 0.9 --context-length 32768 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size -1 --max-prefill-tokens 16384 --trust-remote-code --attention-backend flashinfer --moe-runner-backend flashinfer_cutlass
+[launch_server] CUDA_VISIBLE_DEVICES=4
+[launch_server] log: results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/server.log
+[launch_server] pid=3562149 pgid=3562149
+[run_bench] server startup failed: Server process pid=3562149 exited before /health became ready. Inspect results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/server.log
+[run_bench] failure recorded → results/2026-06-30_lfm2.5/optuna-v2-R_concurrent_decode/trial_0000/summary.json
+[lifecycle] pid=3562149 already exited

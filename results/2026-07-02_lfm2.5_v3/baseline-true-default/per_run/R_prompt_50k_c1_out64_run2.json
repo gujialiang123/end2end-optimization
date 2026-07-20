@@ -1,0 +1,27 @@
+{
+  "regime": "R_prompt_50k_c1_out64",
+  "run": 2,
+  "elapsed_wall_s": 1.5399841790786013,
+  "wall_s": 1.539917723974213,
+  "req_per_s": 1.2987706868120257,
+  "tokens_per_s": 83.12132395596964,
+  "total_out_tokens": 128,
+  "completion_rate": 1.0,
+  "errors": [],
+  "records": [
+    {
+      "idx": 0,
+      "ok": true,
+      "e2e_s": 0.5699026909423992,
+      "output_tokens": 64,
+      "error": null
+    },
+    {
+      "idx": 1,
+      "ok": true,
+      "e2e_s": 0.9693592339754105,
+      "output_tokens": 64,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+[run_bench] spec_hash = sha256:b6fcd075cab1f62267ca89ba7ecaed0460b2b1ba17b9445d586bdf5286529efa
+[run_bench] submission_id = v4-qwen3-0.6b-v3_best_chunk8k
+[lifecycle] launching: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/launch_server.py --config /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/server_config_used.yaml --log /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/server.log --pidfile /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/server.pid --conda-env sglang-dev
+[launch_server] argv: conda run -n sglang-dev --no-capture-output python -m sglang.launch_server --model-path /data/hf/models/Qwen3-0.6B --served-model-name qwen3-0.6b --host 127.0.0.1 --port 32007 --tensor-parallel-size 1 --mem-fraction-static 0.75 --context-length 8192 --max-prefill-tokens 16384 --schedule-policy fcfs --schedule-conservativeness 1.0 --max-running-requests 32 --chunked-prefill-size 8192 --log-requests --trust-remote-code --show-time-cost --log-requests-level 2 --moe-runner-backend auto
+[launch_server] CUDA_VISIBLE_DEVICES=6
+[launch_server] log: /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/server.log
+[launch_server] pid=3145006 pgid=3145006
+[lifecycle] healthy after 22.1s (attempt 8)
+[executor] running: /home/t-jialianggu/.conda/envs/sglang-dev/bin/python /home/t-jialianggu/work/EndtoEnd-auto-optimization/.github/skills/e2e-bench-runner/impl/run_bench.py --url http://127.0.0.1:32007 --backend sglang --tag v4-qwen3-0.6b-v3_best_chunk8k --num-runs 3 --regimes-file /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/regimes_resolved.yaml --out-dir /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k
+[e2e-bench-runner] wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/bench_summary.json
+[run_bench] MFU annotated (model=Qwen3-0.6B, hw=h200)
+[run_bench] OK → /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/2026-07-07_v4_decode_sweep/qwen3-0.6b/v3_best_chunk8k/summary.json
+[lifecycle] killing pgid=3145006 (SIGTERM)...
