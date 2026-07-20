@@ -160,3 +160,17 @@ decode 一步的 CUDA kernel 时间分桶（32 步，115µs/步 eager）：
 1. **decode 前三块 MoE+dense+attn = 89%,全是 memory-bound 权重/KV 读取** → 整个 decode 本质是"流式读权重"。这解释了为何 kernel 算力优化端到端杠杆小。
 2. **MoE 只占 41%** → 即使 MoE 大提速，端到端上限也就 ~7%（1.23× → 理论 7.7%，实测仅 1.5%，因真实模型里自定义 kernel 未完全兑现隔离的 1.23×）。
 3. **dense_gemm 32%（含 lm_head 600MB/token）+ attention 16% 也都 memory-bound** → **spec decoding 一次验证多 token,能同时摊薄 MoE + dense + lm_head + attention 的权重/KV 读取** —— 这正是它杠杆远大于 kernel 重写的原因（打的是全部 89%，不只是 MoE 41%）。
+
+### [9] CUDA 未融合空缺:核实适用性(诚实结论)
+核实那 3 个 "CPU 有融合、CUDA 没有" 的 kernel 各自服务哪个架构:
+| CPU-only fused kernel | 用在哪个模型 | 适用 Qwen3-30B? |
+|---|---|---|
+| `fused_linear_sigmoid_mul` | qwen2_moe / Qwen3.5（shared-expert **gate**）| ❌ Qwen3-30B 无 shared expert |
+| `fused_gdn_gating` | qwen3_next / qwen3_5 / jet_nemotron（GDN 线性注意力）| ❌ Qwen3-30B 是标准注意力 |
+| `fused_rmsnorm_gated` | gated-norm 架构 | ❌ Qwen3-30B 用标准 RMSNorm（已 CUDA 融合 FusedAddRMSNorm）|
+
+**结论**：
+- **对 Qwen3-30B,sglang 热路径已全部 CUDA 融合,没有可补的空缺**（decode audit 的 norm 用的 FusedAddRMSNorm 就是 CUDA 融合版）。
+- 这 3 个空缺服务的是**别的架构**（Qwen2-MoE 的 shared-expert gate、Qwen3-Next/GDN 的线性注意力门控）。
+- **v25 我已经写好了 `fused_linear_sigmoid_mul` 的 CUDA 融合替代**（triton `fused_gate_kernel`,隔离 2-3× 且正确）—— 它就是这个 CUDA 空缺的填充,可直接给 Qwen2-MoE/Qwen3.5 用；但按 decode audit + e2e 杠杆结论,这类小算子融合端到端收益 <1%。
+- **所以"补 CUDA 空缺"这条对 Qwen3-30B 不适用,对其他架构可行但低杠杆** —— 再次印证:kernel/融合层不是端到端提升的主战场,**spec decoding(打全部 89% memory-bound 读取)才是**。
