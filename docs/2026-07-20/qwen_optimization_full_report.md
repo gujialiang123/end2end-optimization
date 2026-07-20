@@ -18,13 +18,39 @@
 | # | 做了什么 | 层次 | 隔离/micro | **端到端实测** | 有无提升 | 判定 |
 |---|---|---|---|---|---|---|
 | 1 | **config 自动调优**（重 tune MoE triton config vs 默认启发式） | 配置 | — | decode +13%、**prefill +35~54%** | ✅ 有 | **主力杠杆**（autotuning） |
-| 2 | **自写 small-M(decode) MoE kernel**（跳过 align/sort、融合 act/sum、tensor-core dot） | kernel | b1 **1.23×** 且更准 | b1 +1.4% / b2 −2% / b4 −11%；agent c1 −0.7% / c32 −7% | ❌ ≈0，高并发负 | 通用改动不成立 |
+| 2 | **自写 small-M(decode) MoE kernel**（跳过 align/sort、融合 act/sum、fp32 累加、tensor-core dot；详见 §1.5） | kernel | b1 **1.23×** 且更准 | b1 **+1.17%**(真信号,\|t\|=6.5) / b2 −4.3% / b4 −11.7%（n=15 t 检验）；agent c1 −0.7% / c32 −7% | ❌ ≈0，b≥2 真回归 | 通用改动不成立 |
 | 3 | **shared-expert gate 融合**（linear+sigmoid+mul 三算子）| kernel | 隔离 2-3× | Qwen3 无 shared expert，**不适用**；换 Qwen1.5-MoE 测得全 batch ~1.0× | ❌ 0 | 对 Qwen3 不适用 |
 | 4 | **投机解码（spec decoding）** | 算法 | — | decode **c1 +6.6% / c32 +30.6%**（exact，不改分布） | ✅ 有 | **最大可实现杠杆** |
 | 5 | **decode step 组成审计**（哪块占时间） | 诊断 | — | MoE 41% + dense 32% + attn 16% = 89% memory-bound | 诊断 | 解释了为何 kernel 杠杆小 |
 | 6 | **MoE HBM 带宽 vs batch** | 诊断 | b≥32 达 74–84% HBM | — | 诊断 | decode 已近内存屋顶 |
 | 7 | **roofline 天花板** | 诊断 | decode 理论上界 ~1.85× | — | 诊断 | config 够不到的 memory 侧空间 |
 | 8 | **线性注意力架构对比**（Qwen3 vs LFM2.5，长上下文 scaling） | 架构 | — | Qwen decode scaling +57% vs LFM +24%（bs=32, 512→8192）；Qwen bs=32×16k **OOM** | ✅（架构级，非同模型） | 选型洞察 |
+
+---
+
+## 1.5 附：自写 custom MoE kernel 具体改了什么（实现细节）
+
+> 代码：`scripts/custom_moe_patch.py`。它 monkeypatch `fused_experts_impl`（Qwen3-MoE 的真实 decode 路径），仅在 **M≤4 + bf16 + gated-silu + 非量化 + shape 匹配** 时接管，否则回退 sglang 原实现（保留 fallback）。
+
+### sglang 原路径（baseline，为大 M 吞吐优化）
+1. `moe_align_block_size`：把 token 按 expert **排序/分组**成对齐 block，让每个 expert 的 token 拼成连续 tile；
+2. `fused_moe_kernel` 做 w1（gate+up）grouped GEMM → 单独 `silu_and_mul` 激活 → w2（down）grouped GEMM；
+3. 再做 topk 加权求和。
+→ 排序 + 分组 GEMM 的开销在大 M 下被摊薄，是**吞吐最优**设计；但在 decode（M=1~4）下，排序/分组几乎是纯开销。
+
+### 我的 custom kernel 改了 4 处
+1. **完全跳过 `moe_align_block_size`**：不排序不分组。改为**按 (token, expert) pair 并行**，共 `P = M × topk` 个 program（decode b=1 只有 8 个 pair）。省掉 decode 下无收益的排序/gather 开销。
+2. **kernel 1 `_w1_act`：融合 w1 GEMM + SwiGLU**。每个 pair 用 tiled `tl.dot`（沿 H 分块）同时算 gate=x·Wg 和 up=x·Wu，**在 kernel 内直接做 `silu(gate)*up`**，写出激活 [P×I]。→ baseline 是"GEMM 后再单独 silu_and_mul"，这里合成一个 kernel、少一次 [P×I] 的写回+读入。
+3. **kernel 2 `_w2_sum`：融合 w2 GEMM + 路由加权 + 缩放 + 规约**。每个 pair 算 down=act·W2，乘上 `topk_weight × routed_scaling_factor`，用 **`atomic_add` 直接累加**进输出（把 topk 个专家贡献就地求和）。→ baseline 是"GEMM 后再单独做加权求和"，这里合成一个 kernel。
+4. **fp32 累加**：输出张量为 fp32、`tl.dot` 与规约全程 fp32 累加，末尾再转回 bf16 → 数值比 sglang 的 bf16 路径**更准**（隔离测 max rel err ~3.95%，且更接近 fp32 参考）。
+   - 补充：即使 M=1，也用 tensor-core `tl.dot`（把 M pad 到 BM=16 tile + mask `m<1`），而非退化成 gemv。
+
+### 为什么 b=1 真赢、b≥2 真输（已用 n=15 t 检验坐实，见 §4.2）
+- **b=1（+1.17%，真信号）**：只有 8 个 pair，分组无收益；跳过 align/sort + 两处融合把 decode 下的固定开销削掉。注意这**不是省 launch**（cudagraph 已隐藏），而是 kernel **GPU 计算本身更省**。
+- **b≥2（−4% ~ −12%，真回归）**：sglang 的 expert 分组能让**同一 expert 的多个 token 复用一次权重加载**（Wg/Wu/W2 每 expert-tile 只读一次，摊到多 token）；而我的 per-pair 方案对每个 (token,expert) 都**重新加载权重** → 显存流量随 M 上升，加上 `atomic_add` 竞争，很快被反超。
+
+### 一句话
+custom kernel = **「去掉 align/sort + 把 GEMM/激活/加权求和融成 2 个 kernel + fp32 累加」**，专为 M=1 decode 定制；它在 b=1 拿到**真实但极小**的 +1.17%，但因为放弃了 expert 权重复用，b≥2 就是净负 → **作为通用改动不成立**。
 
 ---
 
@@ -94,6 +120,7 @@
 
 ### 4.2 方法学教训（已固化）
 - **单点端到端会误导**：自写 MoE kernel 隔离 1.23×、"M≤4 都赢"，一扫 regime 就被证伪（b4 −11%）。**必须扫 batch/context/并发 + 真实 server 负载**。
+- **信号 vs 噪声必须用统计检验**（Chendi 要求，已做）：把 b1 的 "+1.4%" 用 **n=15 交错重复 + Welch t 检验**验证 → **+1.17%，\|t\|=6.51，是真信号（非波动）**，但 b2 −4.3%(\|t\|=3.2)、b4 −11.7%(\|t\|=9.9) 是**真回归**。见 `noise_verification_custom_moe_b1.md`。→ 以后每个改动都应过"多次重复 + t 检验"闸门。
 - **必须对标 sglang 真实 GPU 代码 + cudagraph**：早期用朴素 PyTorch baseline 得出过误导性"SwiGLU 加速"，已撤回。
 - **所有数字自测**，不采信 PR 自称。
 
@@ -117,6 +144,7 @@
 - 本报告：`docs/2026-07-20/qwen_optimization_full_report.md`
 - 图：`results/2026-07-20_v34_figures/fig1_3*.png`、`results/2026-07-20_v39_ctxscan/ctx_scaling.png`
 - 全 regime 扫描 + 最终矩阵：`docs/2026-07-20/regime_sweep_kernel_changes.md`
+- **噪声验证（n=15 + t 检验，b1 +1.17% 真信号）：`docs/2026-07-20/noise_verification_custom_moe_b1.md`**
 - 新架构线性注意力：`docs/2026-07-20/new_architecture_linear_attention_e2e.md`
 - 图说明（Dey）：`docs/2026-07-20/headroom_beyond_tuning_figures.md`
 - kernel 攻坚全过程：`docs/2026-07-20/kernel_optimization_attempt_log.md`
