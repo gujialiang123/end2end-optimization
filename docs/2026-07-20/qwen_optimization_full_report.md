@@ -54,6 +54,72 @@ custom kernel = **「去掉 align/sort + 把 GEMM/激活/加权求和融成 2 �
 
 ---
 
+## 1.6 附：我们对 kernel 做的 tuning（≠ sglang 参数，≠ kernel 重写）
+
+> 这里澄清一个容易混的区分。我们在 kernel 层做过**两件不同的事**：
+> - **A. MoE triton kernel 的 config 调优（本节）** —— 调 kernel 自己的 meta 参数，属于 **autotuning**；
+> - **B. 自写 custom MoE kernel（§1.5）** —— 重写 kernel 逻辑，属于**重写**。
+>
+> A 调的是 **Triton kernel 的启动配置**，和 sglang server 参数（`--chunked-prefill-size` 等）**无关**。
+
+### 1.6.1 tune 了哪个 kernel
+**只有一个：`fused_moe_kernel`（Triton）** —— MoE 的 grouped GEMM（w1=gate+up、w2=down 的专家矩阵乘），Qwen3-MoE 的 decode 和 prefill 都走它。
+调的 meta 参数：`BLOCK_SIZE_M / BLOCK_SIZE_N / BLOCK_SIZE_K / GROUP_SIZE_M / num_warps / num_stages`，按 `(E, N, dtype, H200, M-bucket)` 生成 tuned JSON。
+- 工具：sglang 官方 `benchmark/kernels/fused_moe_triton/tuning_fused_moe_triton.py`（CUDA-graph 计时、flush L2、100 iters）。
+- 脚本 / 数据：`scripts/run_v23_config_evidence.py`、`results/2026-07-19_v23_config_evidence/fused_moe_config_speedup.json`。
+
+### 1.6.2 对标的 baseline（三个 config）
+- **default**：`get_default_config` 启发式（没有任何 tuned JSON 时 sglang 用的）。
+- **fallback**：旧 `triton_3_2_0/E=128,N=768,H200.json`（**sglang 今天实际加载的**——因为 triton 3.5.1 没有我们 shape 的 config，回退并打印 "Performance might be sub-optimal!"）。
+- **ours**：我们对自己 shape 重新 tune 生成的。
+
+### 1.6.3 结果 —— tuned vs default 启发式（**kernel 时间**，U 形）
+
+**Qwen3-30B-A3B（E=128, N=768）：**
+
+| batch(=M) | regime | default (µs) | tuned (µs) | **kernel 提速** |
+|---:|---|---:|---:|---:|
+| 1 | **decode 单请求** | 34.95 | 31.01 | **1.13× (+13%)** |
+| 8 | decode 小并发 | 136.76 | 130.51 | 1.05× (+5%) |
+| 16 | decode | 206.09 | 199.82 | 1.03× |
+| 32 | **decode 并发** | 270.69 | 260.60 | 1.04× (+4%) |
+| 64 | decode | 300.50 | 298.84 | 1.01× |
+| 128 | decode | 311.72 | 301.34 | 1.03× |
+| 256 | **prefill 起点** | 442.30 | 326.83 | **1.35× (+35%)** |
+| 512 | prefill | 495.65 | 339.38 | **1.46× (+46%)** |
+| 1024 | prefill | 570.20 | 401.87 | **1.42× (+42%)** |
+| 2048 | 长 prefill | 801.66 | 547.81 | **1.46× (+46%)** |
+| 4096 | **长 prefill** | 1373.08 | 891.80 | **1.54× (+54%)** |
+
+**DeepSeek-V2-Lite 交叉验证（E=64, N=1408，有 shared expert，top-6）：**
+
+| batch(=M) | regime | default (µs) | tuned (µs) | **kernel 提速** |
+|---:|---|---:|---:|---:|
+| 1 | decode 单请求 | 41.99 | 37.38 | **1.12× (+12%)** |
+| 256 | prefill 起点 | 438.93 | 298.22 | **1.47× (+47%)** |
+| 4096 | 长 prefill | 1753.75 | 1049.54 | **1.67× (+67%)** |
+
+### 1.6.4 per-regime 小结
+- **Decode（小 M）**：单请求 b=1 **+13%（Qwen）/+12%（DeepSeek）**；并发 b=8~128 只有 **+1~5%**。
+- **Prefill（大 M）**：**+35~54%（Qwen）/+47~67%（DeepSeek）**。
+- **为什么 U 形**：大 M 下 kernel 是 compute-bound，好的 block config 能真正吃满算力 → prefill 收益大；decode 小 M 是 memory-bound，config 空间小 → 收益小。
+
+### 1.6.5 三条必须说清的 caveat（诚实）
+1. **这些是 MoE kernel 的隔离时间（µs），不是完整端到端 prefill/decode。** 端到端里 MoE 只占一部分（decode ~41%），所以 **e2e 提升会明显小于这些 kernel 数字**。这张表是"kernel 层"证据，不是"e2e 层"证据。
+2. **大 gap 主要是 "有 tuned config" vs "default 启发式"。** 我们自己重 tune 的 vs sglang 今天加载的**旧 fallback config**，在 b=32 只快 **0.6%** → 旧回退 config 已够好，"按新 triton 版本重调"几乎无收益；真正价值是"**别掉进 default 启发式**"这个坑。
+3. **这本质上是 autotuning。** 它作用在 **kernel meta 参数**层（不是 server 参数、不是重写 kernel），但仍属"配置/自动调优"范畴 → 与本报告"同模型端到端提升都来自配置/特性开关层"的结论一致。
+
+### 1.6.6 A vs B 一句话对比
+| | A. kernel-config 调优（本节） | B. custom kernel 重写（§1.5） |
+|---|---|---|
+| 对象 | Triton `fused_moe_kernel` 的 meta 参数 | 重写 MoE 计算逻辑 |
+| 手段 | autotuning（block/warps/stages） | 去 align/sort + 融合 + fp32 |
+| kernel 层 | decode +13% / prefill +54% | b1 1.23× |
+| **端到端** | 未单独隔离（混入 config-tuning 故事，e2e < kernel 数字） | b1 **+1.17%**（真信号）、b≥2 真回归 |
+| 结论 | ✅ 有 kernel 层收益，尤其 prefill；属 autotuning | ❌ 通用改动不成立 |
+
+---
+
 ## 2. 三张核心图（Dey 要的"tuning 以外还有多少空间"）
 
 > 全部为 Qwen3-30B-A3B / decode / H200 / bf16 实测。文件在 `results/2026-07-20_v34_figures/`。
