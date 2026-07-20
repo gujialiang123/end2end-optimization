@@ -52,3 +52,16 @@
 - （非 graph 下自定义快 4.4×，但无关——真实 serving 用 cudagraph，会消除 sglang 的多 kernel launch 开销。）
 - **为什么输**：sglang fused_moe 用 `tl.dot`（tensor core）；我的朴素版用标量 `tl.sum` 做 GEMV，compute 效率低；且 cudagraph 把 sglang 那 6µs 开销也隐藏了。
 - **教训**：即使在"49% HBM"的 b1 点，sglang 的 tuned tensor-core kernel 在 cudagraph 下也很难被朴素重写打赢。
+
+**尝试 2：tensor-core (tl.dot) + 跳过 align/sort + 融合 act/sum + tuned tiling（v30/v31）—— ★赢了！**
+- 用 `tl.dot`（tensor core，M padding 到 16）匹配 sglang 的 GEMM 效率；**跳过 align/sort**（M 小无需分组）；**把 SwiGLU 激活融进 w1 kernel、加权求和融进 w2 kernel**（消除 act_and_mul + moe_sum 两个 kernel）；再对 tiling 做 sweep。
+- **b1 结果（cudagraph 公平对比）**：sglang **32.0µs** vs 自定义 **26.1µs** → **1.23× 加速** ✅
+  - 最优 config：w1(BN=64,BK=256,warps=4) + w2(BN=64,BK=128,warps=4)
+- **正确性 + 精度（关键）**：多 seed 验证，自定义 vs fp32 真值相对误差 **3.7-5.2%**，而 **sglang vs fp32 是 10-14%** → **我们的 kernel 不但更快，还比 sglang 更准**（bf16 累加更干净）。
+- **胜因**：省掉 align/sort/act/sum 4 个开销 kernel（~6µs）+ tuned tiling 让 GEMM 接近 sglang → 净赢 1.23×。
+- **适用范围（诚实）**：当前仅 M=1（单请求 decode）；kernel 硬编码单 token。b≥8 时 sglang 已 76-84% HBM，此法（M padding 到 16）优势消失。**这是"单请求/超低延迟 decode"场景的真实 kernel-level 胜利。**
+
+## 阶段结论（截至 v31）
+1. **sglang fused_moe 整体已高度优化**：b≥32 decode 达 74-84% HBM（近内存屋顶），prefill compute-bound 处 config-tuning 已 +50%。**无损 kernel 空间总体很小。**
+2. **但存在一个真实的 kernel-level 胜利点**：**M=1 单请求 decode**，sglang 只有 49% HBM + 6µs 路由/激活/求和开销。特化 kernel（tensor-core + 跳过 align/sort + 融合 act/sum + tuned tiling）拿到 **1.23× 且更准**。
+3. **方法学教训贯穿**：必须对标 sglang 真实 GPU 代码 + cudagraph；朴素重写（v29 scalar）会输，tensor-core + 去开销 + 调 tiling（v31）才赢。
