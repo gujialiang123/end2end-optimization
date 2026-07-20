@@ -3,17 +3,17 @@
 ## 当前主线：证明"kernel/config agent"有意义（能拿到 sglang 之外的性能提升）
 
 ### 已完成的证据（按可信度）
-1. **✅ Kernel-level 胜利（M=1 单请求 decode MoE）**：自定义 triton kernel **1.23× 且比 sglang 更准**（对 fp32：我们 4-5% err vs sglang 10-14%）。做法：tensor-core `tl.dot` + 跳过 align/sort + 融合 act/sum + tuned tiling。范围 M≤4；M≥8 sglang 反超。
-   - 文档：`docs/2026-07-20/kernel_optimization_attempt_log.md`
-   - 脚本：`scripts/run_v27-v32*.py`
+1. **✅ Kernel-level 胜利(隔离) + 端到端现实检验**：M=1 单请求 decode MoE 自定义 kernel 隔离 **1.23× 且更准**；但**插进 sglang decode 路径测端到端只有 ~1.5% TPOT**（4.24→4.18ms，正确性 max 3.95% rel err）。→ **kernel 微基准加速不等比例转化到端到端**。
+   - 文档：`docs/2026-07-20/kernel_optimization_attempt_log.md`（§7 端到端）
+   - 脚本：`scripts/run_v27-v32*.py`、`scripts/custom_moe_patch.py`（sglang 集成 patch）、`scripts/run_e2e_*.py`
 2. **✅ Kernel 融合空缺（shared-expert gate）**：sglang CUDA 路径未融合 `linear+sigmoid+mul`（融合版只有 CPU）→ 融合 CUDA kernel 2-3×（算子小）。
    - 文档：`docs/2026-07-20/kernel_level_improvement_evidence.md`
 3. **✅ Config-tuning（autotuning 故事，非 kernel）**：未覆盖 shape 重 tune vs 默认启发式，prefill +54~67%（Qwen3-30B + DeepSeek-V2-Lite 两模型）。
    - 文档：`docs/2026-07-19/pr_validation_report.md`
 
 ### 核心诚实判断
-sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，prefill config-tuning 已 +50%）。**无损 kernel 空间集中在 sglang 未覆盖/未融合的边角**（M=1 decode、CUDA 未融合算子），而非重写已 tuned 的核心 GEMM。
-→ **agent 定位 = "自动发现并补 sglang 的覆盖空缺"**。
+sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，prefill config-tuning 已 +50%）。**无损 kernel 空间集中在 sglang 未覆盖/未融合的边角**（M=1 decode、CUDA 未融合算子），而非重写已 tuned 的核心 GEMM。**而且即使拿到隔离层 1.23×，端到端也只剩 ~1.5%（kernel 重写对端到端杠杆很小）。**
+→ **agent 定位 = "自动发现并补 sglang 的覆盖空缺"**；追端到端加速应优先算法层（spec −23%）/serving 层（并发 2.5×）/config（prefill +50%），而非重写核心 kernel。
 
 ## 下一步（优先级）
 1. **端到端集成**：把 M=1 特化 MoE kernel 挂进 sglang decode 路径，测单请求 TPOT 真实提升（估 ~1.1×）。
