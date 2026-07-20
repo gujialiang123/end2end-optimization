@@ -1,0 +1,44 @@
+[
+  {
+    "batch": 1,
+    "base_ms": 4.29,
+    "custom_ms": 4.19,
+    "speedup": 1.0239
+  },
+  {
+    "batch": 2,
+    "base_ms": 4.95,
+    "custom_ms": 4.99,
+    "speedup": 0.992
+  },
+  {
+    "batch": 4,
+    "base_ms": 5.44,
+    "custom_ms": 6.12,
+    "speedup": 0.8889
+  },
+  {
+    "batch": 8,
+    "base_ms": 5.17,
+    "custom_ms": 6.17,
+    "speedup": 0.8379
+  },
+  {
+    "batch": 16,
+    "base_ms": 6.8,
+    "custom_ms": 6.91,
+    "speedup": 0.9841
+  },
+  {
+    "batch": 32,
+    "base_ms": 7.57,
+    "custom_ms": 9.38,
+    "speedup": 0.807
+  },
+  {
+    "batch": 64,
+    "base_ms": 10.49,
+    "custom_ms": 10.45,
+    "speedup": 1.0038
+  }
+]
