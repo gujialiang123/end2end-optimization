@@ -144,3 +144,19 @@
    - **serving 层**（多并发回收 idle，已验证利用率 2.5×）；
    - **config autotuning**（prefill +50%，覆盖面广）。
 3. kernel agent 的价值更可能在**"自动发现并补 sglang 的覆盖空缺"**（未覆盖 shape 的 config、CUDA 未融合算子），而非"重写核心 kernel 追求端到端加速"。
+
+### [8] 完整 decode-step 开销审计(v33,Qwen3-30B b1，torch profiler，禁 cudagraph）
+decode 一步的 CUDA kernel 时间分桶（32 步，115µs/步 eager）：
+| bucket | % | 说明 |
+|---|---|---|
+| **MoE** | **40.7%** | 读专家权重（memory-bound）|
+| **dense_gemm(qkv/o/gate/lm_head)** | **32.4%** | 读 dense 权重；lm_head 单 token 读 vocab×hidden≈600MB |
+| **attention(+KV+rope)** | 15.9% | 读 KV cache（随上下文增长）|
+| norm | 5.4% | |
+| misc/elementwise | 3.8% | |
+| activation / sampling | 1.8% | |
+
+**关键洞察**：
+1. **decode 前三块 MoE+dense+attn = 89%,全是 memory-bound 权重/KV 读取** → 整个 decode 本质是"流式读权重"。这解释了为何 kernel 算力优化端到端杠杆小。
+2. **MoE 只占 41%** → 即使 MoE 大提速，端到端上限也就 ~7%（1.23× → 理论 7.7%，实测仅 1.5%，因真实模型里自定义 kernel 未完全兑现隔离的 1.23×）。
+3. **dense_gemm 32%（含 lm_head 600MB/token）+ attention 16% 也都 memory-bound** → **spec decoding 一次验证多 token,能同时摊薄 MoE + dense + lm_head + attention 的权重/KV 读取** —— 这正是它杠杆远大于 kernel 重写的原因（打的是全部 89%，不只是 MoE 41%）。

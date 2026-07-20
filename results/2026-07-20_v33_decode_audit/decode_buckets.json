@@ -1,0 +1,9 @@
+{
+  "misc/elementwise": 0.139,
+  "norm": 0.2,
+  "dense_gemm(qkv/o/gate/lm_head)": 1.194,
+  "attention(+KV+rope)": 0.588,
+  "MoE": 1.501,
+  "activation": 0.058,
+  "sampling": 0.008
+}
