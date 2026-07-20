@@ -33,16 +33,25 @@
 > 全部为 Qwen3-30B-A3B / decode / H200 / bf16 实测。文件在 `results/2026-07-20_v34_figures/`。
 
 ### 图1 — decode step 组成（`fig1_decode_composition.png`）
+
+![decode step 组成](../../results/2026-07-20_v34_figures/fig1_decode_composition.png)
+
 **这张图是什么**：把一步 decode 的 GPU kernel 时间按算子类型拆开的饼图/柱图。
 **数据**：**MoE 41% + dense_gemm(qkv/o/lm_head) 32% + attention 16% = 89%**，其余 norm/act/sample/misc ≈ 11%。
 **解析**：decode 前三大块**全是 memory-bound 的权重/KV 流式读取**（b1 下光 lm_head 单 token 就要读 vocab×hidden≈600MB 权重）。这是"为什么抠单个 kernel 的算力，端到端杠杆很小"的根因——整步本质是在**读权重**，不是在算。任何只提升算力/省 launch 的 kernel 改动，最多动 89% 里很小一角。
 
 ### 图2 — MoE 达到的 HBM 带宽 vs batch（`fig2_moe_bandwidth_vs_batch.png`）
+
+![MoE HBM 带宽 vs batch](../../results/2026-07-20_v34_figures/fig2_moe_bandwidth_vs_batch.png)
+
 **这张图是什么**：sglang fused_moe kernel 在不同 batch 下实际打满的 HBM 带宽百分比曲线。
 **数据**：b≥32 达 **74–84% HBM**（近内存屋顶，无损 kernel 空间 <1.3×）；b=4096 掉到 **29%**（此时转 compute-bound，即 prefill 区）。
 **解析**：**decode = memory-bound**（kernel 已近内存屋顶，config 和 kernel 都难再压）；**prefill = compute-bound**（另一套故事，config-tuning 已在这里拿到 +50%）。所以"还有多少空间"这个问题**必须按 regime 分开答**——decode 和 prefill 的瓶颈根本不同。
 
 ### 图3 — ★headroom BEYOND tuning（`fig3_headroom_beyond_tuning.png`，核心图）
+
+![headroom beyond tuning](../../results/2026-07-20_v34_figures/fig3_headroom_beyond_tuning.png)
+
 **这张图是什么**：以 **best-tuned config 为 baseline（=1.0×）**，展示"在把 config 调到最优之后，别的手段还能再拿多少"的分组柱状图（decode，exact 方法）。
 **数据**：
 
@@ -58,6 +67,8 @@
 ---
 
 ## 3. 补充图 — 线性注意力如何"扩大" tuning 以外的空间（`results/2026-07-20_v39_ctxscan/ctx_scaling.png`）
+
+![线性注意力 context scaling](../../results/2026-07-20_v39_ctxscan/ctx_scaling.png)
 
 **这张图是什么**：两张并排子图。左：Qwen3-30B（全注意力）vs LFM2.5-8B（混合线性注意力）**decode 每步延迟 随上下文长度**曲线（batch=32）；右：同数据**归一化到 ctx=512** 后的 scaling 因子。
 **数据**：
