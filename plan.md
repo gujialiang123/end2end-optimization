@@ -30,6 +30,13 @@
 - **教训固化**：信号 vs 噪声必须多次重复 + t 检验（连 3 次中位数都可能误判方向）。
 
 
+### 2026-07-21：PR #29007 复现（DeepSeek-V4 MoE TP allreduce NCCL 对称内存）✅ 强正结果
+- **候选一 headline**（纯文本、语义不变、两边同配置）。模型 `sgl-project/DeepSeek-V4-Flash-FP8`（294GB, FP8, TP8, attention_backend=dsv4），两边都 `--enable-symm-mem`，唯一差异 = PR 是否把 MoE 输出分配进对称内存池（让 TP allreduce 走低延迟 NCCL 对称路径）。
+- **结果（全 cell 一致正向，gain=改善）**：c1(4096/1024) **TPOT +9.2% / E2E +10.6% / 吞吐 +10.6%**；c8 +6~7%；c16 +5.3~6.4%。**复现且略超上游**（上游 −6.58% E2E / +7.05% tput）。n=2 两次高度一致。
+- **移植**：PR 基于更新 main，cherry-pick 到 v0.5.15 解 2 处冲突（dp_attention 保留 v515 额外字段 + PR 默认值；deep_gemm 保留 v515 的 post_reorder_triton_kernel 只加 symmetric wrap）。5 个纯 Python 文件 baseline/patched 快照存 `patches/pr29007/`。
+- **环境修复（关键）**：`--enable-symm-mem` 的 nccl_allocator JIT 编译需 CUDA+NCCL 头/库：`CPATH`+=targets/include & nccl/include，`LIBRARY_PATH`+=stubs:/usr/lib:nccl/lib，`ln -sf libnccl.so.2 libnccl.so`；清 /tmp/symm_allocator 缓存。
+- 文档 `docs/2026-07-21/pr29007_dsv4_symm_mem_allreduce_repro.md`；脚本 `run_v48_dsv4_pr29007_ab.py`；raw `results/2026-07-21_v48_dsv4_pr29007/`。
+
 ### 2026-07-21：PR 复现线开启 — #31558 (FLA l2norm 按 token 数重编译) ✅ 复现成功
 - **背景**：用户给出一份"复现 SGLang 最新 PR (A=v0.5.15.post1, B=+单个 PR patch) 证明 agent 价值"的方案。从最易验证的 Qwen VLM + #31558 开始。
 - **模型/环境**：`Qwen/Qwen3.6-35B-A3B-FP8`（hybrid linear-attn + VLM，走 FLA l2norm 路径）；新建 env `sglang-v515`（v0.5.15.post1, transformers 5.12.1, kernels 0.14.1, flashinfer 0.6.12），保留 sglang-dev 不动。

@@ -1,0 +1,304 @@
+commit 980acd6eca1a1b0a3265f0a76a145901c8265a20
+Author: sky <fakangwang@gmail.com>
+Date:   Wed Jul 15 15:06:37 2026 +0800
+
+    Fix MoE TP allreduce to use NCCL symmetric memory via in-pool output allocation (#29007)
+    
+    Signed-off-by: wangfakang <fakangwang@gmail.com>
+    Co-authored-by: Brayden Zhong <b8zhong@uwaterloo.ca>
+
+diff --git a/python/sglang/kernels/ops/layernorm/mhc.py b/python/sglang/kernels/ops/layernorm/mhc.py
+index 20de370930..190d408744 100644
+--- a/python/sglang/kernels/ops/layernorm/mhc.py
++++ b/python/sglang/kernels/ops/layernorm/mhc.py
+@@ -8,8 +8,13 @@ from typing import Tuple
+ import torch
+ 
+ from sglang.jit_kernel.utils import is_arch_support_pdl
++from sglang.srt.distributed.device_communicators.pynccl_allocator import (
++    use_symmetric_memory,
++)
++from sglang.srt.distributed.parallel_state import get_tp_group
+ from sglang.srt.environ import envs
+ from sglang.srt.layers.attention.dsa.utils import is_dsa_prefill_cp_round_robin_split
++from sglang.srt.layers.dp_attention import is_allocation_symmetric
+ from sglang.srt.layers.utils.common import strict_contiguous
+ 
+ logger = logging.getLogger(__name__)
+@@ -818,9 +823,15 @@ def mhc_pre(
+     comb_mix = torch.empty(
+         num_tokens, hc_mult2, dtype=torch.float32, device=residual.device
+     )
+-    layer_input = torch.empty(
+-        num_tokens, hidden_size, dtype=torch.bfloat16, device=residual.device
+-    )
++    # layer_input is the post-norm activation fed into the MoE. Allocate it in
++    # the symmetric memory pool so the downstream all-reduce uses the low-latency
++    # NCCL symmetric path: the Triton inplace MoE runner writes the expert
++    # output back into this buffer, so a symmetric input yields a symmetric
++    # all-reduce input.
++    with use_symmetric_memory(get_tp_group(), disabled=not is_allocation_symmetric()):
++        layer_input = torch.empty(
++            num_tokens, hidden_size, dtype=torch.bfloat16, device=residual.device
++        )
+ 
+     if envs.SGLANG_OPT_DEEPGEMM_HC_PRENORM.get():
+         n_splits = _compute_num_split_for_mhc_pre(num_tokens, hc_hidden_size)
+@@ -1476,12 +1487,16 @@ def mhc_fused_post_pre(
+         dtype=torch.float32,
+         device=residual.device,
+     )
+-    layer_input_cur = torch.empty(
+-        num_tokens,
+-        hidden_size,
+-        dtype=torch.bfloat16,
+-        device=residual.device,
+-    )
++    # layer_input_cur is the post-norm activation fed into the MoE; allocate it
++    # in the symmetric memory pool so the Triton inplace MoE runner yields a
++    # symmetric all-reduce input (see _mhc_pre_impl).
++    with use_symmetric_memory(get_tp_group(), disabled=not is_allocation_symmetric()):
++        layer_input_cur = torch.empty(
++            num_tokens,
++            hidden_size,
++            dtype=torch.bfloat16,
++            device=residual.device,
++        )
+ 
+     if norm_weight is not None:
+         # Final mhc_pre stage: convert GEMM partials into post/comb/layer_input
+diff --git a/python/sglang/srt/layers/dp_attention.py b/python/sglang/srt/layers/dp_attention.py
+index 99762aa78d..eeed1d8a91 100644
+--- a/python/sglang/srt/layers/dp_attention.py
++++ b/python/sglang/srt/layers/dp_attention.py
+@@ -101,10 +101,18 @@ class _DpGatheredBufferWrapper:
+     slots value-guard into the recompile limit (one recompile per distinct
+     size)."""
+ 
+-    _global_dp_buffer_len: int
+-    _local_dp_buffer_len: int
+-    _dp_max_padding: bool
+-    _global_num_tokens: Optional[List[int]]
++    # Real defaults (not bare annotations): the sizing quartet is overwritten
++    # per-forward by set_dp_buffer_len, but callers that run before the first
++    # forward — notably the load-time mhc_pre prewarm, which has no ForwardBatch
++    # yet — read _dp_max_padding via is_allocation_symmetric(). A bare
++    # annotation creates no class attribute, so those reads raised
++    # AttributeError. Defaulting _dp_max_padding to False (non-symmetric) is
++    # safe for prewarm: it only JIT-compiles kernels and never enters a real
++    # all-reduce, so the symmetric pool is not needed there.
++    _global_dp_buffer_len: int = 0
++    _local_dp_buffer_len: int = 0
++    _dp_max_padding: bool = False
++    _global_num_tokens: Optional[List[int]] = None
+ 
+     @classmethod
+     def set_metadata(cls, hidden_size: int, dtype: torch.dtype, device: torch.device):
+diff --git a/python/sglang/srt/layers/moe/moe_runner/deep_gemm.py b/python/sglang/srt/layers/moe/moe_runner/deep_gemm.py
+index fd26566540..b13881ed01 100644
+--- a/python/sglang/srt/layers/moe/moe_runner/deep_gemm.py
++++ b/python/sglang/srt/layers/moe/moe_runner/deep_gemm.py
+@@ -7,8 +7,13 @@ import einops
+ import torch
+ 
+ from sglang.jit_kernel.dsv4 import silu_and_mul_masked_post_quant
++from sglang.srt.distributed import get_tp_group
++from sglang.srt.distributed.device_communicators.pynccl_allocator import (
++    use_symmetric_memory,
++)
+ from sglang.srt.environ import envs
+ from sglang.srt.layers import deep_gemm_wrapper
++from sglang.srt.layers.dp_attention import is_allocation_symmetric
+ from sglang.srt.layers.moe.moe_runner.base import (
+     MoeQuantInfo,
+     MoeRunnerConfig,
+@@ -286,11 +291,18 @@ class DeepGemmRunnerCore(MoeRunnerCore):
+             )
+             del down_input
+ 
+-        down_output = torch.empty(
+-            (all_tokens, K),
+-            device=hidden_states_device,
+-            dtype=torch.bfloat16,
+-        )
++        # Allocate the MoE output in the NCCL symmetric memory pool when symmetric
++        # allocation is required, so the downstream all-reduce takes the low-latency
++        # symmetric path. Only this final output enters the pool; intermediate
++        # buffers stay on the default allocator to bound pool occupancy.
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            down_output = torch.empty(
++                (all_tokens, K),
++                device=hidden_states_device,
++                dtype=torch.bfloat16,
++            )
+         if deep_gemm_wrapper.DEEPGEMM_NEED_TMA_ALIGNED_SCALES:
+             down_input_scale = tma_align_input_scale(down_input_scale)
+ 
+@@ -356,11 +368,14 @@ class DeepGemmRunnerCore(MoeRunnerCore):
+         del gateup_output
+ 
+         # GroupGemm-2: (M, N/2) (E, K, N/2) -> (M, K)
+-        down_output = torch.empty(
+-            (all_tokens, K),
+-            device=hidden_states_device,
+-            dtype=torch.bfloat16,
+-        )
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            down_output = torch.empty(
++                (all_tokens, K),
++                device=hidden_states_device,
++                dtype=torch.bfloat16,
++            )
+         deep_gemm_wrapper.grouped_gemm_nt_bf16_contig(
+             down_input,
+             w2_weight,
+@@ -522,9 +537,12 @@ class DeepGemmRunnerCore(MoeRunnerCore):
+                 down_input_scale
+             )
+ 
+-        down_output = torch.empty(
+-            (num_groups, m, n), device=hidden_states_device, dtype=torch.bfloat16
+-        )
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            down_output = torch.empty(
++                (num_groups, m, n), device=hidden_states_device, dtype=torch.bfloat16
++            )
+ 
+         down_gemm_overlap_args = running_state.get("down_gemm_overlap_args", None)
+         if down_gemm_overlap_args is None:
+@@ -609,9 +627,12 @@ class DeepGemmRunnerCore(MoeRunnerCore):
+         # GroupGemm-1
+         n = w2_weight.shape[1]
+ 
+-        down_output = torch.empty(
+-            (num_groups, m, n), device=hidden_states_device, dtype=torch.bfloat16
+-        )
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            down_output = torch.empty(
++                (num_groups, m, n), device=hidden_states_device, dtype=torch.bfloat16
++            )
+         deep_gemm_wrapper.grouped_gemm_nt_bf16_masked(
+             down_input,
+             w2_weight,
+@@ -706,9 +727,10 @@ def post_permute_deep_gemm_to_standard(
+     topk_ids = running_state["topk_ids"]
+     topk_weights = running_state["topk_weights"]
+ 
+-    output = torch.empty(
+-        hidden_states_shape, dtype=hidden_states_dtype, device=hidden_states_device
+-    )
++    with use_symmetric_memory(get_tp_group(), disabled=not is_allocation_symmetric()):
++        output = torch.empty(
++            hidden_states_shape, dtype=hidden_states_dtype, device=hidden_states_device
++        )
+     post_reorder_deepgemm(
+         runner_output.hidden_states,
+         output,
+diff --git a/python/sglang/srt/layers/moe/moe_runner/triton_utils/fused_moe.py b/python/sglang/srt/layers/moe/moe_runner/triton_utils/fused_moe.py
+index 62da1a50c8..6b1f011283 100644
+--- a/python/sglang/srt/layers/moe/moe_runner/triton_utils/fused_moe.py
++++ b/python/sglang/srt/layers/moe/moe_runner/triton_utils/fused_moe.py
+@@ -20,7 +20,12 @@ from sglang.kernels.ops.moe.fused_moe_triton_kernels import (
+     support_tensor_descriptor,
+ )
+ from sglang.srt.batch_invariant_ops import is_batch_invariant_mode_enabled
++from sglang.srt.distributed import get_tp_group
++from sglang.srt.distributed.device_communicators.pynccl_allocator import (
++    use_symmetric_memory,
++)
+ from sglang.srt.environ import envs
++from sglang.srt.layers.dp_attention import is_allocation_symmetric
+ from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
+ from sglang.srt.layers.moe.utils import get_moe_padding_size
+ from sglang.srt.runtime_context import get_server_args
+@@ -485,7 +490,14 @@ def _fused_moe_kernel_sequence(
+     elif inplace:
+         out_hidden_states = hidden_states
+     else:
+-        out_hidden_states = torch.empty_like(hidden_states)
++        # Allocate the MoE output in the NCCL symmetric memory pool when symmetric
++        # allocation is required, so the downstream all-reduce takes the low-latency
++        # symmetric path. Only this output enters the pool; the intermediate caches
++        # below stay on the default allocator to bound pool occupancy.
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            out_hidden_states = torch.empty_like(hidden_states)
+ 
+     use_fused_moe_sum_all_reduce = (
+         get_server_args().enable_fused_moe_sum_all_reduce
+diff --git a/python/sglang/srt/models/deepseek_v4.py b/python/sglang/srt/models/deepseek_v4.py
+index 29e285803f..6cf1d4610c 100644
+--- a/python/sglang/srt/models/deepseek_v4.py
++++ b/python/sglang/srt/models/deepseek_v4.py
+@@ -38,6 +38,9 @@ from sglang.srt.distributed import (
+     get_pp_group,
+     get_tp_group,
+ )
++from sglang.srt.distributed.device_communicators.pynccl_allocator import (
++    use_symmetric_memory,
++)
+ from sglang.srt.environ import envs
+ from sglang.srt.eplb.expert_distribution import get_global_expert_distribution_recorder
+ from sglang.srt.eplb.expert_location import ModelConfigForExpertLocation
+@@ -70,6 +73,7 @@ from sglang.srt.layers.dp_attention import (
+     get_local_dp_buffer,
+     get_local_dp_buffer_len,
+     get_tbo_persistent_buffer,
++    is_allocation_symmetric,
+     is_dp_attention_enabled,
+     is_dp_gatherv_active,
+ )
+@@ -1460,8 +1464,17 @@ class DeepseekV4DecoderLayer(nn.Module):
+             self.hc_sinkhorn_iters,
+             self.hc_eps,
+         )
+-        y = (pre.squeeze(1).unsqueeze(-1) * x_flat.view(shape)).sum(dim=1)
+-        return y.to(dtype), post.squeeze(1), comb.squeeze(1), False
++        # y is the post-norm activation fed into the MoE. Allocate it in the
++        # symmetric memory pool so the downstream all-reduce uses the low-latency
++        # NCCL symmetric path: the Triton inplace MoE runner writes the expert
++        # output back into this buffer, so a symmetric input yields a symmetric
++        # all-reduce input. Gated by is_allocation_symmetric() (mirrors the
++        # TileLang path in _mhc_pre_impl / mhc_fused_post_pre).
++        with use_symmetric_memory(
++            get_tp_group(), disabled=not is_allocation_symmetric()
++        ):
++            y = (pre.squeeze(1).unsqueeze(-1) * x_flat.view(shape)).sum(dim=1).to(dtype)
++        return y, post.squeeze(1), comb.squeeze(1), False
+ 
+     def hc_post(
+         self,
+diff --git a/test/registered/kernels/test_mhc_kernels.py b/test/registered/kernels/test_mhc_kernels.py
+index 91c2b30dd6..7e9a5a65cd 100644
+--- a/test/registered/kernels/test_mhc_kernels.py
++++ b/test/registered/kernels/test_mhc_kernels.py
+@@ -1,3 +1,5 @@
++from contextlib import nullcontext
++
+ import pytest
+ import torch
+ 
+@@ -18,6 +20,14 @@ def test_mhc_fused_post_pre_matches_unfused(
+         pytest.skip("CUDA is required for TileLang mHC kernels")
+ 
+     monkeypatch.setattr(mhc, "is_dsa_prefill_cp_round_robin_split", lambda: False)
++    # This is a single-process kernel unit test with no TP group initialized.
++    # mhc_pre / mhc_fused_post_pre allocate the MoE input in the symmetric-memory
++    # pool via use_symmetric_memory(get_tp_group(), ...); bypass that path so the
++    # kernel runs with a plain torch.empty allocation. Mirrors the workaround in
++    # test_mxfp4_sm90_cutlass.py for the same TP-group-not-initialized case.
++    monkeypatch.setattr(mhc, "use_symmetric_memory", lambda *a, **kw: nullcontext())
++    monkeypatch.setattr(mhc, "is_allocation_symmetric", lambda: False)
++    monkeypatch.setattr(mhc, "get_tp_group", lambda: None)
+     torch.manual_seed(0)
+     device = torch.device("cuda")
+     hc_mult = 4
