@@ -1,0 +1,14 @@
+
+===== arm=fallback : launching server =====
+[fallback] server ready
+[fallback] agent_toolagent r0: TTFT=52.6 TPOT=15.47 E2E=1334 out_tput=1015 (29s)
+[fallback] agent_toolagent r1: TTFT=50.3 TPOT=12.98 E2E=1211 out_tput=1011 (29s)
+[fallback] agent_toolagent r2: TTFT=51.1 TPOT=13.15 E2E=1214 out_tput=1007 (30s)
+
+===== arm=ours : launching server =====
+[ours] server ready
+[ours] agent_toolagent r0: TTFT=297.6 TPOT=13.83 E2E=1970 out_tput=1034 (28s)
+[ours] agent_toolagent r1: TTFT=49.3 TPOT=10.45 E2E=1022 out_tput=1071 (28s)
+[ours] agent_toolagent r2: TTFT=48.9 TPOT=10.33 E2E=1007 out_tput=1071 (28s)
+
+raw -> /home/t-jialianggu/work/end2end-optimization/results/2026-07-21_v45_server_ours_vs_fallback/server_ab.jsonl

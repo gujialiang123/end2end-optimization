@@ -1,0 +1,42 @@
+regime                metric         fb_med   ours_med    gain%       t        p    n
+-----------------------------------------------------------------------------------------------
+tiny_latency          ttft_ms         11.94      12.02   -0.64%    0.59   0.5914    3
+tiny_latency          tpot_ms          3.84       3.92   -2.03%   16.19   0.0006    3 *
+tiny_latency          e2e_ms          16.08      16.03    0.34%   -0.10   0.9253    3
+tiny_latency          out_tput       139.74     138.42   -0.95%    0.56   0.6260    3
+
+short_in_short_out    ttft_ms         22.85      22.91   -0.26%   -0.04   0.9725    3
+short_in_short_out    tpot_ms         14.23      14.24   -0.05%   -0.05   0.9629    3
+short_in_short_out    e2e_ms         211.79     212.10   -0.15%   -0.05   0.9660    3
+short_in_short_out    out_tput      1034.97    1034.94   -0.00%    0.04   0.9710    3
+
+sched_overhead_hiconc ttft_ms         30.71      30.42    0.96%   -0.06   0.9585    3
+sched_overhead_hiconc tpot_ms         26.74      26.28    1.75%   -0.18   0.8690    3
+sched_overhead_hiconc e2e_ms         212.80     211.86    0.44%   -0.02   0.9843    3
+sched_overhead_hiconc out_tput      2048.38    2090.69    2.07%    0.20   0.8517    3
+
+prefill_medium        ttft_ms         19.07      18.95    0.65%   -0.00   0.5662    3
+prefill_medium        tpot_ms          7.62       7.72   -1.32%    0.11   0.9148    3
+prefill_medium        e2e_ms          73.48      73.27    0.30%   -0.01   0.9732    3
+prefill_medium        out_tput       402.60     401.79   -0.20%   -0.02   0.9816    3
+
+prefill_long          ttft_ms         29.16      27.93    4.38%   -0.01   0.9730    3
+prefill_long          tpot_ms          5.44       5.45   -0.19%    0.10   0.9245    3
+prefill_long          e2e_ms          69.52      68.89    0.92%   -0.01   0.9052    3
+prefill_long          out_tput       242.79     244.75    0.81%    0.02   0.9849    3
+
+decode_medium         ttft_ms         27.13      27.09    0.13%    0.03   0.9810    3
+decode_medium         tpot_ms         11.46      11.47   -0.10%    5.45   0.0097    3 *
+decode_medium         e2e_ms        3037.48    3041.61   -0.14%    1.24   0.3417    3
+decode_medium         out_tput      1296.84    1296.42   -0.03%   -1.05   0.4032    3
+
+decode_heavy          ttft_ms         31.18      30.83    1.16%  -19.79   0.0018    3 *
+decode_heavy          tpot_ms         14.26      14.08    1.32% -157.05   0.0000    3 *
+decode_heavy          e2e_ms        7562.33    7467.10    1.28% -120.42   0.0000    3 *
+decode_heavy          out_tput      1967.84    1987.32    0.99%   50.54   0.0000    3 *
+
+agent_toolagent       ttft_ms         51.14      53.85   -5.04%    1.62   0.1800    3
+agent_toolagent       tpot_ms         13.15      13.09    0.51%   -0.42   0.6876    3
+agent_toolagent       e2e_ms        1214.24    1226.50   -1.00%    1.14   0.3139    3
+agent_toolagent       out_tput      1010.53     998.42   -1.20%   -0.03   0.9746    3
+

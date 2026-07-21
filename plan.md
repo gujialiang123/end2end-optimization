@@ -9,6 +9,13 @@
 - **Triton 版本**：tuning 基于 3.5.1，但 sglang config 目录无我们 shape → 回退加载 3.2.0 config（版本错配）；迁移须放进 `triton_3_5_1/`。
 - 脚本 `run_v42_kernel_e2e.py`、`run_v43_server_e2e.py`；数据 `results/2026-07-20_v42_kernel_e2e/`、`v43_server_e2e/`。
 
+### 2026-07-21：v45 — server 级 ours vs fallback，全 regime + agent 数据集（补 v44 的最后一块）✅
+- **v45（真实 server + bench_serving，全 8 regime + mooncake toolagent agent 数据集，n=3，median + Welch t）**：v44 是 bench_one_batch，本节升级到真实 server 排队场景 + agent 负载。对比同 v44：**ours(3.6.0 重 tune) vs sglang 实际加载的 fallback(triton_3_2_0)**。
+  - **结论：全 regime 端到端 ≈0。** 8 regime × 4 指标(TTFT/TPOT/E2E/out_tput)全在 ±2% 内，无一有意义加速；唯一显著的是 decode_heavy ~+1%（幅度微小）。**agent_toolagent 平手**（median TTFT −5% p=0.18、E2E −1% p=0.31）——注意 ours agent r0 是冷启动离群(TTFT 250ms vs 稳态 52ms)，用 median 正确滤掉。
+  - **三层测量一致**：隔离 kernel（§1.6.5）+0.6% · bench_one_batch（v44）≈0 · server+agent（v45）≈0。**"重 tune 已被 fallback 覆盖的 shape = 端到端无用功"这个结论现在铁证如山，连真实 agent 负载也证实。**
+  - **harness 修复**：sglang v0.5.12.post1 的 `bench_serving` mooncake 路径有 bug（两处把 list-of-dict 当 DatasetRow 访问 `.prompt`/`.prompt_len`），已修（`patches/sglang_bench_serving_mooncake_v0.5.12.post1.patch`）。
+  - 文档 `docs/2026-07-20/kernel_config_server_ours_vs_fallback_e2e.md`；脚本 `scripts/run_v45_server_ours_vs_fallback.py`、`analyze_v45_server_ab.py`；raw `results/2026-07-21_v45_server_ours_vs_fallback/`（server_ab.jsonl 48 行 + 每 regime jsonl + 分析表）。
+
 ### 2026-07-20 深夜：迁移新机器 aifx-clou000001（8×H200, triton 3.6.0）+ config-tuning 第 3 层 e2e（v44）✅
 - **v44 — re-tune vs fallback 的端到端 A/B（补上 §1.6.3 断言缺的 e2e 证据，与上面 v42/v43 互补）**：v42/v43 测的是 **default 启发式 vs tuned/fallback**（有 config 的价值，prefill +34~43%）；**v44 测的是 fallback vs 我们重新 tune** —— 在本机 triton 3.6.0 上重新 tune 未覆盖 shape 的 fused_moe config（18 桶全 tune，2149s），放进 `triton_3_6_0/` 让 sglang 优先加载，`bench_one_batch` A/B = **ours(3.6.0 重 tune) vs sglang 实际加载的 fallback(triton_3_2_0)**。
   - **结论：无端到端收益（≈0）。** 7 cell（decode b=1/8/32 各 n=8 + prefill in=512/1024/2048/4096 各 n=3）无一显著加速；唯二显著的是**小回归**（decode b1 −1.64%、prefill 1024 −2.75%），其余全在噪声内。**用真实 e2e 证实了 §1.6.3 那句"重 tune vs fallback 仅 +0.6%（隔离）"在端到端层面 = 0。**

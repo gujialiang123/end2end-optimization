@@ -1,0 +1,56 @@
+
+===== arm=fallback : launching server =====
+[fallback] server ready
+[fallback] tiny_latency r0: TTFT=12.3 TPOT=3.85 E2E=18 out_tput=120 (15s)
+[fallback] tiny_latency r1: TTFT=11.9 TPOT=3.83 E2E=16 out_tput=140 (11s)
+[fallback] tiny_latency r2: TTFT=11.9 TPOT=3.84 E2E=16 out_tput=140 (11s)
+[fallback] short_in_short_out r0: TTFT=37.5 TPOT=17.84 E2E=272 out_tput=819 (13s)
+[fallback] short_in_short_out r1: TTFT=22.9 TPOT=14.22 E2E=212 out_tput=1035 (12s)
+[fallback] short_in_short_out r2: TTFT=22.7 TPOT=14.23 E2E=212 out_tput=1035 (13s)
+[fallback] sched_overhead_hiconc r0: TTFT=50.7 TPOT=31.43 E2E=258 out_tput=1732 (12s)
+[fallback] sched_overhead_hiconc r1: TTFT=30.7 TPOT=26.52 E2E=212 out_tput=2068 (12s)
+[fallback] sched_overhead_hiconc r2: TTFT=30.6 TPOT=26.74 E2E=213 out_tput=2048 (12s)
+[fallback] prefill_medium r0: TTFT=86.0 TPOT=15.80 E2E=185 out_tput=149 (13s)
+[fallback] prefill_medium r1: TTFT=19.1 TPOT=7.62 E2E=73 out_tput=403 (12s)
+[fallback] prefill_medium r2: TTFT=19.1 TPOT=7.49 E2E=73 out_tput=412 (12s)
+[fallback] prefill_long r0: TTFT=155.0 TPOT=7.22 E2E=268 out_tput=58 (13s)
+[fallback] prefill_long r1: TTFT=29.2 TPOT=5.36 E2E=67 out_tput=243 (11s)
+[fallback] prefill_long r2: TTFT=27.1 TPOT=5.44 E2E=70 out_tput=243 (11s)
+[fallback] decode_medium r0: TTFT=27.1 TPOT=11.46 E2E=3038 out_tput=1297 (30s)
+[fallback] decode_medium r1: TTFT=27.1 TPOT=11.46 E2E=3037 out_tput=1297 (30s)
+[fallback] decode_medium r2: TTFT=27.1 TPOT=11.46 E2E=3037 out_tput=1297 (30s)
+[fallback] decode_heavy r0: TTFT=31.2 TPOT=14.26 E2E=7563 out_tput=1968 (36s)
+[fallback] decode_heavy r1: TTFT=31.1 TPOT=14.26 E2E=7562 out_tput=1968 (36s)
+[fallback] decode_heavy r2: TTFT=31.2 TPOT=14.26 E2E=7560 out_tput=1967 (36s)
+[fallback] agent_toolagent r0: FAILED
+[fallback] agent_toolagent r1: FAILED
+[fallback] agent_toolagent r2: FAILED
+
+===== arm=ours : launching server =====
+[ours] server ready
+[ours] tiny_latency r0: TTFT=12.6 TPOT=3.91 E2E=18 out_tput=134 (11s)
+[ours] tiny_latency r1: TTFT=12.0 TPOT=3.92 E2E=16 out_tput=138 (11s)
+[ours] tiny_latency r2: TTFT=12.0 TPOT=3.92 E2E=16 out_tput=139 (11s)
+[ours] short_in_short_out r0: TTFT=36.7 TPOT=17.60 E2E=268 out_tput=830 (13s)
+[ours] short_in_short_out r1: TTFT=22.8 TPOT=14.20 E2E=212 out_tput=1037 (13s)
+[ours] short_in_short_out r2: TTFT=22.9 TPOT=14.24 E2E=212 out_tput=1035 (13s)
+[ours] sched_overhead_hiconc r0: TTFT=49.6 TPOT=31.26 E2E=261 out_tput=1738 (12s)
+[ours] sched_overhead_hiconc r1: TTFT=30.3 TPOT=26.28 E2E=212 out_tput=2091 (12s)
+[ours] sched_overhead_hiconc r2: TTFT=30.4 TPOT=25.92 E2E=208 out_tput=2118 (12s)
+[ours] prefill_medium r0: TTFT=86.1 TPOT=17.06 E2E=184 out_tput=148 (13s)
+[ours] prefill_medium r1: TTFT=18.8 TPOT=7.72 E2E=73 out_tput=402 (12s)
+[ours] prefill_medium r2: TTFT=18.9 TPOT=7.55 E2E=72 out_tput=405 (11s)
+[ours] prefill_long r0: TTFT=154.3 TPOT=7.39 E2E=268 out_tput=58 (13s)
+[ours] prefill_long r1: TTFT=27.9 TPOT=5.45 E2E=66 out_tput=245 (11s)
+[ours] prefill_long r2: TTFT=26.9 TPOT=5.45 E2E=69 out_tput=245 (11s)
+[ours] decode_medium r0: TTFT=27.2 TPOT=11.47 E2E=3042 out_tput=1296 (30s)
+[ours] decode_medium r1: TTFT=27.1 TPOT=11.47 E2E=3041 out_tput=1297 (30s)
+[ours] decode_medium r2: TTFT=27.1 TPOT=11.47 E2E=3083 out_tput=1276 (30s)
+[ours] decode_heavy r0: TTFT=30.8 TPOT=14.08 E2E=7467 out_tput=1987 (41s)
+[ours] decode_heavy r1: TTFT=30.8 TPOT=14.08 E2E=7467 out_tput=1987 (36s)
+[ours] decode_heavy r2: TTFT=30.8 TPOT=14.08 E2E=7467 out_tput=1988 (36s)
+[ours] agent_toolagent r0: FAILED
+[ours] agent_toolagent r1: FAILED
+[ours] agent_toolagent r2: FAILED
+
+raw -> /home/t-jialianggu/work/end2end-optimization/results/2026-07-21_v45_server_ours_vs_fallback/server_ab.jsonl
