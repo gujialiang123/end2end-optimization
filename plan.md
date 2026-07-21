@@ -9,6 +9,14 @@
 - **Triton 版本**：tuning 基于 3.5.1，但 sglang config 目录无我们 shape → 回退加载 3.2.0 config（版本错配）；迁移须放进 `triton_3_5_1/`。
 - 脚本 `run_v42_kernel_e2e.py`、`run_v43_server_e2e.py`；数据 `results/2026-07-20_v42_kernel_e2e/`、`v43_server_e2e/`。
 
+### 2026-07-20 深夜：迁移新机器 aifx-clou000001（8×H200, triton 3.6.0）+ config-tuning 第 3 层 e2e（v44）✅
+- **v44 — re-tune vs fallback 的端到端 A/B（补上 §1.6.3 断言缺的 e2e 证据，与上面 v42/v43 互补）**：v42/v43 测的是 **default 启发式 vs tuned/fallback**（有 config 的价值，prefill +34~43%）；**v44 测的是 fallback vs 我们重新 tune** —— 在本机 triton 3.6.0 上重新 tune 未覆盖 shape 的 fused_moe config（18 桶全 tune，2149s），放进 `triton_3_6_0/` 让 sglang 优先加载，`bench_one_batch` A/B = **ours(3.6.0 重 tune) vs sglang 实际加载的 fallback(triton_3_2_0)**。
+  - **结论：无端到端收益（≈0）。** 7 cell（decode b=1/8/32 各 n=8 + prefill in=512/1024/2048/4096 各 n=3）无一显著加速；唯二显著的是**小回归**（decode b1 −1.64%、prefill 1024 −2.75%），其余全在噪声内。**用真实 e2e 证实了 §1.6.3 那句"重 tune vs fallback 仅 +0.6%（隔离）"在端到端层面 = 0。**
+  - **三层完整故事**：default 启发式 →(+34~43%)→ fallback config →(≈0)→ ours 重 tune。**config-tuning 的全部 e2e 收益来自"别掉进 default 启发式"，而非"按 triton 版本重 tune 已被 fallback 覆盖的 shape"。**
+  - **噪声教训再现**：n=3 时 decode b8 显示 −8.84%（吓人），n=8 后塌成 +0.91%(p=0.93) 纯噪声 → 信号 vs 噪声必须多重复 + t 检验。
+  - 文档 `docs/2026-07-20/kernel_config_retune_vs_fallback_e2e.md`；脚本 `scripts/run_v44_e2e_config_ab.py`、`analyze_v44_config_ab.py`；raw `results/2026-07-20_v44_retune_e2e_ab/`（config + tune.log + e2e_ab.jsonl 72 行 + 分析表）。
+- **新机器环境**：triton 3.6.0 / torch 2.11 / CUDA 13.0；坑：`kernels==0.12.3`（sglang 未 pin 上界，pip 拉 0.16 破 transformers 5.6.0）、`CUDA_HOME=$CONDA_PREFIX`（conda 装 cuda-13.0 toolkit 提供 nvcc，deep_gemm import 期 JIT 建 _C）。
+
 ### 2026-07-20 晚：噪声验证（Chendi 要求）+ kernel 细节入报告
 - **v41 噪声验证**：把 custom MoE kernel 的 b1 "+1.4%" 用 **n=15 交错重复 + Welch t 检验**验证 → **+1.17%，|t|=6.51，真信号（非波动）**；b2 −4.3%(|t|=3.2)、b4 −11.7%(|t|=9.9) 是**真回归**。文档 `docs/2026-07-20/noise_verification_custom_moe_b1.md`（带误差棒图）、脚本 `scripts/run_v41_noise_verify.py`。
 - **报告补充**：§1.5 写清 custom kernel 具体改了什么（去 align/sort + 融合 w1+SwiGLU / w2+加权求和 + fp32 累加）；§1.6 写清 kernel-config 调优（Triton `fused_moe_kernel` meta 参数：decode +13%、prefill +35~54% kernel 时间，U 形；本质是 autotuning，且是隔离时间非 e2e）。

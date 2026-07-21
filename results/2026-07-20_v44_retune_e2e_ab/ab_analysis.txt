@@ -1,0 +1,8 @@
+cell                        metric              base_med    ours_med   delta%       t        p     n
+decode b=1 in=256           decode_lat(s)        0.00427     0.00434   -1.64%   13.39   0.0000     8
+decode b=8 in=256           decode_lat(s)        0.00606     0.00600    0.91%   -0.09   0.9258     8
+decode b=32 in=256          decode_lat(s)        0.00797     0.00827   -3.76%    0.85   0.4084     8
+prefill b=1 in=512          prefill_tput     27131.52000 26915.97000   -0.79%   -0.13   0.9069     3
+prefill b=1 in=1024         prefill_tput     41164.23000 40032.39000   -2.75%   -5.76   0.0283     3
+prefill b=1 in=2048         prefill_tput     54175.68000 54513.47000    0.62%    0.37   0.7367     3
+prefill b=1 in=4096         prefill_tput     59353.09000 60331.33000    1.65%    0.32   0.7651     3
