@@ -1,0 +1,73 @@
+===== REP=1 ARM=baseline dynamic =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=855.7ms
+  r0 720p      idx=1   TTFT=206.5ms
+  r0 1080p     idx=2   TTFT=303.3ms
+  r0 512x512   idx=3   TTFT=155.5ms
+  r0 640x800   idx=4   TTFT=243.0ms
+  r0 768x1024  idx=5   TTFT=256.5ms
+  r0 900x1200  idx=6   TTFT=280.7ms
+  r0 1024x1024 idx=7   TTFT=255.2ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+===== REP=1 ARM=patched dynamic =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=863.2ms
+  r0 720p      idx=1   TTFT=205.2ms
+  r0 1080p     idx=2   TTFT=305.4ms
+  r0 512x512   idx=3   TTFT=156.7ms
+  r0 640x800   idx=4   TTFT=177.3ms
+  r0 768x1024  idx=5   TTFT=179.2ms
+  r0 900x1200  idx=6   TTFT=203.2ms
+  r0 1024x1024 idx=7   TTFT=181.7ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+===== REP=2 ARM=baseline dynamic =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=854.7ms
+  r0 720p      idx=1   TTFT=196.7ms
+  r0 1080p     idx=2   TTFT=302.6ms
+  r0 512x512   idx=3   TTFT=150.3ms
+  r0 640x800   idx=4   TTFT=169.8ms
+  r0 768x1024  idx=5   TTFT=170.8ms
+  r0 900x1200  idx=6   TTFT=197.5ms
+  r0 1024x1024 idx=7   TTFT=172.1ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+===== REP=2 ARM=patched dynamic =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=859.2ms
+  r0 720p      idx=1   TTFT=197.7ms
+  r0 1080p     idx=2   TTFT=301.1ms
+  r0 512x512   idx=3   TTFT=145.6ms
+  r0 640x800   idx=4   TTFT=163.5ms
+  r0 768x1024  idx=5   TTFT=170.1ms
+  r0 900x1200  idx=6   TTFT=198.7ms
+  r0 1024x1024 idx=7   TTFT=178.8ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+===== REP=3 ARM=baseline dynamic =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=850.9ms
+  r0 720p      idx=1   TTFT=210.6ms
+  r0 1080p     idx=2   TTFT=303.8ms
+  r0 512x512   idx=3   TTFT=155.4ms
+  r0 640x800   idx=4   TTFT=179.1ms
+  r0 768x1024  idx=5   TTFT=179.4ms
+  r0 900x1200  idx=6   TTFT=203.3ms
+  r0 1024x1024 idx=7   TTFT=180.5ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+===== REP=3 ARM=patched dynamic =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=855.1ms
+  r0 720p      idx=1   TTFT=207.0ms
+  r0 1080p     idx=2   TTFT=316.2ms
+  r0 512x512   idx=3   TTFT=151.9ms
+  r0 640x800   idx=4   TTFT=173.6ms
+  r0 768x1024  idx=5   TTFT=183.1ms
+  r0 900x1200  idx=6   TTFT=206.3ms
+  r0 1024x1024 idx=7   TTFT=184.4ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_rep.jsonl
+ALL REPEATS DONE

@@ -1,0 +1,73 @@
+===== REP=1 ARM=baseline TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_baseline_1_31191) =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1686.3ms
+  r0 720p      idx=1   TTFT=275.1ms
+  r0 1080p     idx=2   TTFT=789.1ms
+  r0 512x512   idx=3   TTFT=220.9ms
+  r0 640x800   idx=4   TTFT=233.9ms
+  r0 768x1024  idx=5   TTFT=249.7ms
+  r0 900x1200  idx=6   TTFT=268.5ms
+  r0 1024x1024 idx=7   TTFT=248.3ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+===== REP=1 ARM=patched TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_patched_1_31191) =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1621.9ms
+  r0 720p      idx=1   TTFT=202.9ms
+  r0 1080p     idx=2   TTFT=727.4ms
+  r0 512x512   idx=3   TTFT=152.5ms
+  r0 640x800   idx=4   TTFT=166.5ms
+  r0 768x1024  idx=5   TTFT=177.3ms
+  r0 900x1200  idx=6   TTFT=208.7ms
+  r0 1024x1024 idx=7   TTFT=178.6ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+===== REP=2 ARM=baseline TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_baseline_2_31191) =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1696.6ms
+  r0 720p      idx=1   TTFT=282.1ms
+  r0 1080p     idx=2   TTFT=798.8ms
+  r0 512x512   idx=3   TTFT=228.0ms
+  r0 640x800   idx=4   TTFT=247.2ms
+  r0 768x1024  idx=5   TTFT=250.7ms
+  r0 900x1200  idx=6   TTFT=283.6ms
+  r0 1024x1024 idx=7   TTFT=254.3ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+===== REP=2 ARM=patched TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_patched_2_31191) =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1628.0ms
+  r0 720p      idx=1   TTFT=201.9ms
+  r0 1080p     idx=2   TTFT=724.6ms
+  r0 512x512   idx=3   TTFT=152.7ms
+  r0 640x800   idx=4   TTFT=173.3ms
+  r0 768x1024  idx=5   TTFT=175.0ms
+  r0 900x1200  idx=6   TTFT=203.5ms
+  r0 1024x1024 idx=7   TTFT=180.2ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+===== REP=3 ARM=baseline TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_baseline_3_31191) =====
+[baseline/dynamic] launching fresh server (cold cache)...
+[baseline/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1687.7ms
+  r0 720p      idx=1   TTFT=275.1ms
+  r0 1080p     idx=2   TTFT=774.6ms
+  r0 512x512   idx=3   TTFT=234.1ms
+  r0 640x800   idx=4   TTFT=239.3ms
+  r0 768x1024  idx=5   TTFT=253.5ms
+  r0 900x1200  idx=6   TTFT=273.5ms
+  r0 1024x1024 idx=7   TTFT=264.1ms
+[baseline/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+===== REP=3 ARM=patched TRUE-COLD (TRITON_CACHE_DIR=/tmp/triton_cache_patched_3_31191) =====
+[patched/dynamic] launching fresh server (cold cache)...
+[patched/dynamic] ready, firing requests
+  r0 360p      idx=0   TTFT=1626.1ms
+  r0 720p      idx=1   TTFT=208.1ms
+  r0 1080p     idx=2   TTFT=758.5ms
+  r0 512x512   idx=3   TTFT=153.4ms
+  r0 640x800   idx=4   TTFT=175.2ms
+  r0 768x1024  idx=5   TTFT=177.8ms
+  r0 900x1200  idx=6   TTFT=205.6ms
+  r0 1024x1024 idx=7   TTFT=183.5ms
+[patched/dynamic] done -> results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl
+ALL COLD DONE

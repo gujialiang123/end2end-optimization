@@ -30,6 +30,16 @@
 - **教训固化**：信号 vs 噪声必须多次重复 + t 检验（连 3 次中位数都可能误判方向）。
 
 
+### 2026-07-21：PR 复现线开启 — #31558 (FLA l2norm 按 token 数重编译) ✅ 复现成功
+- **背景**：用户给出一份"复现 SGLang 最新 PR (A=v0.5.15.post1, B=+单个 PR patch) 证明 agent 价值"的方案。从最易验证的 Qwen VLM + #31558 开始。
+- **模型/环境**：`Qwen/Qwen3.6-35B-A3B-FP8`（hybrid linear-attn + VLM，走 FLA l2norm 路径）；新建 env `sglang-v515`（v0.5.15.post1, transformers 5.12.1, kernels 0.14.1, flashinfer 0.6.12），保留 sglang-dev 不动。
+- **patch**：#31558 只改 3 行（l2norm kernel 的 `T` 从 `tl.constexpr` 改成 `do_not_specialize` runtime 标量）。PR 的 main 路径在 v0.5.15 不存在（后续重构），手动移植到 `srt/layers/attention/fla/l2norm.py`（逐行等价）。
+- **机制（微基准 v46，铁证）**：baseline 对 10 个不同 token 数 **编译 10 个 kernel variant**；patched **编译 0 个**（复用 1 个）。完全复现上游 "N cubin → 1 cubin"。
+- **端到端（v47，真冷 TRITON_CACHE_DIR）**：VLM 冷启动 + 8 个不同图片分辨率，patched 把首轮 8 分辨率总 TTFT **−13.7%**（4.005→3.454s，**Welch t=20.9, p≪0.001**）；每个新分辨率 baseline 稳定多付 **~70ms** l2norm 编译停顿（小分辨率上 +25~33% TTFT）。稳态/固定分辨率控制两 arm 相同（无回归）。
+- **关键 confound**：Triton 磁盘缓存 `~/.triton/cache` 会掩盖效应，必须清 `TRITON_CACHE_DIR` 才测得真实编译代价（方案已预警）。
+- 文档 `docs/2026-07-21/pr31558_fla_l2norm_recompile_repro.md`；脚本 `run_v46_*`、`run_v47_*`；patch `patches/l2norm_v0.5.15.post1_*.py`；raw `results/2026-07-21_v46_*`、`v47_*`。
+
+
 ## 当前主线：证明"kernel/config agent"有意义（能拿到 sglang 之外的性能提升）
 
 ### 复现 kernel PR 技术（2026-07-20，真实模型端到端实测）

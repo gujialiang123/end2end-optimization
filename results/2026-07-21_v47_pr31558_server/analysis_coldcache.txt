@@ -1,0 +1,14 @@
+=== TRUE-COLD first-pass total TTFT over 8 distinct resolutions (fresh TRITON_CACHE_DIR), s ===
+  baseline  n=3 mean=4.005s std=0.035  raw=[3.97, 4.04, 4.0]
+  patched   n=3 mean=3.454s std=0.029  raw=[3.44, 3.44, 3.49]
+  reduction: 13.7%   Welch t=20.93 df=3.9
+
+=== per-resolution first-seen TTFT (mean over 3 cold reps), ms; delta=l2norm compile stall avoided ===
+  360p      baseline= 1690.2  patched= 1625.3  delta= +64.9ms ( +3.8%)
+  720p      baseline=  277.4  patched=  204.3  delta= +73.2ms (+26.4%)
+  1080p     baseline=  787.5  patched=  736.8  delta= +50.7ms ( +6.4%)
+  512x512   baseline=  227.7  patched=  152.9  delta= +74.8ms (+32.9%)
+  640x800   baseline=  240.1  patched=  171.7  delta= +68.5ms (+28.5%)
+  768x1024  baseline=  251.3  patched=  176.7  delta= +74.6ms (+29.7%)
+  900x1200  baseline=  275.2  patched=  206.0  delta= +69.2ms (+25.2%)
+  1024x1024 baseline=  255.6  patched=  180.8  delta= +74.8ms (+29.3%)
