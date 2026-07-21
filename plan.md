@@ -30,6 +30,13 @@
 - **教训固化**：信号 vs 噪声必须多次重复 + t 检验（连 3 次中位数都可能误判方向）。
 
 
+### 2026-07-21：PR #31438 复现（VLM 多模态预处理并行化）✅ 正向 + 语义精确
+- 第三个复现（同 Qwen3.6-35B VLM）。把图片 I/O + HF processor 从 tokenizer event loop 移到独立 worker 池（patched 默认 2 processor + 16 I/O worker）。
+- **结果（暖态 burst A/B）**：默认 2 worker 图片 burst 请求吞吐 **+14.5%(c8) / +8.5%(c16)**，p99 TTFT 改善；**correctness 闸门通过**（baseline==patched==patched4w 贪心输出逐字一致）。
+- **4 worker 不再提升**（此 workload 2 已够，与 PR 选默认 2 一致）；比上游 +80% 温和是因随机小图解码便宜、预处理非主瓶颈——机制真实，e2e 幅度依 workload。
+- **移植**：5 纯 Python 文件，cherry-pick 解 2 冲突（保留 v515 的 SGL_USE_CUDA_IPC/get_global_server_args；丢弃 PR 附带的会崩的 BOS 块）。executor.py 零外部依赖。
+- 文档 `docs/2026-07-21/pr31438_mm_preproc_parallel_repro.md`；脚本 `run_v49_pr31438_mm_preproc_ab.py`；raw `results/2026-07-21_v49_pr31438_mm_preproc/`；patch `patches/pr31438/`。
+
 ### 2026-07-21：PR #29007 复现（DeepSeek-V4 MoE TP allreduce NCCL 对称内存）✅ 强正结果
 - **候选一 headline**（纯文本、语义不变、两边同配置）。模型 `sgl-project/DeepSeek-V4-Flash-FP8`（294GB, FP8, TP8, attention_backend=dsv4），两边都 `--enable-symm-mem`，唯一差异 = PR 是否把 MoE 输出分配进对称内存池（让 TP allreduce 走低延迟 NCCL 对称路径）。
 - **结果（全 cell 一致正向，gain=改善）**：c1(4096/1024) **TPOT +9.2% / E2E +10.6% / 吞吐 +10.6%**；c8 +6~7%；c16 +5.3~6.4%。**复现且略超上游**（上游 −6.58% E2E / +7.05% tput）。n=2 两次高度一致。

@@ -1,0 +1,17 @@
+=== CORRECTNESS (greedy, same 2-image prompt) ===
+baseline == patched output: True
+baseline[:80]: 'The user wants a deterministic list of what is visible in the provided images.\n\n'
+patched [:80]: 'The user wants a deterministic list of what is visible in the provided images.\n\n'
+
+=== BURST A/B (warm repeats; + = patched better) ===
+cell (nreq/k/conc)  metric            baseline   patched    gain%
+16/4/c8             req_throughput        8.81     10.09   +14.5%
+16/4/c8             ttft_p99_ms         885.60    763.70   +16.0%
+16/4/c8             ttft_mean_ms        767.30    720.55    +6.5%
+16/4/c8             wall_s                1.81      1.58   +14.5%
+
+32/4/c16            req_throughput        9.57     10.38    +8.5%
+32/4/c16            ttft_p99_ms        1703.25   1669.40    +2.0%
+32/4/c16            ttft_mean_ms       1427.05   1389.35    +2.7%
+32/4/c16            wall_s                3.37      3.12    +7.9%
+

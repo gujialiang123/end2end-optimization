@@ -1,0 +1,7 @@
+[patched4w] correctness: ok=True out='The user wants a deterministic list of what is visible in the provided images.\n\n1.  **Analyze the im'
+[patched4w] burst n=32 k=4 c16: wall=4.2s TTFT mean=1786.2 p99=2279.9 req_tput=7.7 ok=32/32
+[patched4w] burst n=32 k=4 c16: wall=3.8s TTFT mean=1656.0 p99=2193.4 req_tput=8.34 ok=32/32
+[patched4w] burst n=32 k=4 c16: wall=2.9s TTFT mean=1275.5 p99=1473.5 req_tput=11.05 ok=32/32
+[patched4w] burst n=16 k=4 c8: wall=1.9s TTFT mean=871.2 p99=945.0 req_tput=8.47 ok=16/16
+[patched4w] burst n=16 k=4 c8: wall=1.8s TTFT mean=811.4 p99=862.4 req_tput=9.06 ok=16/16
+[patched4w] burst n=16 k=4 c8: wall=2.1s TTFT mean=982.8 p99=1174.9 req_tput=7.7 ok=16/16

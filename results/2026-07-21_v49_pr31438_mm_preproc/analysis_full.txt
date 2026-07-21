@@ -1,0 +1,13 @@
+=== CORRECTNESS (greedy) ===
+baseline==patched: True | baseline==patched4w: True
+
+=== BURST throughput (warm; req/s) & p99 TTFT (ms) ===
+cell          arm         req_tput  p99_ttft gain_vs_base%
+16/4/c8       baseline        8.81     885.6         +0.0%
+16/4/c8       patched        10.09     763.7        +14.5%
+16/4/c8       patched4w       8.38    1018.7         -4.9%
+
+32/4/c16      baseline        9.57    1703.2         +0.0%
+32/4/c16      patched        10.38    1669.4         +8.5%
+32/4/c16      patched4w       9.70    1833.5         +1.3%
+

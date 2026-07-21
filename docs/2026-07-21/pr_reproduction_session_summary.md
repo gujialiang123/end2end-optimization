@@ -12,6 +12,7 @@
 |---|---|---|---|---|
 | **#31558** | JIT / compile-side (FLA l2norm recompile by token count) | Qwen3.6-35B-A3B-FP8 (linear-attn VLM) | mechanism exact (10 compiles → 0); **cold-start VLM TTFT −13.7%**, Welch t≈21; ~70 ms compile stall avoided per new image resolution | ✅ reproduced, positive |
 | **#29007** | communication / memory (MoE TP allreduce → NCCL symmetric memory) | DeepSeek-V4-Flash-FP8 (294 GB, TP8) | **TPOT −9.2% / E2E −10.6% / throughput +10.6%** at c1; +5–7% through c16 | ✅ reproduced, positive (≥ upstream) |
+| **#31438** | CPU critical path (parallelize VLM multimodal preprocessing) | Qwen3.6-35B-A3B-FP8 | **+8.5–14.5% image-burst throughput** at default 2 workers; **bit-identical** greedy output | ✅ reproduced, positive |
 | #30514 | GPU CUDA kernel (Q8KV8 FP8 sparse-MLA prefill) | DeepSeek-V3.2 (689 GB) | not attempted — needs an **sgl-kernel CUDA rebuild** (modifies `csrc/.../kernel.cuh`), not a pure-Python toggle; + accuracy gate | ⏸ deferred (high effort) |
 
 These two cover two of the three evidence categories the plan wanted: **CPU/JIT
