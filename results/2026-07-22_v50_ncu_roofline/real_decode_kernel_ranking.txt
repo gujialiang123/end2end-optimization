@@ -1,0 +1,17 @@
+Real bench_one_batch decode-heavy (batch=32, in=8, out=32, --disable-cuda-graph),
+NCU SpeedOfLight, kernel regex gemm|moe|attn|fmha|flash|rmsnorm|silu,
+--launch-skip 400 --launch-count 120. Kernels aggregated by name:
+
+kernel                                     n   tot_us  %MoE-path-time  compute%  dram%
+fused_moe_kernel                          60    41.8   93.2%           60.2      14.5
+moe_sum_reduce_warp_per_token_vec_kernel  30     2.1    4.7%           31.8      88.1
+moe_align_block_size_kernel               30     0.9    2.0%            0.1       0.2
+
+NOTE / caveat:
+- Confirms fused_moe_kernel is by far the dominant MoE-path kernel (93% of profiled time).
+- The SoL %/roofline numbers here are NOT reliable: the --launch-skip window landed on
+  launches whose effective M is ambiguous (mix of warmup/phase), so compute/dram % differ
+  from the clean isolated microbench. Use the ISOLATED v50 microbench (fused_moe_M*.ncu-rep)
+  for the authoritative roofline crossover.
+- Attention (fa3/flash) kernels were NOT captured — the fa3 kernel name did not match the
+  regex. A clean attention roofline needs a follow-up with the correct kernel-name filter.

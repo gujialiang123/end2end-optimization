@@ -109,7 +109,22 @@ Open a report: `ncu-ui results/2026-07-22_v50_ncu_roofline/fused_moe_M32.ncu-rep
 - **Prefill = on the compute roof** → MoE config/tiling tuning converts to real e2e
   gains (**+34–43% prefill**), because the kernel is compute-limited there.
 
-## 5. Suggested follow-ups
+## 5. Supplementary — real `bench_one_batch` decode capture
+
+A real decode-heavy step (batch=32, in=8, out=32, `--disable-cuda-graph`) profiled
+under NCU (SpeedOfLight) confirms the **`fused_moe_kernel` dominates the MoE path
+(93% of profiled MoE-path kernel time)**; the small `moe_sum_reduce` (4.7%, DRAM
+88% → memory-bound) and `moe_align_block_size` (2%) are the only other MoE kernels.
+Ranking + caveats: `results/2026-07-22_v50_ncu_roofline/real_decode_kernel_ranking.txt`,
+report `real_decode.ncu-rep`.
+
+Caveat (honest): the SoL %/roofline numbers in that *real* capture are **not
+reliable** — the `--launch-skip` window landed on launches of ambiguous effective M,
+so its compute/DRAM % differ from the controlled microbench. **Use the isolated v50
+microbench (`fused_moe_M*.ncu-rep`) as the authoritative roofline crossover.** The
+`fa3` attention kernel was not captured (name didn't match the filter).
+
+## 6. Suggested follow-ups
 
 - Same NCU roofline for the **attention kernel** (#2 kernel: 38.8% of long-context
   prefill, 16–21% of decode) — it should show the same flip but driven by O(seq²)
