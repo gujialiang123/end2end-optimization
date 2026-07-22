@@ -1,0 +1,13 @@
+==PROF== Connected to process 1097780 (/home/t-jialianggu/.conda/envs/sglang-dev/bin/python3.12)
+Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/moe_runner/triton_utils/configs/triton_3_6_0/E=128,N=768,device_name=NVIDIA_H200.json. Fallback to triton version 3.2.0 and use MoE kernel config from /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/moe_runner/triton_utils/configs/triton_3_2_0/E=128,N=768,device_name=NVIDIA_H200.json. Performance might be sub-optimal!
+Using MoE kernel config with down_moe=False. Performance might be sub-optimal! Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/moe_runner/triton_utils/configs/triton_3_6_0/E=128,N=768,device_name=NVIDIA_H200_down.json, you can create them with https://github.com/sgl-project/sglang/tree/main/benchmark/kernels/fused_moe_triton
+==WARNING== Unable to access the following 6 metrics: ctc__rx_bytes_data_user.sum, ctc__rx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__rx_bytes_data_user.sum.per_second, ctc__tx_bytes_data_user.sum, ctc__tx_bytes_data_user.sum.pct_of_peak_sustained_elapsed, ctc__tx_bytes_data_user.sum.per_second.
+
+
+==PROF== Profiling "fused_moe_kernel": 0%....50%....100% - 38 passes
+==PROF== Connected to process 1098232 (/home/t-jialianggu/.conda/envs/sglang-dev/bin/python3.12)
+==PROF== Profiling "fused_moe_kernel": 0%....50%....100% - 38 passes
+[v50] M=32 done: fused_moe E=128 N=1536 H=2048 topk=8 bf16
+==PROF== Disconnected from process 1098232
+==PROF== Disconnected from process 1097780
+==PROF== Report: /home/t-jialianggu/work/end2end-optimization/results/2026-07-22_v50_ncu_roofline/fused_moe_M32.ncu-rep

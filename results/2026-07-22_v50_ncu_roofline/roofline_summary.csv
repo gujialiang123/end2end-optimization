@@ -1,0 +1,9 @@
+M,regime,gemm,duration_us,compute_sm_pct,dram_pct,mem_TBs,bound
+32,decode,w1,167.52,19.71,87.87,4.23,memory
+32,decode,w2,92.42,25.86,80.09,3.85,memory
+128,decode,w1,187.90,15.11,89.80,4.32,memory
+128,decode,w2,107.78,20.15,79.04,3.80,memory
+2048,prefill,w1,330.24,64.50,57.87,2.78,compute
+2048,prefill,w2,211.90,50.32,48.16,2.32,compute
+4096,prefill,w1,521.38,67.44,43.28,2.08,compute
+4096,prefill,w2,336.35,51.50,36.27,1.74,compute
