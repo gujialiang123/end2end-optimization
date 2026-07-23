@@ -1,0 +1,1596 @@
+[2026-07-23 21:42:07] INFO server_args.py:1835: Attention backend not specified. Use fa3 backend by default.
+[2026-07-23 21:42:08] server_args=ServerArgs(model_path='/data/hf/models/Qwen3-30B-A3B-Instruct-2507', tokenizer_path='/data/hf/models/Qwen3-30B-A3B-Instruct-2507', tokenizer_mode='auto', tokenizer_worker_num=1, skip_tokenizer_init=False, load_format='auto', model_loader_extra_config='{}', trust_remote_code=True, context_length=8192, is_embedding=False, enable_multimodal=None, revision=None, model_impl='auto', host='127.0.0.1', port=32207, fastapi_root_path='', grpc_mode=False, skip_server_warmup=False, warmups=None, nccl_port=None, checkpoint_engine_wait_weights_before_ready=False, dtype='auto', quantization=None, quantization_param_path=None, kv_cache_dtype='auto', enable_fp32_lm_head=False, modelopt_quant=None, modelopt_checkpoint_restore_path=None, modelopt_checkpoint_save_path=None, modelopt_export_path=None, quantize_and_serve=False, rl_quant_profile=None, mem_fraction_static=0.85, max_running_requests=128, max_queued_requests=None, max_total_tokens=None, chunked_prefill_size=-1, enable_dynamic_chunking=False, max_prefill_tokens=16384, prefill_max_requests=None, schedule_policy='lpm', enable_priority_scheduling=False, abort_on_priority_when_disabled=False, schedule_low_priority_values_first=False, priority_scheduling_preemption_threshold=10, schedule_conservativeness=1.0, page_size=1, swa_full_tokens_ratio=0.8, disable_hybrid_swa_memory=False, radix_eviction_policy='lru', enable_prefill_delayer=False, prefill_delayer_max_delay_passes=30, prefill_delayer_token_usage_low_watermark=None, prefill_delayer_forward_passes_buckets=None, prefill_delayer_wait_seconds_buckets=None, device='cuda', tp_size=1, pp_size=1, pp_max_micro_batch_size=None, pp_async_batch_depth=0, stream_interval=1, stream_output=False, random_seed=628544616, constrained_json_whitespace_pattern=None, constrained_json_disable_any_whitespace=False, watchdog_timeout=300, soft_watchdog_timeout=None, dist_timeout=None, download_dir=None, model_checksum=None, base_gpu_id=0, gpu_id_step=1, sleep_on_idle=False, custom_sigquit_handler=None, log_level='info', log_level_http=None, log_requests=False, log_requests_level=2, log_requests_format='text', log_requests_target=None, uvicorn_access_log_exclude_prefixes=[], crash_dump_folder=None, show_time_cost=False, enable_metrics=False, enable_metrics_for_all_schedulers=False, tokenizer_metrics_custom_labels_header='x-custom-labels', tokenizer_metrics_allowed_custom_labels=None, extra_metric_labels=None, bucket_time_to_first_token=None, bucket_inter_token_latency=None, bucket_e2e_request_latency=None, collect_tokens_histogram=False, prompt_tokens_buckets=None, generation_tokens_buckets=None, gc_warning_threshold_secs=0.0, decode_log_interval=40, enable_request_time_stats_logging=False, kv_events_config=None, enable_trace=False, otlp_traces_endpoint='localhost:4317', export_metrics_to_file=False, export_metrics_to_file_dir=None, api_key=None, admin_api_key=None, served_model_name='qwen3-30b-a3b', weight_version='default', chat_template=None, hf_chat_template_name=None, completion_template=None, file_storage_path='sglang_storage', enable_cache_report=False, reasoning_parser=None, tool_call_parser=None, tool_server=None, sampling_defaults='model', dp_size=1, load_balance_method='round_robin', attn_cp_size=1, moe_dp_size=1, dist_init_addr=None, nnodes=1, node_rank=0, json_model_override_args='{}', preferred_sampling_params=None, enable_lora=None, enable_lora_overlap_loading=None, max_lora_rank=None, lora_target_modules=None, lora_paths=None, max_loaded_loras=None, max_loras_per_batch=8, lora_eviction_policy='lru', lora_backend='csgmv', max_lora_chunk_size=16, attention_backend='fa3', decode_attention_backend=None, prefill_attention_backend=None, sampling_backend='flashinfer', grammar_backend='xgrammar', mm_attention_backend=None, fp8_gemm_runner_backend='auto', fp4_gemm_runner_backend='flashinfer_cutlass', nsa_prefill_backend=None, nsa_decode_backend=None, disable_flashinfer_autotune=False, mamba_backend='triton', speculative_algorithm=None, speculative_draft_model_path=None, speculative_draft_model_revision=None, speculative_draft_load_format=None, speculative_num_steps=None, speculative_eagle_topk=None, speculative_num_draft_tokens=None, speculative_accept_threshold_single=1.0, speculative_accept_threshold_acc=1.0, speculative_token_map=None, speculative_attention_mode='prefill', speculative_draft_attention_backend=None, speculative_moe_runner_backend='auto', speculative_moe_a2a_backend=None, speculative_draft_model_quantization=None, speculative_ngram_min_match_window_size=1, speculative_ngram_max_match_window_size=12, speculative_ngram_min_bfs_breadth=1, speculative_ngram_max_bfs_breadth=10, speculative_ngram_match_type='BFS', speculative_ngram_branch_length=18, speculative_ngram_capacity=10000000, enable_multi_layer_eagle=False, ep_size=1, moe_a2a_backend='none', moe_runner_backend='auto', flashinfer_mxfp4_moe_precision='default', enable_flashinfer_allreduce_fusion=True, deepep_mode='auto', ep_num_redundant_experts=0, ep_dispatch_algorithm=None, init_expert_location='trivial', enable_eplb=False, eplb_algorithm='auto', eplb_rebalance_num_iterations=1000, eplb_rebalance_layers_per_chunk=None, eplb_min_rebalancing_utilization_threshold=1.0, expert_distribution_recorder_mode=None, expert_distribution_recorder_buffer_size=1000, enable_expert_distribution_metrics=False, deepep_config=None, moe_dense_tp_size=None, elastic_ep_backend=None, mooncake_ib_device=None, max_mamba_cache_size=None, mamba_ssm_dtype=None, mamba_full_memory_ratio=0.9, mamba_scheduler_strategy='no_buffer', mamba_track_interval=256, enable_hierarchical_cache=False, hicache_ratio=2.0, hicache_size=0, hicache_write_policy='write_through', hicache_io_backend='kernel', hicache_mem_layout='layer_first', disable_hicache_numa_detect=False, hicache_storage_backend=None, hicache_storage_prefetch_policy='best_effort', hicache_storage_backend_extra_config=None, hierarchical_sparse_attention_extra_config=None, enable_lmcache=False, kt_weight_path=None, kt_method='AMXINT4', kt_cpuinfer=None, kt_threadpool_count=2, kt_num_gpu_experts=None, kt_max_deferred_experts_per_token=None, dllm_algorithm=None, dllm_algorithm_config=None, enable_double_sparsity=False, ds_channel_config_path=None, ds_heavy_channel_num=32, ds_heavy_token_num=256, ds_heavy_channel_type='qk', ds_sparse_decode_threshold=4096, cpu_offload_gb=0, offload_group_size=-1, offload_num_in_group=1, offload_prefetch_step=1, offload_mode='cpu', multi_item_scoring_delimiter=None, disable_radix_cache=False, cuda_graph_max_bs=256, cuda_graph_bs=[1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256], disable_cuda_graph=False, disable_cuda_graph_padding=False, enable_profile_cuda_graph=False, enable_cudagraph_gc=False, enable_layerwise_nvtx_marker=False, enable_nccl_nvls=False, enable_symm_mem=False, disable_flashinfer_cutlass_moe_fp4_allgather=False, enable_tokenizer_batch_encode=False, disable_tokenizer_batch_decode=False, disable_outlines_disk_cache=False, disable_custom_all_reduce=False, enable_mscclpp=False, enable_torch_symm_mem=False, disable_overlap_schedule=False, enable_mixed_chunk=False, enable_dp_attention=False, enable_dp_lm_head=False, enable_two_batch_overlap=False, enable_single_batch_overlap=False, tbo_token_distribution_threshold=0.48, enable_torch_compile=False, enable_piecewise_cuda_graph=False, enable_torch_compile_debug_mode=False, torch_compile_max_bs=32, piecewise_cuda_graph_max_tokens=-1, piecewise_cuda_graph_tokens=[], piecewise_cuda_graph_compiler='eager', torchao_config='', enable_nan_detection=False, enable_p2p_check=False, triton_attention_reduce_in_fp32=False, triton_attention_num_kv_splits=8, triton_attention_split_tile_size=None, num_continuous_decode_steps=1, delete_ckpt_after_loading=False, enable_memory_saver=False, enable_weights_cpu_backup=False, enable_draft_weights_cpu_backup=False, allow_auto_truncate=False, enable_custom_logit_processor=False, flashinfer_mla_disable_ragged=False, disable_shared_experts_fusion=False, disable_chunked_prefix_cache=False, disable_fast_image_processor=False, keep_mm_feature_on_device=False, enable_return_hidden_states=False, enable_return_routed_experts=False, scheduler_recv_interval=1, numa_node=None, enable_deterministic_inference=False, rl_on_policy_target=None, enable_attn_tp_input_scattered=False, enable_nsa_prefill_context_parallel=False, nsa_prefill_cp_mode='round-robin-split', enable_fused_qk_norm_rope=False, enable_precise_embedding_interpolation=False, enable_dynamic_batch_tokenizer=False, dynamic_batch_tokenizer_batch_size=32, dynamic_batch_tokenizer_batch_timeout=0.002, debug_tensor_dump_output_folder=None, debug_tensor_dump_layers=None, debug_tensor_dump_input_file=None, debug_tensor_dump_inject=False, disaggregation_mode='null', disaggregation_transfer_backend='mooncake', disaggregation_bootstrap_port=8998, disaggregation_decode_tp=None, disaggregation_decode_dp=None, disaggregation_prefill_pp=1, disaggregation_ib_device=None, disaggregation_decode_enable_offload_kvcache=False, num_reserved_decode_tokens=512, disaggregation_decode_polling_interval=1, encoder_only=False, language_only=False, encoder_transfer_backend='zmq_to_scheduler', encoder_urls=[], custom_weight_loader=[], weight_loader_disable_mmap=False, remote_instance_weight_loader_seed_instance_ip=None, remote_instance_weight_loader_seed_instance_service_port=None, remote_instance_weight_loader_send_weights_group_ports=None, remote_instance_weight_loader_backend='nccl', remote_instance_weight_loader_start_seed_via_transfer_engine=False, enable_pdmux=False, pdmux_config_path=None, sm_group_num=8, mm_max_concurrent_calls=32, mm_per_request_timeout=10.0, enable_broadcast_mm_inputs_process=False, enable_prefix_mm_cache=False, mm_enable_dp_encoder=False, mm_process_config={}, limit_mm_data_per_request=None, decrypted_config_file=None, decrypted_draft_config_file=None, forward_hooks=None)
+[2026-07-23 21:42:08] Using default HuggingFace chat template with detected content format: string
+[2026-07-23 21:42:16] Mamba selective_state_update backend initialized: triton
+[2026-07-23 21:42:16] Init torch distributed begin.
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[2026-07-23 21:42:17] Init torch distributed ends. elapsed=1.02 s, mem usage=0.09 GB
+[2026-07-23 21:42:17] Ignore import error when loading sglang.srt.models.glm_ocr: No module named 'transformers.models.glm_ocr'
+[2026-07-23 21:42:17] Ignore import error when loading sglang.srt.models.glm_ocr_nextn: No module named 'transformers.models.glm_ocr'
+[2026-07-23 21:42:17] Ignore import error when loading sglang.srt.models.glmasr: cannot import name 'GlmAsrConfig' from 'transformers' (/home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/transformers/__init__.py)
+[2026-07-23 21:42:18] Load weight begin. avail mem=138.98 GB
+Loading safetensors checkpoint shards:   0% Completed | 0/16 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:   6% Completed | 1/16 [00:00<00:03,  4.26it/s]
+Loading safetensors checkpoint shards:  12% Completed | 2/16 [00:01<00:09,  1.51it/s]
+Loading safetensors checkpoint shards:  19% Completed | 3/16 [00:02<00:10,  1.19it/s]
+Loading safetensors checkpoint shards:  25% Completed | 4/16 [00:03<00:10,  1.11it/s]
+Loading safetensors checkpoint shards:  31% Completed | 5/16 [00:04<00:10,  1.06it/s]
+Loading safetensors checkpoint shards:  38% Completed | 6/16 [00:05<00:09,  1.05it/s]
+Loading safetensors checkpoint shards:  44% Completed | 7/16 [00:06<00:08,  1.02it/s]
+Loading safetensors checkpoint shards:  50% Completed | 8/16 [00:07<00:07,  1.02it/s]
+Loading safetensors checkpoint shards:  56% Completed | 9/16 [00:08<00:06,  1.00it/s]
+Loading safetensors checkpoint shards:  62% Completed | 10/16 [00:09<00:05,  1.01it/s]
+Loading safetensors checkpoint shards:  69% Completed | 11/16 [00:10<00:05,  1.00s/it]
+Loading safetensors checkpoint shards:  75% Completed | 12/16 [00:11<00:04,  1.00s/it]
+Loading safetensors checkpoint shards:  81% Completed | 13/16 [00:12<00:03,  1.07s/it]
+Loading safetensors checkpoint shards:  88% Completed | 14/16 [00:13<00:02,  1.05s/it]
+Loading safetensors checkpoint shards:  94% Completed | 15/16 [00:14<00:01,  1.02s/it]
+Loading safetensors checkpoint shards: 100% Completed | 16/16 [00:15<00:00,  1.02s/it]
+Loading safetensors checkpoint shards: 100% Completed | 16/16 [00:15<00:00,  1.03it/s]
+
+[2026-07-23 21:42:33] Load weight end. elapsed=15.73 s, type=Qwen3MoeForCausalLM, dtype=torch.bfloat16, avail mem=81.96 GB, mem usage=57.02 GB.
+[2026-07-23 21:42:33] Using KV cache dtype: torch.bfloat16
+[2026-07-23 21:42:34] KV Cache is allocated. #tokens: 667379, K size: 30.55 GB, V size: 30.55 GB
+[2026-07-23 21:42:34] Memory pool end. avail mem=20.84 GB
+[2026-07-23 21:42:34] Capture cuda graph begin. This can take up to several minutes. avail mem=20.74 GB
+[2026-07-23 21:42:34] Capture cuda graph bs [1, 2, 4, 8, 12, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128]
+  0%|          | 0/20 [00:00<?, ?it/s]Capturing batches (bs=128 avail_mem=20.66 GB):   0%|          | 0/20 [00:00<?, ?it/s][2026-07-23 21:42:35] Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=128,N=768,device_name=NVIDIA_H200.json. Fallback to triton version 3.2.0 and use MoE kernel config from /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_2_0/E=128,N=768,device_name=NVIDIA_H200.json. Performance might be sub-optimal!
+[2026-07-23 21:42:35] Using MoE kernel config with down_moe=False. Performance might be sub-optimal! Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=128,N=768,device_name=NVIDIA_H200_down.json, you can create them with https://github.com/sgl-project/sglang/tree/main/benchmark/kernels/fused_moe_triton
+Capturing batches (bs=128 avail_mem=20.66 GB):   5%|▌         | 1/20 [00:00<00:12,  1.58it/s]Capturing batches (bs=120 avail_mem=20.55 GB):   5%|▌         | 1/20 [00:00<00:12,  1.58it/s]Capturing batches (bs=120 avail_mem=20.55 GB):  10%|█         | 2/20 [00:00<00:06,  2.98it/s]Capturing batches (bs=112 avail_mem=20.55 GB):  10%|█         | 2/20 [00:00<00:06,  2.98it/s]Capturing batches (bs=112 avail_mem=20.55 GB):  15%|█▌        | 3/20 [00:01<00:07,  2.14it/s]Capturing batches (bs=104 avail_mem=20.55 GB):  15%|█▌        | 3/20 [00:01<00:07,  2.14it/s]Capturing batches (bs=104 avail_mem=20.55 GB):  20%|██        | 4/20 [00:01<00:05,  2.96it/s]Capturing batches (bs=96 avail_mem=20.54 GB):  20%|██        | 4/20 [00:01<00:05,  2.96it/s] Capturing batches (bs=96 avail_mem=20.54 GB):  25%|██▌       | 5/20 [00:01<00:03,  3.92it/s]Capturing batches (bs=88 avail_mem=20.54 GB):  25%|██▌       | 5/20 [00:01<00:03,  3.92it/s]Capturing batches (bs=88 avail_mem=20.54 GB):  30%|███       | 6/20 [00:01<00:02,  4.89it/s]Capturing batches (bs=80 avail_mem=20.54 GB):  30%|███       | 6/20 [00:01<00:02,  4.89it/s]Capturing batches (bs=80 avail_mem=20.54 GB):  35%|███▌      | 7/20 [00:01<00:02,  5.73it/s]Capturing batches (bs=72 avail_mem=20.54 GB):  35%|███▌      | 7/20 [00:01<00:02,  5.73it/s]Capturing batches (bs=72 avail_mem=20.54 GB):  40%|████      | 8/20 [00:01<00:01,  6.53it/s]Capturing batches (bs=64 avail_mem=20.53 GB):  40%|████      | 8/20 [00:01<00:01,  6.53it/s]Capturing batches (bs=64 avail_mem=20.53 GB):  45%|████▌     | 9/20 [00:02<00:01,  7.22it/s]Capturing batches (bs=56 avail_mem=20.53 GB):  45%|████▌     | 9/20 [00:02<00:01,  7.22it/s]Capturing batches (bs=56 avail_mem=20.53 GB):  50%|█████     | 10/20 [00:02<00:01,  7.64it/s]Capturing batches (bs=48 avail_mem=20.53 GB):  50%|█████     | 10/20 [00:02<00:01,  7.64it/s]Capturing batches (bs=48 avail_mem=20.53 GB):  55%|█████▌    | 11/20 [00:02<00:01,  8.04it/s]Capturing batches (bs=40 avail_mem=20.53 GB):  55%|█████▌    | 11/20 [00:02<00:01,  8.04it/s]Capturing batches (bs=40 avail_mem=20.53 GB):  60%|██████    | 12/20 [00:02<00:00,  8.21it/s]Capturing batches (bs=32 avail_mem=20.52 GB):  60%|██████    | 12/20 [00:02<00:00,  8.21it/s]Capturing batches (bs=32 avail_mem=20.52 GB):  65%|██████▌   | 13/20 [00:03<00:01,  3.53it/s]Capturing batches (bs=24 avail_mem=20.52 GB):  65%|██████▌   | 13/20 [00:03<00:01,  3.53it/s]Capturing batches (bs=24 avail_mem=20.52 GB):  70%|███████   | 14/20 [00:03<00:01,  3.07it/s]Capturing batches (bs=16 avail_mem=20.52 GB):  70%|███████   | 14/20 [00:03<00:01,  3.07it/s]Capturing batches (bs=16 avail_mem=20.52 GB):  75%|███████▌  | 15/20 [00:03<00:01,  3.55it/s]Capturing batches (bs=12 avail_mem=20.52 GB):  75%|███████▌  | 15/20 [00:03<00:01,  3.55it/s]Capturing batches (bs=12 avail_mem=20.52 GB):  80%|████████  | 16/20 [00:03<00:00,  4.23it/s]Capturing batches (bs=8 avail_mem=20.51 GB):  80%|████████  | 16/20 [00:03<00:00,  4.23it/s] Capturing batches (bs=8 avail_mem=20.51 GB):  85%|████████▌ | 17/20 [00:03<00:00,  4.82it/s]Capturing batches (bs=4 avail_mem=20.51 GB):  85%|████████▌ | 17/20 [00:03<00:00,  4.82it/s]Capturing batches (bs=4 avail_mem=20.51 GB):  90%|█████████ | 18/20 [00:04<00:00,  5.39it/s]Capturing batches (bs=2 avail_mem=20.51 GB):  90%|█████████ | 18/20 [00:04<00:00,  5.39it/s]Capturing batches (bs=2 avail_mem=20.51 GB):  95%|█████████▌| 19/20 [00:04<00:00,  5.88it/s]Capturing batches (bs=1 avail_mem=20.50 GB):  95%|█████████▌| 19/20 [00:04<00:00,  5.88it/s]Capturing batches (bs=1 avail_mem=20.50 GB): 100%|██████████| 20/20 [00:04<00:00,  5.63it/s]Capturing batches (bs=1 avail_mem=20.50 GB): 100%|██████████| 20/20 [00:04<00:00,  4.55it/s]
+[2026-07-23 21:42:39] Capture cuda graph end. Time elapsed: 5.03 s. mem usage=0.24 GB. avail mem=20.50 GB.
+[2026-07-23 21:42:40] max_total_num_tokens=667379, chunked_prefill_size=-1, max_prefill_tokens=16384, max_running_requests=128, context_len=8192, available_gpu_mem=20.50 GB
+[2026-07-23 21:42:40] INFO:     Started server process [227699]
+[2026-07-23 21:42:40] INFO:     Waiting for application startup.
+[2026-07-23 21:42:40] Using default chat sampling params from model generation config: {'repetition_penalty': 1.0, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}
+[2026-07-23 21:42:40] INFO:     Application startup complete.
+[2026-07-23 21:42:40] INFO:     Uvicorn running on http://127.0.0.1:32207 (Press CTRL+C to quit)
+[2026-07-23 21:42:40] INFO:     127.0.0.1:38408 - "GET /health HTTP/1.1" 503 Service Unavailable
+[2026-07-23 21:42:41] INFO:     127.0.0.1:38410 - "GET /model_info HTTP/1.1" 200 OK
+[2026-07-23 21:42:42] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, token usage: 0.00, #running-req: 0, #queue-req: 0, input throughput (token/s): 0.00, cuda graph: False
+[2026-07-23 21:42:42] INFO:     127.0.0.1:38420 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:42] The server is fired up and ready to roll!
+[2026-07-23 21:42:43] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 0, token usage: 0.00, #running-req: 0, #queue-req: 0, input throughput (token/s): 4.09, cuda graph: False
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38424 - "GET /health HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38438 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38460 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38488 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38502 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38508 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38512 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38522 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38524 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38536 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38550 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38564 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38568 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38594 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38604 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38612 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38618 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38628 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38644 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38658 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38686 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38706 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38722 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38736 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38742 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38744 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38754 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38782 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38766 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38788 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38800 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38812 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38828 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38842 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38854 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38870 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38882 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:44] INFO:     127.0.0.1:38894 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38898 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38912 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38924 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38948 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38934 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38964 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] Prefill batch, #new-seq: 1, #new-token: 200, #cached-token: 0, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 0.93, cuda graph: False
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38984 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:38994 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39000 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39010 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39012 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39016 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39022 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39024 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39040 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39056 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39070 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39072 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] INFO:     127.0.0.1:39080 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:45] Prefill batch, #new-seq: 42, #new-token: 8409, #cached-token: 0, token usage: 0.01, #running-req: 1, #queue-req: 0, input throughput (token/s): 1542.26, cuda graph: False
+[2026-07-23 21:42:45] Prefill batch, #new-seq: 7, #new-token: 1401, #cached-token: 0, token usage: 0.02, #running-req: 43, #queue-req: 0, input throughput (token/s): 168436.57, cuda graph: False
+[2026-07-23 21:42:45] Prefill batch, #new-seq: 14, #new-token: 2802, #cached-token: 4, token usage: 0.02, #running-req: 50, #queue-req: 0, input throughput (token/s): 19066.01, cuda graph: False
+[2026-07-23 21:42:45] Decode batch, #running-req: 64, #token: 14820, token usage: 0.02, cuda graph: True, gen throughput (token/s): 67.20, #queue-req: 0
+[2026-07-23 21:42:45] Decode batch, #running-req: 64, #token: 17380, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6404.35, #queue-req: 0
+[2026-07-23 21:42:46] Decode batch, #running-req: 64, #token: 19940, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6310.11, #queue-req: 0
+[2026-07-23 21:42:46] Decode batch, #running-req: 64, #token: 22500, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6283.91, #queue-req: 0
+[2026-07-23 21:42:47] Decode batch, #running-req: 64, #token: 25060, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6245.10, #queue-req: 0
+[2026-07-23 21:42:47] Decode batch, #running-req: 64, #token: 27620, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6157.11, #queue-req: 0
+[2026-07-23 21:42:48] Decode batch, #running-req: 64, #token: 30180, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6172.27, #queue-req: 0
+[2026-07-23 21:42:48] Decode batch, #running-req: 64, #token: 32740, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6141.94, #queue-req: 0
+[2026-07-23 21:42:48] Decode batch, #running-req: 64, #token: 35300, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6079.64, #queue-req: 0
+[2026-07-23 21:42:49] Decode batch, #running-req: 64, #token: 37860, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6088.50, #queue-req: 0
+[2026-07-23 21:42:49] Decode batch, #running-req: 64, #token: 40420, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6079.00, #queue-req: 0
+[2026-07-23 21:42:50] Decode batch, #running-req: 64, #token: 42980, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6018.75, #queue-req: 0
+[2026-07-23 21:42:50] Decode batch, #running-req: 64, #token: 0, token usage: 0.00, cuda graph: True, gen throughput (token/s): 5888.77, #queue-req: 0
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39086 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39098 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39104 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39116 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39126 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:39134 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59352 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59380 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59384 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59394 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59410 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59412 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59428 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59436 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59440 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59446 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59462 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59468 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59470 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59484 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59496 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59520 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59504 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59546 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59556 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59562 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59530 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59570 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59574 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59588 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59568 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59590 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59592 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59600 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59616 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59630 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59642 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59650 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59666 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59668 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59682 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59684 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59688 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59692 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59696 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59702 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59704 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59716 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59728 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59744 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59758 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59760 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59776 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59780 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59810 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59818 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59794 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59826 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59856 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59870 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59878 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59882 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59894 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59902 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59906 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59918 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59930 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59936 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59948 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59958 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59974 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 516.14, cuda graph: False
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59982 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:59998 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60014 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60022 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60024 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60038 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60044 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60060 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60068 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60080 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60084 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60088 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60096 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60104 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60108 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60110 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60120 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60126 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60142 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60158 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60170 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60184 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60186 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60198 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60202 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60210 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60218 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60230 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60232 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60242 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60244 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60254 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60266 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60272 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60274 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60286 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60288 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60302 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60312 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60320 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] Prefill batch, #new-seq: 36, #new-token: 36, #cached-token: 7171, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 18.37, cuda graph: False
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60336 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60348 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60360 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60372 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60386 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60396 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60408 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60416 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60422 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60438 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] INFO:     127.0.0.1:60454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:50] Prefill batch, #new-seq: 38, #new-token: 2215, #cached-token: 5398, token usage: 0.03, #running-req: 37, #queue-req: 0, input throughput (token/s): 637.16, cuda graph: False
+[2026-07-23 21:42:50] Prefill batch, #new-seq: 42, #new-token: 8360, #cached-token: 52, token usage: 0.04, #running-req: 75, #queue-req: 0, input throughput (token/s): 29947.05, cuda graph: False
+[2026-07-23 21:42:50] Prefill batch, #new-seq: 11, #new-token: 2192, #cached-token: 13, token usage: 0.04, #running-req: 117, #queue-req: 0, input throughput (token/s): 241391.47, cuda graph: False
+[2026-07-23 21:42:51] Decode batch, #running-req: 128, #token: 30628, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6255.65, #queue-req: 0
+[2026-07-23 21:42:51] Decode batch, #running-req: 128, #token: 35748, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10394.83, #queue-req: 0
+[2026-07-23 21:42:52] Decode batch, #running-req: 128, #token: 40868, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10228.38, #queue-req: 0
+[2026-07-23 21:42:52] Decode batch, #running-req: 128, #token: 45988, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10193.70, #queue-req: 0
+[2026-07-23 21:42:53] Decode batch, #running-req: 128, #token: 51108, token usage: 0.08, cuda graph: True, gen throughput (token/s): 10121.71, #queue-req: 0
+[2026-07-23 21:42:53] Decode batch, #running-req: 128, #token: 56228, token usage: 0.08, cuda graph: True, gen throughput (token/s): 9967.01, #queue-req: 0
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60466 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60482 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60498 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60506 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60512 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60514 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60518 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60528 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60536 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60552 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60566 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60588 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60590 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60598 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60600 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60610 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60618 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60634 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60640 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60652 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60654 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60668 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60688 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60692 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60716 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60730 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60736 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60746 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60748 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60762 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60778 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60790 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60796 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60804 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60806 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60832 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60848 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60860 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60874 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60916 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60890 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60918 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60944 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60900 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60930 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60952 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60966 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60980 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60988 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:60992 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32774 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32782 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32798 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32814 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32818 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32832 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32848 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32860 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32864 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32872 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32878 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32886 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32896 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32908 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32922 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32928 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 656.12, cuda graph: False
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32932 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32946 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32952 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32964 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32978 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32986 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32992 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:32996 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33004 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33018 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33022 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33024 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33038 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33050 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33062 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33078 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33088 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33098 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33124 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33132 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33146 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33152 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33168 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33176 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33182 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33194 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33206 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33218 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33230 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33238 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33248 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33250 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33258 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33274 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33290 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33306 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33320 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] Prefill batch, #new-seq: 38, #new-token: 38, #cached-token: 7569, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 18.47, cuda graph: False
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33324 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33328 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33330 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33332 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33348 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33362 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33370 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33386 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33396 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33398 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33414 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33418 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] INFO:     127.0.0.1:33434 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:54] Prefill batch, #new-seq: 35, #new-token: 35, #cached-token: 6979, token usage: 0.03, #running-req: 39, #queue-req: 0, input throughput (token/s): 704.50, cuda graph: False
+[2026-07-23 21:42:54] Prefill batch, #new-seq: 41, #new-token: 41, #cached-token: 8170, token usage: 0.04, #running-req: 74, #queue-req: 0, input throughput (token/s): 571.43, cuda graph: False
+[2026-07-23 21:42:54] Prefill batch, #new-seq: 13, #new-token: 13, #cached-token: 2592, token usage: 0.04, #running-req: 115, #queue-req: 0, input throughput (token/s): 13182.94, cuda graph: False
+[2026-07-23 21:42:54] Decode batch, #running-req: 128, #token: 28580, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6354.03, #queue-req: 0
+[2026-07-23 21:42:55] Decode batch, #running-req: 128, #token: 33700, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10635.02, #queue-req: 0
+[2026-07-23 21:42:55] Decode batch, #running-req: 128, #token: 38820, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10294.72, #queue-req: 0
+[2026-07-23 21:42:56] Decode batch, #running-req: 128, #token: 43940, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10248.53, #queue-req: 0
+[2026-07-23 21:42:56] Decode batch, #running-req: 128, #token: 49060, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10200.61, #queue-req: 0
+[2026-07-23 21:42:57] Decode batch, #running-req: 128, #token: 54180, token usage: 0.08, cuda graph: True, gen throughput (token/s): 9980.24, #queue-req: 0
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33438 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33436 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33444 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33448 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33452 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33464 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33472 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33484 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33492 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33502 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33504 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33506 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33516 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33524 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33536 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33542 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33556 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33562 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33570 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33590 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33604 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33608 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33622 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33628 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33640 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33646 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33662 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33676 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33678 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33682 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33696 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33708 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33722 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33738 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33758 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33762 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33778 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33780 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33792 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33804 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33824 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33830 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33838 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33854 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33868 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33880 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33896 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33910 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33912 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33922 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33934 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33942 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33958 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33964 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33966 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33968 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33974 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] INFO:     127.0.0.1:33986 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:42:57] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 200, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 3.91, cuda graph: False
+[2026-07-23 21:42:57] Prefill batch, #new-seq: 35, #new-token: 35, #cached-token: 6971, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 18.60, cuda graph: False
+[2026-07-23 21:42:57] Prefill batch, #new-seq: 28, #new-token: 28, #cached-token: 5581, token usage: 0.02, #running-req: 36, #queue-req: 0, input throughput (token/s): 7263.23, cuda graph: False
+[2026-07-23 21:42:57] Decode batch, #running-req: 64, #token: 13284, token usage: 0.02, cuda graph: True, gen throughput (token/s): 6653.12, #queue-req: 0
+[2026-07-23 21:42:58] Decode batch, #running-req: 64, #token: 15844, token usage: 0.02, cuda graph: True, gen throughput (token/s): 6623.28, #queue-req: 0
+[2026-07-23 21:42:58] Decode batch, #running-req: 64, #token: 18404, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6319.90, #queue-req: 0
+[2026-07-23 21:42:59] Decode batch, #running-req: 64, #token: 20964, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6275.91, #queue-req: 0
+[2026-07-23 21:42:59] Decode batch, #running-req: 64, #token: 23524, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6275.63, #queue-req: 0
+[2026-07-23 21:42:59] Decode batch, #running-req: 64, #token: 26084, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6214.58, #queue-req: 0
+[2026-07-23 21:43:00] Decode batch, #running-req: 64, #token: 28644, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6183.50, #queue-req: 0
+[2026-07-23 21:43:00] Decode batch, #running-req: 64, #token: 31204, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6160.95, #queue-req: 0
+[2026-07-23 21:43:01] Decode batch, #running-req: 64, #token: 33764, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6123.32, #queue-req: 0
+[2026-07-23 21:43:01] Decode batch, #running-req: 64, #token: 36324, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6090.00, #queue-req: 0
+[2026-07-23 21:43:02] Decode batch, #running-req: 64, #token: 38884, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6098.52, #queue-req: 0
+[2026-07-23 21:43:02] Decode batch, #running-req: 64, #token: 41444, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6065.95, #queue-req: 0
+[2026-07-23 21:43:02] Decode batch, #running-req: 64, #token: 44004, token usage: 0.07, cuda graph: True, gen throughput (token/s): 6006.14, #queue-req: 0
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39334 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39340 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39346 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39352 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39366 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39370 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39376 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39384 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39400 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39410 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39416 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39422 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39434 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39442 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39460 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39484 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39498 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39506 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39520 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39524 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39530 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39544 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39538 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39554 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39556 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39560 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39570 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39590 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39604 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39614 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39620 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39628 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39638 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39640 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39646 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39668 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39660 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39680 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39682 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39690 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39692 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39696 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39724 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39708 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39728 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39736 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39760 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39766 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39782 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39790 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39800 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39814 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39830 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39836 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39848 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39854 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39868 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] INFO:     127.0.0.1:39870 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:03] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.17, cuda graph: False
+[2026-07-23 21:43:03] Prefill batch, #new-seq: 35, #new-token: 35, #cached-token: 6972, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 19.72, cuda graph: False
+[2026-07-23 21:43:03] Prefill batch, #new-seq: 28, #new-token: 28, #cached-token: 5581, token usage: 0.02, #running-req: 36, #queue-req: 0, input throughput (token/s): 7405.28, cuda graph: False
+[2026-07-23 21:43:03] Decode batch, #running-req: 64, #token: 13796, token usage: 0.02, cuda graph: True, gen throughput (token/s): 4342.22, #queue-req: 0
+[2026-07-23 21:43:03] Decode batch, #running-req: 64, #token: 16356, token usage: 0.02, cuda graph: True, gen throughput (token/s): 6528.22, #queue-req: 0
+[2026-07-23 21:43:04] Decode batch, #running-req: 64, #token: 18916, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6290.86, #queue-req: 0
+[2026-07-23 21:43:04] Decode batch, #running-req: 64, #token: 21476, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6276.16, #queue-req: 0
+[2026-07-23 21:43:05] Decode batch, #running-req: 64, #token: 24036, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6266.68, #queue-req: 0
+[2026-07-23 21:43:05] Decode batch, #running-req: 64, #token: 26596, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6210.81, #queue-req: 0
+[2026-07-23 21:43:05] Decode batch, #running-req: 64, #token: 29156, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6177.71, #queue-req: 0
+[2026-07-23 21:43:06] Decode batch, #running-req: 64, #token: 31716, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6148.45, #queue-req: 0
+[2026-07-23 21:43:06] Decode batch, #running-req: 64, #token: 34276, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6120.22, #queue-req: 0
+[2026-07-23 21:43:07] Decode batch, #running-req: 64, #token: 36836, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6085.48, #queue-req: 0
+[2026-07-23 21:43:07] Decode batch, #running-req: 64, #token: 39396, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6095.25, #queue-req: 0
+[2026-07-23 21:43:08] Decode batch, #running-req: 64, #token: 41956, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6056.18, #queue-req: 0
+[2026-07-23 21:43:08] Decode batch, #running-req: 64, #token: 44516, token usage: 0.07, cuda graph: True, gen throughput (token/s): 6000.79, #queue-req: 0
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39894 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39906 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39876 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39892 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39920 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39928 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39944 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39950 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39962 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39980 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39982 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:39998 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40012 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40020 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40022 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40028 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40042 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40044 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40056 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40058 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40060 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40068 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40092 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40102 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40118 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40132 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40146 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40148 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40150 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40162 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40178 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40190 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40192 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40202 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40216 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40232 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40234 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40238 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40250 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40252 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40264 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40280 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40296 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40302 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40316 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40330 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40336 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40350 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40358 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40378 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40390 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40396 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40412 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40414 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40420 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40422 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40428 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40430 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40442 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40456 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40462 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40464 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40480 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40482 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.14, cuda graph: False
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40486 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40506 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40512 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40516 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40522 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40532 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40538 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40554 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40562 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40576 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40586 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40600 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40614 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40618 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40620 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40624 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40630 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40646 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40656 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40664 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40676 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40692 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40708 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40716 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40732 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40742 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40750 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40756 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40760 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40762 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40768 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40772 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40778 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40788 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40800 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40810 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40824 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40834 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] Prefill batch, #new-seq: 35, #new-token: 35, #cached-token: 6972, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 18.81, cuda graph: False
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40850 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40866 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40876 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40884 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40896 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40910 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40920 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40934 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40944 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40946 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40960 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40978 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:40986 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:41000 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:41002 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:41014 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] INFO:     127.0.0.1:41030 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:08] Prefill batch, #new-seq: 32, #new-token: 32, #cached-token: 6379, token usage: 0.03, #running-req: 36, #queue-req: 0, input throughput (token/s): 768.61, cuda graph: False
+[2026-07-23 21:43:08] Prefill batch, #new-seq: 41, #new-token: 41, #cached-token: 8173, token usage: 0.04, #running-req: 68, #queue-req: 0, input throughput (token/s): 533.32, cuda graph: False
+[2026-07-23 21:43:08] Prefill batch, #new-seq: 19, #new-token: 19, #cached-token: 3786, token usage: 0.04, #running-req: 109, #queue-req: 0, input throughput (token/s): 10154.48, cuda graph: False
+[2026-07-23 21:43:09] Decode batch, #running-req: 128, #token: 28580, token usage: 0.04, cuda graph: True, gen throughput (token/s): 5331.23, #queue-req: 0
+[2026-07-23 21:43:09] Decode batch, #running-req: 128, #token: 33700, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10635.77, #queue-req: 0
+[2026-07-23 21:43:10] Decode batch, #running-req: 128, #token: 38820, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10303.03, #queue-req: 0
+[2026-07-23 21:43:10] Decode batch, #running-req: 128, #token: 43940, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10242.38, #queue-req: 0
+[2026-07-23 21:43:11] Decode batch, #running-req: 128, #token: 49060, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10193.86, #queue-req: 0
+[2026-07-23 21:43:11] Decode batch, #running-req: 128, #token: 54180, token usage: 0.08, cuda graph: True, gen throughput (token/s): 9974.23, #queue-req: 0
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36694 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36708 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36714 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36728 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36736 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36738 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36756 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36746 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36762 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36772 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36784 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36790 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36796 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36808 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36826 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36834 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36850 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36858 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36860 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36862 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36878 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36892 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36912 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36926 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36910 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36904 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36936 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36944 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36960 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36968 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36972 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36982 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36994 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:36998 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37006 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37018 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37024 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37026 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37034 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37042 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37054 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37068 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37098 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37108 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37124 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37130 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37154 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37156 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37168 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37182 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37186 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37200 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37206 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37210 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37226 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37222 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37232 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37236 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37250 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37266 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37280 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37296 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37302 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.67, cuda graph: False
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37306 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37308 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37316 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37330 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37332 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37336 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37350 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37366 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37368 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37378 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37394 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37408 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37416 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37422 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37436 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37438 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37442 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37444 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37446 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37450 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37464 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37476 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37490 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6574, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 22.93, cuda graph: False
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6577, token usage: 0.03, #running-req: 34, #queue-req: 0, input throughput (token/s): 627.95, cuda graph: False
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 24, #new-token: 24, #cached-token: 4784, token usage: 0.03, #running-req: 67, #queue-req: 0, input throughput (token/s): 5420.85, cuda graph: False
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37512 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37532 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37528 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37536 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37552 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37578 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37566 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37576 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37588 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37594 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37600 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37614 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37630 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37640 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37648 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37658 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37662 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37676 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37680 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37694 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37702 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37706 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37720 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37728 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37742 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37746 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37750 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37760 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37764 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37778 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37794 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37800 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37804 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] INFO:     127.0.0.1:37814 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 2, #new-token: 2, #cached-token: 399, token usage: 0.04, #running-req: 91, #queue-req: 0, input throughput (token/s): 189.47, cuda graph: False
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 31, #new-token: 31, #cached-token: 6179, token usage: 0.04, #running-req: 93, #queue-req: 0, input throughput (token/s): 40.10, cuda graph: False
+[2026-07-23 21:43:12] Prefill batch, #new-seq: 4, #new-token: 4, #cached-token: 797, token usage: 0.04, #running-req: 124, #queue-req: 0, input throughput (token/s): 15597.75, cuda graph: False
+[2026-07-23 21:43:12] Decode batch, #running-req: 128, #token: 26384, token usage: 0.04, cuda graph: True, gen throughput (token/s): 5375.38, #queue-req: 0
+[2026-07-23 21:43:13] Decode batch, #running-req: 128, #token: 31504, token usage: 0.05, cuda graph: True, gen throughput (token/s): 11061.75, #queue-req: 0
+[2026-07-23 21:43:13] Decode batch, #running-req: 128, #token: 36624, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10351.81, #queue-req: 0
+[2026-07-23 21:43:14] Decode batch, #running-req: 128, #token: 41744, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10243.72, #queue-req: 0
+[2026-07-23 21:43:14] Decode batch, #running-req: 128, #token: 46864, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10228.04, #queue-req: 0
+[2026-07-23 21:43:15] Decode batch, #running-req: 128, #token: 51984, token usage: 0.08, cuda graph: True, gen throughput (token/s): 10075.00, #queue-req: 0
+[2026-07-23 21:43:15] Decode batch, #running-req: 128, #token: 57104, token usage: 0.09, cuda graph: True, gen throughput (token/s): 9963.01, #queue-req: 0
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37832 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37828 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37818 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37834 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37846 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37852 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37864 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37880 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37884 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37886 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37890 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37898 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37900 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37916 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37922 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37928 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37934 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37948 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37964 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:37990 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38002 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38012 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38026 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38030 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38042 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38058 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38070 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38086 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38088 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38098 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38124 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38156 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38164 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38172 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38180 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38184 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38188 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38196 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38208 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38222 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38232 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38248 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38258 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38274 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38280 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38284 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38308 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38318 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38324 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38330 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38340 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38356 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38372 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38388 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38404 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] INFO:     127.0.0.1:38410 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:15] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 200, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 1.20, cuda graph: False
+[2026-07-23 21:43:15] Prefill batch, #new-seq: 34, #new-token: 34, #cached-token: 6772, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 16.60, cuda graph: False
+[2026-07-23 21:43:15] Prefill batch, #new-seq: 26, #new-token: 26, #cached-token: 5182, token usage: 0.02, #running-req: 35, #queue-req: 0, input throughput (token/s): 6658.17, cuda graph: False
+[2026-07-23 21:43:16] Decode batch, #running-req: 61, #token: 13883, token usage: 0.02, cuda graph: True, gen throughput (token/s): 4519.00, #queue-req: 0
+[2026-07-23 21:43:16] INFO:     127.0.0.1:38414 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:16] INFO:     127.0.0.1:38422 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:16] INFO:     127.0.0.1:38430 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:16] Prefill batch, #new-seq: 3, #new-token: 3, #cached-token: 598, token usage: 0.02, #running-req: 61, #queue-req: 0, input throughput (token/s): 73.18, cuda graph: False
+[2026-07-23 21:43:16] Decode batch, #running-req: 64, #token: 17031, token usage: 0.03, cuda graph: True, gen throughput (token/s): 5647.91, #queue-req: 0
+[2026-07-23 21:43:17] Decode batch, #running-req: 64, #token: 19591, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6274.74, #queue-req: 0
+[2026-07-23 21:43:17] Decode batch, #running-req: 64, #token: 22151, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6276.56, #queue-req: 0
+[2026-07-23 21:43:17] Decode batch, #running-req: 64, #token: 24711, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6252.29, #queue-req: 0
+[2026-07-23 21:43:18] Decode batch, #running-req: 64, #token: 27271, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6194.70, #queue-req: 0
+[2026-07-23 21:43:18] Decode batch, #running-req: 64, #token: 29831, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6170.62, #queue-req: 0
+[2026-07-23 21:43:19] Decode batch, #running-req: 64, #token: 32391, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6148.42, #queue-req: 0
+[2026-07-23 21:43:19] Decode batch, #running-req: 64, #token: 34951, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6105.94, #queue-req: 0
+[2026-07-23 21:43:19] Decode batch, #running-req: 64, #token: 37511, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6090.56, #queue-req: 0
+[2026-07-23 21:43:20] Decode batch, #running-req: 64, #token: 40071, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6091.88, #queue-req: 0
+[2026-07-23 21:43:20] Decode batch, #running-req: 64, #token: 42631, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6038.11, #queue-req: 0
+[2026-07-23 21:43:21] Decode batch, #running-req: 64, #token: 45191, token usage: 0.07, cuda graph: True, gen throughput (token/s): 5992.33, #queue-req: 0
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40478 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40488 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40490 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40500 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40516 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40528 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40536 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40552 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40564 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40578 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40584 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40598 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40608 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40616 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40630 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40634 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40638 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40646 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40656 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40666 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40682 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40698 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40718 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40732 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40742 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40758 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40774 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40784 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40788 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40796 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40804 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40810 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40822 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40826 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40836 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40840 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40842 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40850 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40854 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40870 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40876 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40880 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40886 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40898 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40904 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40908 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40914 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40930 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40936 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40940 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40950 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40954 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40968 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:40990 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41002 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41004 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41014 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41030 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41038 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41046 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41054 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 0.57, cuda graph: False
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41062 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41070 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41072 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41076 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41088 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41100 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41102 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41106 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41128 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41152 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41166 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41172 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41178 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41184 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41200 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41210 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41222 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41228 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41230 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41238 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41246 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41254 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41262 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41264 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41268 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41270 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41276 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41298 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41300 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41314 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41322 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41326 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41328 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41338 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41352 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41378 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41388 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41398 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41402 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] Prefill batch, #new-seq: 34, #new-token: 34, #cached-token: 6773, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 17.54, cuda graph: False
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41418 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41426 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41440 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41446 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41470 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41482 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41498 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41506 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41512 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41516 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41532 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41546 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41556 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41558 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41572 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41578 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41580 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41592 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41596 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] INFO:     127.0.0.1:41606 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:21] Prefill batch, #new-seq: 29, #new-token: 29, #cached-token: 5780, token usage: 0.03, #running-req: 35, #queue-req: 0, input throughput (token/s): 697.76, cuda graph: False
+[2026-07-23 21:43:21] Prefill batch, #new-seq: 43, #new-token: 43, #cached-token: 8571, token usage: 0.04, #running-req: 64, #queue-req: 0, input throughput (token/s): 471.23, cuda graph: False
+[2026-07-23 21:43:21] Prefill batch, #new-seq: 21, #new-token: 21, #cached-token: 4186, token usage: 0.04, #running-req: 107, #queue-req: 0, input throughput (token/s): 9933.81, cuda graph: False
+[2026-07-23 21:43:21] Decode batch, #running-req: 128, #token: 26148, token usage: 0.04, cuda graph: True, gen throughput (token/s): 1607.64, #queue-req: 0
+[2026-07-23 21:43:22] Decode batch, #running-req: 128, #token: 31268, token usage: 0.05, cuda graph: True, gen throughput (token/s): 11190.06, #queue-req: 0
+[2026-07-23 21:43:22] Decode batch, #running-req: 128, #token: 36388, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10405.85, #queue-req: 0
+[2026-07-23 21:43:23] Decode batch, #running-req: 128, #token: 41508, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10264.30, #queue-req: 0
+[2026-07-23 21:43:23] Decode batch, #running-req: 128, #token: 46628, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10223.12, #queue-req: 0
+[2026-07-23 21:43:24] Decode batch, #running-req: 128, #token: 51748, token usage: 0.08, cuda graph: True, gen throughput (token/s): 10080.23, #queue-req: 0
+[2026-07-23 21:43:24] Decode batch, #running-req: 128, #token: 56868, token usage: 0.09, cuda graph: True, gen throughput (token/s): 9961.52, #queue-req: 0
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41624 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41608 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41632 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41636 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41652 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41656 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41668 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41680 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41694 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41704 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41718 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41726 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41732 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41746 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41756 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41766 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41774 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41780 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41794 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41808 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41826 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41842 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41850 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41858 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41872 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41886 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41900 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41908 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41924 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41940 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41942 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41950 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41956 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41960 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41972 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41980 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41992 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:41998 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42002 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42012 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42028 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42038 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42046 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42048 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42056 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42070 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42094 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42104 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42118 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42132 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42138 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42144 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42158 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42168 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42180 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42188 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42198 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42204 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42206 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] INFO:     127.0.0.1:42208 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:25] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 6.28, cuda graph: False
+[2026-07-23 21:43:25] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6574, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 18.00, cuda graph: False
+[2026-07-23 21:43:25] Prefill batch, #new-seq: 30, #new-token: 30, #cached-token: 5979, token usage: 0.02, #running-req: 34, #queue-req: 0, input throughput (token/s): 6759.41, cuda graph: False
+[2026-07-23 21:43:25] Decode batch, #running-req: 64, #token: 14628, token usage: 0.02, cuda graph: True, gen throughput (token/s): 5107.84, #queue-req: 0
+[2026-07-23 21:43:25] Decode batch, #running-req: 64, #token: 17188, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6409.16, #queue-req: 0
+[2026-07-23 21:43:26] Decode batch, #running-req: 64, #token: 19748, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6247.93, #queue-req: 0
+[2026-07-23 21:43:26] Decode batch, #running-req: 64, #token: 22308, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6248.98, #queue-req: 0
+[2026-07-23 21:43:27] Decode batch, #running-req: 64, #token: 24868, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6221.74, #queue-req: 0
+[2026-07-23 21:43:27] Decode batch, #running-req: 64, #token: 27428, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6160.32, #queue-req: 0
+[2026-07-23 21:43:27] Decode batch, #running-req: 64, #token: 29988, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6138.82, #queue-req: 0
+[2026-07-23 21:43:28] Decode batch, #running-req: 64, #token: 32548, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6110.48, #queue-req: 0
+[2026-07-23 21:43:28] Decode batch, #running-req: 64, #token: 35108, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6062.17, #queue-req: 0
+[2026-07-23 21:43:29] Decode batch, #running-req: 64, #token: 37668, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6053.89, #queue-req: 0
+[2026-07-23 21:43:29] Decode batch, #running-req: 64, #token: 40228, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6055.68, #queue-req: 0
+[2026-07-23 21:43:30] Decode batch, #running-req: 64, #token: 42788, token usage: 0.06, cuda graph: True, gen throughput (token/s): 5991.04, #queue-req: 0
+[2026-07-23 21:43:30] Decode batch, #running-req: 64, #token: 45348, token usage: 0.07, cuda graph: True, gen throughput (token/s): 5948.36, #queue-req: 0
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42226 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42224 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42238 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42240 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42242 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42254 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42260 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42270 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42280 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42304 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42312 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42318 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42334 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42350 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42366 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42372 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42374 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42380 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42390 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42398 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42402 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42408 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42410 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42426 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42434 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42436 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42446 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42458 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42484 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42492 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42498 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42508 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42520 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42530 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42548 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42546 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42552 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42568 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42580 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42588 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42596 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42598 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42614 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42630 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42644 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42646 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42652 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42656 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42660 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42688 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:42704 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46946 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46948 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46960 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46962 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46976 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46992 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46994 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:46998 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] INFO:     127.0.0.1:47008 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:30] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.49, cuda graph: False
+[2026-07-23 21:43:30] Prefill batch, #new-seq: 34, #new-token: 34, #cached-token: 6773, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 19.04, cuda graph: False
+[2026-07-23 21:43:30] Prefill batch, #new-seq: 29, #new-token: 29, #cached-token: 5780, token usage: 0.02, #running-req: 35, #queue-req: 0, input throughput (token/s): 6658.83, cuda graph: False
+[2026-07-23 21:43:31] Decode batch, #running-req: 64, #token: 15140, token usage: 0.02, cuda graph: True, gen throughput (token/s): 4314.58, #queue-req: 0
+[2026-07-23 21:43:31] Decode batch, #running-req: 64, #token: 17700, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6369.95, #queue-req: 0
+[2026-07-23 21:43:31] Decode batch, #running-req: 64, #token: 20260, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6275.25, #queue-req: 0
+[2026-07-23 21:43:32] Decode batch, #running-req: 64, #token: 22820, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6274.18, #queue-req: 0
+[2026-07-23 21:43:32] Decode batch, #running-req: 64, #token: 25380, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6226.66, #queue-req: 0
+[2026-07-23 21:43:33] Decode batch, #running-req: 64, #token: 27940, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6187.98, #queue-req: 0
+[2026-07-23 21:43:33] Decode batch, #running-req: 64, #token: 30500, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6164.15, #queue-req: 0
+[2026-07-23 21:43:33] Decode batch, #running-req: 64, #token: 33060, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6138.03, #queue-req: 0
+[2026-07-23 21:43:34] Decode batch, #running-req: 64, #token: 35620, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6086.57, #queue-req: 0
+[2026-07-23 21:43:34] Decode batch, #running-req: 64, #token: 38180, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6092.94, #queue-req: 0
+[2026-07-23 21:43:35] Decode batch, #running-req: 64, #token: 40740, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6083.51, #queue-req: 0
+[2026-07-23 21:43:35] Decode batch, #running-req: 64, #token: 43300, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6012.82, #queue-req: 0
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47022 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47028 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47040 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47046 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47060 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47068 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47078 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47086 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47094 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47096 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47114 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47118 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47134 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47148 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47156 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47170 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47174 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47188 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47198 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47202 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47212 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47216 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47218 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47224 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47228 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47232 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47244 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47250 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47254 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47268 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47278 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47306 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47310 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47320 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47336 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47350 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47376 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47386 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47388 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47390 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47400 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47416 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47428 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47434 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47438 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47450 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47452 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47464 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47478 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47480 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47486 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47496 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47504 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47514 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47520 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47526 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47530 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47542 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47558 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47570 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47578 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47592 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.32, cuda graph: False
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47602 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47616 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47618 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47620 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47634 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47650 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47654 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47658 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47668 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47676 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47692 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47714 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47724 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47740 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47762 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47764 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47778 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47782 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47796 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47800 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47814 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47826 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47836 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47848 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47864 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47868 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47874 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47884 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6574, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 21.88, cuda graph: False
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47892 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47902 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47912 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47918 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47930 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47944 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47946 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47948 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47956 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47966 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47970 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:47984 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48000 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48016 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48024 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48030 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48034 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48040 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48050 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48060 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48076 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48082 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48096 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48110 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48126 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48130 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] INFO:     127.0.0.1:48152 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:36] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6577, token usage: 0.03, #running-req: 34, #queue-req: 0, input throughput (token/s): 721.49, cuda graph: False
+[2026-07-23 21:43:36] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6578, token usage: 0.04, #running-req: 67, #queue-req: 0, input throughput (token/s): 609.52, cuda graph: False
+[2026-07-23 21:43:36] Prefill batch, #new-seq: 28, #new-token: 28, #cached-token: 5581, token usage: 0.04, #running-req: 100, #queue-req: 0, input throughput (token/s): 6507.96, cuda graph: False
+[2026-07-23 21:43:36] Decode batch, #running-req: 128, #token: 26148, token usage: 0.04, cuda graph: True, gen throughput (token/s): 3797.01, #queue-req: 0
+[2026-07-23 21:43:36] Decode batch, #running-req: 128, #token: 31268, token usage: 0.05, cuda graph: True, gen throughput (token/s): 9543.33, #queue-req: 0
+[2026-07-23 21:43:37] Decode batch, #running-req: 128, #token: 36388, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10420.86, #queue-req: 0
+[2026-07-23 21:43:37] Decode batch, #running-req: 128, #token: 41508, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10284.09, #queue-req: 0
+[2026-07-23 21:43:38] Decode batch, #running-req: 128, #token: 46628, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10241.78, #queue-req: 0
+[2026-07-23 21:43:38] Decode batch, #running-req: 128, #token: 51748, token usage: 0.08, cuda graph: True, gen throughput (token/s): 10094.58, #queue-req: 0
+[2026-07-23 21:43:39] Decode batch, #running-req: 128, #token: 56868, token usage: 0.09, cuda graph: True, gen throughput (token/s): 9965.85, #queue-req: 0
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48178 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48184 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48164 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48196 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48198 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48202 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48216 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48218 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48234 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48244 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48256 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48266 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48274 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48288 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48304 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48320 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48326 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48340 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48348 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48360 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48364 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48372 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48376 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48388 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48400 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48410 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48424 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48440 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48448 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48460 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48474 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48486 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48490 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48494 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48508 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48516 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48534 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48530 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48542 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48552 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48568 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48582 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48592 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48596 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48608 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48622 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48624 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48632 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48642 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48654 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48660 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48666 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48674 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48676 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48682 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48686 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48700 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48710 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48724 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48726 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48742 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48748 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48752 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] INFO:     127.0.0.1:48756 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:39] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 8.17, cuda graph: False
+[2026-07-23 21:43:39] Prefill batch, #new-seq: 34, #new-token: 34, #cached-token: 6773, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 19.14, cuda graph: False
+[2026-07-23 21:43:39] Prefill batch, #new-seq: 29, #new-token: 29, #cached-token: 5780, token usage: 0.02, #running-req: 35, #queue-req: 0, input throughput (token/s): 6899.84, cuda graph: False
+[2026-07-23 21:43:40] Decode batch, #running-req: 64, #token: 14628, token usage: 0.02, cuda graph: True, gen throughput (token/s): 5081.20, #queue-req: 0
+[2026-07-23 21:43:40] Decode batch, #running-req: 64, #token: 17188, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6421.59, #queue-req: 0
+[2026-07-23 21:43:40] Decode batch, #running-req: 64, #token: 19748, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6268.73, #queue-req: 0
+[2026-07-23 21:43:41] Decode batch, #running-req: 64, #token: 22308, token usage: 0.03, cuda graph: True, gen throughput (token/s): 6274.04, #queue-req: 0
+[2026-07-23 21:43:41] Decode batch, #running-req: 64, #token: 24868, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6250.85, #queue-req: 0
+[2026-07-23 21:43:42] Decode batch, #running-req: 64, #token: 27428, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6187.99, #queue-req: 0
+[2026-07-23 21:43:42] Decode batch, #running-req: 64, #token: 29988, token usage: 0.04, cuda graph: True, gen throughput (token/s): 6166.30, #queue-req: 0
+[2026-07-23 21:43:42] Decode batch, #running-req: 64, #token: 32548, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6145.70, #queue-req: 0
+[2026-07-23 21:43:43] Decode batch, #running-req: 64, #token: 35108, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6096.97, #queue-req: 0
+[2026-07-23 21:43:43] Decode batch, #running-req: 64, #token: 37668, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6090.37, #queue-req: 0
+[2026-07-23 21:43:44] Decode batch, #running-req: 64, #token: 40228, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6089.02, #queue-req: 0
+[2026-07-23 21:43:44] Decode batch, #running-req: 64, #token: 42788, token usage: 0.06, cuda graph: True, gen throughput (token/s): 6028.11, #queue-req: 0
+[2026-07-23 21:43:45] Decode batch, #running-req: 64, #token: 45348, token usage: 0.07, cuda graph: True, gen throughput (token/s): 5985.34, #queue-req: 0
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42090 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42094 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42108 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42128 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42140 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42142 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42144 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42158 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42164 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42168 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42178 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42204 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42190 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42216 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42218 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42228 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42240 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42256 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42266 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42274 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42278 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42292 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42306 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42314 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42322 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42332 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42344 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42348 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42352 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42360 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42370 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42372 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42380 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42388 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42394 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42396 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42412 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42428 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42434 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42450 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42454 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42456 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42466 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42468 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42482 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42494 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42510 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42524 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42538 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42548 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42558 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42566 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42570 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42580 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42592 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42596 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42604 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42608 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42614 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42626 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42640 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42644 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42656 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42672 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42680 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42686 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42696 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42706 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42712 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42726 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42732 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42748 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 199, token usage: 0.01, #running-req: 0, #queue-req: 0, input throughput (token/s): 5.32, cuda graph: False
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42756 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42764 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42772 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42788 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42802 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42810 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42816 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42820 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42824 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42828 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42842 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42850 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42860 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42866 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42882 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42892 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42906 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42920 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42928 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42936 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42942 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42954 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42964 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42970 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42972 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42974 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:42988 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43000 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43002 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43016 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43030 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43036 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43042 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] Prefill batch, #new-seq: 37, #new-token: 37, #cached-token: 7370, token usage: 0.02, #running-req: 1, #queue-req: 0, input throughput (token/s): 23.52, cuda graph: False
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43050 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43054 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43066 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43074 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43084 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43094 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43102 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43112 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43128 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43136 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43144 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43152 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43162 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43174 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43188 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43194 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43204 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43206 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43220 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43224 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43236 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] INFO:     127.0.0.1:43246 - "POST /generate HTTP/1.1" 200 OK
+[2026-07-23 21:43:45] Prefill batch, #new-seq: 35, #new-token: 35, #cached-token: 6978, token usage: 0.03, #running-req: 38, #queue-req: 0, input throughput (token/s): 893.86, cuda graph: False
+[2026-07-23 21:43:45] Prefill batch, #new-seq: 33, #new-token: 33, #cached-token: 6577, token usage: 0.04, #running-req: 73, #queue-req: 0, input throughput (token/s): 688.55, cuda graph: False
+[2026-07-23 21:43:45] Prefill batch, #new-seq: 22, #new-token: 22, #cached-token: 4385, token usage: 0.04, #running-req: 106, #queue-req: 0, input throughput (token/s): 9007.19, cuda graph: False
+[2026-07-23 21:43:45] Decode batch, #running-req: 128, #token: 30244, token usage: 0.05, cuda graph: True, gen throughput (token/s): 6501.11, #queue-req: 0
+[2026-07-23 21:43:46] Decode batch, #running-req: 128, #token: 35364, token usage: 0.05, cuda graph: True, gen throughput (token/s): 10473.94, #queue-req: 0
+[2026-07-23 21:43:46] Decode batch, #running-req: 128, #token: 40484, token usage: 0.06, cuda graph: True, gen throughput (token/s): 10261.34, #queue-req: 0
+[2026-07-23 21:43:47] Decode batch, #running-req: 128, #token: 45604, token usage: 0.07, cuda graph: True, gen throughput (token/s): 10224.22, #queue-req: 0
+[2026-07-23 21:43:47] Decode batch, #running-req: 128, #token: 50724, token usage: 0.08, cuda graph: True, gen throughput (token/s): 10132.96, #queue-req: 0
+[2026-07-23 21:43:48] Decode batch, #running-req: 128, #token: 55844, token usage: 0.08, cuda graph: True, gen throughput (token/s): 9967.22, #queue-req: 0
+[2026-07-23 21:43:48] SIGTERM received. signum=None frame=None. Draining requests and shutting down...
+[2026-07-23 21:43:51] Gracefully exiting... Remaining number of requests 0. Remaining requests remaining_rids=[].
