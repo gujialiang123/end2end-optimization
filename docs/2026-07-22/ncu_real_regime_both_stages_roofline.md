@@ -15,14 +15,15 @@
 | **PREFILL** | fused_moe (MoE GEMM) M=4096 | **67.4** | 43.3 | **COMPUTE** | v50 isolated |
 | **PREFILL** | fused_moe (real, in=4096) | **60.0** | 13.8 | **COMPUTE** | prefill_roofline |
 | **PREFILL** | **dense GEMM** (nvjet, qkv/o) | **79.8** | 13.8 | **COMPUTE** | prefill_roofline |
-| **PREFILL** | **attention** (FA3 `FlashAttnFwdSm90`) | — dominant by **time (33 ms, O(seq²))** | | compute | names3 dump |
+| **PREFILL** | **attention** (FA3 `FlashAttnFwdSm90`) seq=4096 | **32.1** (occ-limited 18.8%) | 1.1 | **COMPUTE-leaning** | prefill_attention_measured |
 
 - **Decode-heavy regime**: the MoE GEMM streams expert weights for few tokens → sits
   on the **memory-bandwidth roof** (DRAM ~88–90%). Dense GEMM and attention are also
   small/latency-bound at decode. Decode ≈ memory-bound (matches the bottleneck report).
-- **Prefill-heavy regime**: every hot kernel is **compute-bound** — MoE GEMM 60–67%,
-  dense GEMM ~80% SM, and **attention (FA3) is the single largest kernel by time**
-  (33 ms across the profiled window, O(seq²) at 4096 context). Prefill ≈ compute-bound.
+- **PREFILL**: every hot kernel is compute-oriented — MoE GEMM 60–67% SM, dense GEMM
+  ~80% SM (both genuinely compute-bound), and **attention (FA3) SM 32% / DRAM 1%**,
+  compute-leaning but **occupancy-limited (18.8%, 255 regs/thread)** and the single
+  largest kernel per layer (~1.84 ms at seq=4096). Prefill ≈ compute-bound.
 
 **The same fused_moe kernel flips memory→compute from decode to prefill** — that
 crossover is the headline (see the isolated report for the clean M-sweep).
@@ -73,6 +74,33 @@ The four underlying quantities the roofline needs (and that we read for the tabl
   *dominance by time* (33 ms, from the duration-only sweep) is the reliable statement;
   a clean attention roofline is a noted follow-up.
 
+### 3.1 FA3 attention: compute-leaning but occupancy-limited (measured, seq=4096)
+
+**Important measurement note:** the FA3 `FlashAttnFwdSm90` kernel must be captured in
+the **measured** forward, not warmup. Warmup instances are ~10 µs degenerate launches;
+the real measured prefill attention at seq=4096 is **~1.84 ms/launch** (found via a
+duration sweep: measured `FlashAttnFwdSm90` averages 2145 µs vs 10 µs in warmup). Use
+`--kernel-name-base demangled --kernel-name regex:FlashAttnFwdSm90 --launch-skip 200`.
+
+Measured `prefill_attention_measured.ncu-rep` (batch=1, in=4096):
+
+| metric | value | meaning |
+|---|---|---|
+| Duration | **1.84 ms** | the single largest kernel per layer-forward |
+| Compute (SM) % | **32.1** | compute is the utilized axis (not memory) |
+| DRAM % | **1.1** | **not** memory-bound |
+| Achieved Occupancy | **18.8%** | held back by register pressure |
+| Registers Per Thread | 255 | near the 256 cap → caps occupancy |
+
+So on the roofline the FA3 attention dot is **compute-leaning (well right of the
+memory-bound decode MoE) but held below the compute ceiling by low occupancy
+(18.8%)**. It is neither memory-bound (DRAM ~1%) nor compute-saturated — it is
+**register/occupancy-limited**. The optimization lever for prefill attention is
+therefore **occupancy** (reduce register pressure / retune tiling) or batching more
+work per launch, *not* faster memory. This refines the bottleneck report's
+"prefill = compute-bound": the GEMMs (MoE 60%, dense 80% SM) are genuinely
+compute-bound, while attention is compute-*oriented* but occupancy-capped.
+
 ## 4. WHERE to take each screenshot (ncu-ui)
 
 Open a report, e.g. `ncu-ui results/2026-07-22_v51_ncu_real/prefill_roofline.ncu-rep`.
@@ -84,8 +112,10 @@ Select the kernel in the top launch selector, then:
   compute (Tensor/Half) ceiling, right side** → compute-bound (SM 60%).
 - Same report, select **`nvjet_sm90_…`** (dense GEMM) → Roofline chart: even closer to
   the compute ceiling (SM ~80%). Screenshot side-by-side with MoE.
-- (Attention: open `prefill_attention.ncu-rep` — the FA3 kernel; note the time-dominance
-  from `names3` if the per-launch roofline is degenerate.)
+- (Attention: open `prefill_attention_measured.ncu-rep` — the **measured** FA3 kernel
+  at seq=4096, SM 32% / DRAM 1% / occupancy 18.8%. Its Roofline dot is compute-leaning
+  but below the ceiling due to low occupancy; the **Occupancy** section shows the
+  255-register limiter. Screenshot the Roofline chart + the Occupancy section.)
 
 ### Decode hot kernel — roofline (show memory-bound) + the memory analysis
 - **`fused_moe_M32.ncu-rep`** (isolated, from the companion report) → **Roofline** chart:

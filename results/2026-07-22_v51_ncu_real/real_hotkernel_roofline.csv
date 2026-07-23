@@ -1,4 +1,7 @@
-stage,config,kernel,dur_us,compute_pct,dram_pct,bound,source
-prefill,batch1_in4096,MoE_GEMM_fused_moe,329.2,60.0,13.8,compute,prefill_roofline.ncu-rep
-prefill,batch1_in4096,dense_GEMM_nvjet,139.4,79.8,13.8,compute,prefill_roofline.ncu-rep
-prefill,batch1_in4096,attention_FA3_cutlass,by_time_33ms_dominant,NA,NA,compute_O(seq^2),names3_dump
+stage,config,kernel,dur,compute_pct,dram_pct,occupancy_pct,bound,source
+decode,isolated_M32,MoE_GEMM_fused_moe,167.5us,19.7,87.9,NA,memory,v50 fused_moe_M32
+decode,isolated_M128,MoE_GEMM_fused_moe,187.9us,15.1,89.8,NA,memory,v50 fused_moe_M128
+prefill,isolated_M4096,MoE_GEMM_fused_moe,521.4us,67.4,43.3,NA,compute,v50 fused_moe_M4096
+prefill,batch1_in4096,MoE_GEMM_fused_moe,329.2us,60.0,13.8,NA,compute,prefill_roofline
+prefill,batch1_in4096,dense_GEMM_nvjet,139.4us,79.8,13.8,NA,compute,prefill_roofline
+prefill,batch1_in4096,attention_FA3_FlashAttnFwdSm90,1.84ms,32.1,1.1,18.8,compute-leaning/occupancy-limited,prefill_attention_measured
