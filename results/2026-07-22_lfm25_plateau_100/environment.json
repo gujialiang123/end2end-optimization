@@ -1,0 +1,30 @@
+{
+  "recorded_at": "2026-07-22T21:38:46Z",
+  "repo_git_sha": "60985bb86e619d658a41ccddf06322b053e280b7",
+  "sglang_git_sha": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+  "sglang_version": "0.5.12.post1",
+  "triton_version": "3.5.1",
+  "pytorch_version": "2.9.1+cu128",
+  "cuda_version": "12.8",
+  "optuna_version": "4.9.0",
+  "nvidia_driver": "580.105.08",
+  "gpu_model": "NVIDIA H200",
+  "python": "3.11.15",
+  "model_path": "/data/hf/LFM2.5-8B-A1B",
+  "served_model_name": "lfm2.5-8b-a1b",
+  "tp": 1,
+  "dtype": "bf16 (model default, same as v3)",
+  "workload_R_concurrent_decode": {
+    "concurrency": 32,
+    "output_len": 256,
+    "num_prompts": 32,
+    "input_len_tokens": 256,
+    "note": "reproduces v3 spec (prompt_words=200\u2248256 tok); client=sglang.bench_serving streaming (v3 used non-streaming custom client, upgraded to obtain TTFT/TPOT percentiles)"
+  },
+  "fixed_knobs": {
+    "moe_runner_backend": "triton",
+    "attention_backend": "fa3",
+    "disable_cuda_graph": false
+  },
+  "conda_env": "sglang-dev"
+}
