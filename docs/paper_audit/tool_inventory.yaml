@@ -1,0 +1,154 @@
+# Tool / script / skill inventory — end2end-optimization
+# Audit commit: 100ba9f6434c92779fbe7431161f820045cd5c54  date: 2026-07-23
+# status: implemented_and_used | implemented_not_used | partially_implemented |
+#         documentation_only | deprecated | duplicate_or_overlapping | unclear
+
+core_harness:
+  - name: run_bench
+    path: harness/run_bench.py
+    function: "deterministic end-to-end bench harness: spec -> launch server -> bench -> quality gate -> schema-v1 summary.json"
+    inputs: [bench-spec yaml, out-dir, optional MFU args]
+    outputs: [summary.json, server.log, per_run/*]
+    side_effects: "launches/kills server, writes files"
+    caller: [harness/autotune*.py, users]
+    typed_tool_candidate: true
+    decision_maker: deterministic
+    status: implemented_and_used
+  - name: spec
+    path: harness/spec.py
+    function: "load/validate bench spec + compute spec_hash (excludes prose)"
+    inputs: [spec yaml, base config, regimes]
+    outputs: [resolved config, spec_hash]
+    caller: [run_bench, autotune]
+    typed_tool_candidate: true
+    decision_maker: deterministic
+    status: implemented_and_used
+  - name: executor
+    path: harness/executor.py
+    function: "shell out to e2e-bench-runner skill; return bench_summary.json"
+    caller: [run_bench]
+    typed_tool_candidate: true
+    decision_maker: deterministic
+    status: implemented_and_used
+  - name: lifecycle
+    path: harness/lifecycle.py
+    function: "server process-group launch/kill, health wait"
+    side_effects: "starts/kills server"
+    typed_tool_candidate: true
+    status: implemented_and_used
+  - name: quality
+    path: harness/quality.py
+    function: "reliability/sanity gate on per_run metrics"
+    typed_tool_candidate: true
+    status: implemented_and_used
+  - name: output
+    path: harness/output.py
+    function: "schema v1 writer/validator for summary.json"
+    typed_tool_candidate: true
+    status: implemented_and_used
+  - name: env_snapshot
+    path: harness/env_snapshot.py
+    function: "capture env (nvidia-smi/nvcc/git)"
+    side_effects: "shell probes"
+    typed_tool_candidate: true
+    status: implemented_and_used
+  - name: mfu
+    path: harness/mfu.py
+    function: "MFU/MBU postprocessing"
+    typed_tool_candidate: true
+    status: partially_implemented
+
+autotuning:
+  - name: autotune_v1
+    path: harness/autotune.py
+    function: "Optuna v1 framework tuning"
+    outputs: [study.db, best.json, trial dirs]
+    decision_maker: "Optuna TPE (not LLM)"
+    status: implemented_and_used
+  - name: autotune_v2_lfm
+    path: harness/autotune_v2_lfm.py
+    function: "conditional search-space tuning"
+    status: implemented_and_used
+    note: "v2 conditional search underperformed (see 2026-06-30)"
+  - name: autotune_v3_lfm
+    path: harness/autotune_v3_lfm.py
+    function: "warm-start + MFU annotation tuning"
+    status: implemented_and_used
+    note: "warm-start biased convergence; superseded by clean v48 study (run_v48_lfm25_plateau.py)"
+
+solver:
+  - name: config_agent
+    path: scripts/solver/config_agent.py
+    function: "Stage B single-knob solver: sweep one knob, verify target+neighbors+controls, write decision.json + solution.md"
+    inputs: [problem package]
+    outputs: [attempts/*/candidate_config.yaml, decision.json, solution.md]
+    side_effects: "launches/kills server"
+    decision_maker: "RULE-BASED fixed loop (NOT an LLM)"
+    typed_tool_candidate: true
+    status: implemented_and_used
+    note: "IMPORTANT for honest attribution: this is a rule-based sweep, not an LLM agent"
+  - name: other_solvers
+    path: "stages/problem-solver/README.md (scheduler/kernel/workload-shape)"
+    status: documentation_only
+    note: "only config-agent is implemented"
+
+stage1_reusable:
+  - {name: run_experiment, path: scripts/run_experiment.py, function: "one-workload orchestrator (launch->bench->parse->cleanup)", status: implemented_and_used, typed_tool_candidate: true}
+  - {name: run_regime_suite, path: scripts/run_regime_suite.py, function: "sweep a directory of workloads under one config", status: implemented_and_used, typed_tool_candidate: true}
+  - {name: generate_seed_suite, path: scripts/generate_seed_suite.py, function: "materialize seed workloads", status: implemented_and_used}
+  - {name: score_suspicion, path: scripts/score_suspicion.py, function: "score runs for suspicious regimes (rule-based)", status: implemented_and_used}
+  - {name: cluster_regimes, path: scripts/cluster_regimes.py, function: "cluster/map regimes", status: implemented_and_used}
+  - {name: select_cases_for_stage2, path: scripts/select_cases_for_stage2.py, function: "freeze selected cases into problem packages", status: implemented_and_used}
+  - {name: launch_server, path: scripts/launch_server.py, status: implemented_and_used}
+  - {name: wait_ready, path: scripts/wait_ready.py, status: implemented_and_used}
+  - {name: run_benchmark, path: scripts/run_benchmark.py, function: "bench_serving wrapper", status: implemented_and_used}
+  - {name: parse_metrics, path: scripts/parse_metrics.py, status: implemented_and_used}
+  - {name: utils, path: scripts/utils.py, status: implemented_and_used}
+  - {name: logging_setup, path: scripts/logging_setup.py, status: implemented_and_used}
+
+skills:
+  - {name: regime-bench-harness, path: .github/skills/regime-bench-harness/, function: "deterministic e2e harness wrapper", decision_maker: deterministic, status: implemented_and_used}
+  - {name: e2e-bench-runner, path: .github/skills/e2e-bench-runner/, function: "multi-regime NON-STREAMING bench against running server (req/s + e2e p50/p99, NO TTFT/TPOT)", decision_maker: deterministic, status: implemented_and_used, note: "non-streaming; for TTFT/TPOT use sglang.bench_serving"}
+  - {name: server-log-mining, path: .github/skills/server-log-mining/, function: "server.log -> structured server_features.json", decision_maker: rule-based, status: implemented_and_used}
+  - {name: failure-classification, path: .github/skills/failure-classification/, function: "classify failures from metrics/features", decision_maker: rule-based, status: implemented_and_used}
+  - {name: noise-aware-scoring, path: .github/skills/noise-aware-scoring/, function: "noise calibration/thresholding", decision_maker: rule-based, status: implemented_and_used}
+  - {name: suspicion-scoring, path: .github/skills/suspicion-scoring/, function: "composite suspicion score", decision_maker: rule-based, status: implemented_and_used}
+  - {name: boundary-expansion, path: .github/skills/boundary-expansion/, function: "generate neighbor workloads around a cliff", decision_maker: rule-based, status: implemented_and_used}
+  - {name: cross-regime-anomaly, path: .github/skills/cross-regime-anomaly/, function: "cross-config/regime anomaly finder (explicitly rule-based, not ML)", decision_maker: rule-based, status: implemented_and_used}
+  - {name: nsys-capture, path: .github/skills/nsys-capture/, function: "capture nsys profiler trace", decision_maker: deterministic, status: implemented_and_used}
+  - {name: nsys-timeline-sql, path: .github/skills/nsys-timeline-sql/, function: "SQL over nsys timeline", decision_maker: deterministic, status: implemented_and_used}
+  - {name: ncu-microarch, path: .github/skills/ncu-microarch/, function: "NCU microarchitecture analysis (roofline/occupancy/bandwidth)", decision_maker: deterministic, status: implemented_and_used}
+  - {name: pytorch-profiling, path: .github/skills/pytorch-profiling/, function: "torch profiler trace -> kernel composition", decision_maker: deterministic, status: implemented_and_used}
+  - {name: profile-summary-unified, path: .github/skills/profile-summary-unified/, function: "unify profile summaries across tools", decision_maker: deterministic, status: implemented_and_used}
+  - {name: minimal-repro-shrink, path: .github/skills/minimal-repro-shrink/, function: "shrink a failing case to minimal repro", status: implemented_and_used}
+  - {name: regime-sweep-runner, path: .github/skills/regime-sweep-runner/, function: "legacy sweep runner", status: deprecated, note: "superseded by regime-bench-harness (duplicate/overlapping)"}
+  - {name: handoff-prompt-template, path: .github/skills/handoff-prompt-template/, function: "prompt template for handoff", status: documentation_only}
+
+stage_a_policies:
+  - {name: rule_based_explore, path: stages/problem-setter/policies/rule_based_explore.py, function: "deterministic/rule-based regime exploration", decision_maker: rule-based, status: implemented_and_used}
+  - {name: llm_agent_triage, path: stages/problem-setter/policies/llm_agent.md, function: "LLM decides which workload to expand / axis / when to stop", decision_maker: LLM, status: partially_implemented, note: "ONLY genuine LLM decision point in repo; NO landed run-trace found -> weak attribution evidence"}
+
+one_off_experiment_scripts:
+  - path: "scripts/run_v4_*.py ... scripts/run_v50_*.py"
+    function: "per-experiment paper-evidence drivers (server A/B, NCU, autotuning, PR-repro)"
+    status: implemented_and_used
+    note: "one-off; NOT core infra; extract common capabilities (server A/B, bench_serving parse, median+t-test, cold-start filtering) into a shared lib"
+  - path: "scripts/{analyze,build,compute,plot}_v*.py"
+    function: "per-experiment analysis/plotting"
+    status: implemented_and_used
+    note: "one-off / semi-reusable"
+
+deprecated_or_historical:
+  - {path: scripts/archive/run_stage1_v0.2.py, status: deprecated, note: "historical Stage1 orchestrator"}
+  - {path: scripts/archive/score_suspicion_v1.py, status: deprecated, note: "historical scoring"}
+  - {path: archive/**, status: historical, note: "design history only; NOT current capability"}
+
+gaps_design_vs_code:
+  - "harness README claims vLLM support (v1.1) but spec.py/run_bench.py still v1-limited"
+  - "Stage B docs describe scheduler/kernel/workload solvers; only config-agent exists"
+  - "regime-sweep-runner deprecated in favor of regime-bench-harness"
+  - "LLM triage documented but no landed decision run-trace"
+
+typed_tool_adapter_recommendation:
+  strong_candidates: [harness/spec.py, harness/output.py, harness/quality.py, harness/mfu.py, harness/run_bench.py, harness/lifecycle.py, harness/env_snapshot.py, scripts/solver/config_agent.py, "all .github/skills/*"]
+  extract_shared_lib_from_oneoffs: ["server start+stop A/B", "sglang.bench_serving parse", "median + Welch t-test", "cold-start outlier filtering", "config-dir A/B switch (SGLANG_MOE_CONFIG_DIR)"]

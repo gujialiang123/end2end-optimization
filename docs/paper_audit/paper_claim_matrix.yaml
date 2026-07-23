@@ -1,0 +1,125 @@
+# Paper claim <-> evidence matrix — end2end-optimization
+# Audit commit: 100ba9f6434c92779fbe7431161f820045cd5c54  date: 2026-07-23
+# writable_now: yes | yes_with_caveat | no
+
+claims:
+  - id: C1
+    claim: "The bottleneck moves across prefill/decode and workload regimes; there is no single global bottleneck."
+    honest_wording: "In serving/agent regimes decode dominates wall-clock (83-99%); in long-context regimes prefill dominates (55-89%). NCU roofline confirms decode is memory-bound (DRAM 87.9-89.8%) and prefill compute-bound (compute 64.5-67.4%)."
+    direct_evidence: [E025, E032, E020, E021, E002, E007]
+    evidence_strength: E3_REPEATED_E2E_AB + PROFILE
+    caveat: "mostly Qwen3-30B / LFM2.5; cross-model not yet done"
+    missing_experiment: "cross-model bottleneck-shift confirmation"
+    recommended_figure: "stacked prefill/decode wall-clock share per regime (from v43)"
+    reviewer_risk: "single-model -> add cross-model"
+    writable_now: yes
+    disallowed_overclaim: "do NOT say 'decode is always the bottleneck'"
+
+  - id: C2
+    claim: "Isolated-kernel/microbenchmark speedups do not necessarily transfer to server end-to-end."
+    honest_wording: "A custom M=1 MoE kernel with isolated 1.23x yields only +1.17% e2e (n=15, Welch |t|=6.51) and is a net regression at b>=2; CUTLASS kernel faster per-layer but e2e hidden by non-MoE/routing."
+    direct_evidence: [E023, E038, E001, E024]
+    evidence_strength: E3_REPEATED_E2E_AB
+    caveat: "specific kernels/scales; generalize to attn/dense (P4)"
+    missing_experiment: "more kernel classes"
+    recommended_figure: "isolated speedup x vs e2e gain % scatter"
+    reviewer_risk: "kernel representativeness -> roofline + more kernels"
+    writable_now: yes
+    disallowed_overclaim: "do NOT claim we discovered a large kernel speedup"
+
+  - id: C3
+    claim: "Baseline choice can silently manufacture large false optimization conclusions."
+    honest_wording: "An autotuning '5-9x' speedup was entirely a cudagraph-OFF baseline artifact; against the framework-actual default (cudagraph ON) the tuned config is only 0.95-1.05x (within noise). Separately, config-tuning '+34-43% prefill' is vs a disabled default heuristic, not the framework's actual fallback config."
+    direct_evidence: [E004, E003, E022, E024]
+    evidence_strength: E3_REPEATED_E2E_AB
+    caveat: "must explain cudagraph and default-heuristic-vs-fallback distinction"
+    missing_experiment: "clean cg-on/cg-off single-variable A/B (P1)"
+    recommended_figure: "three-baseline bar (cg-off / cg-on-default / tuned) x 4 regimes"
+    reviewer_risk: "cherry-pick -> show all 4 regimes"
+    writable_now: yes
+    strength_note: "STRONGEST claim; cornerstone of falsification story"
+
+  - id: C4
+    claim: "Cold-start, JIT cache, small sample size, and statistical noise can produce false diagnoses; cache-controlled repeated A/B is required."
+    honest_wording: "PR #31558 shows -13.7% cold-cache TTFT but ~0 with warm cache / fixed shape; a retune A/B that looked like -8.84% at n=3 collapsed to +0.91% (noise) at n=8; custom-kernel b1 needed n=15 + t-test to confirm a tiny real signal."
+    direct_evidence: [E029, E028, E026, E023]
+    evidence_strength: E3_REPEATED_E2E_AB
+    caveat: "cold effect requires clearing TRITON_CACHE_DIR (documented)"
+    missing_experiment: "more resolutions + revert (P3)"
+    recommended_figure: "cold-vs-warm TTFT + n=3-vs-n=8 delta collapse"
+    reviewer_risk: "artificial cold cache -> note real first deployment is cold"
+    writable_now: yes
+    strength_note: "STRONG; second cornerstone"
+
+  - id: C5
+    claim: "A structured workflow (regime exploration -> frozen problem package -> verified intervention) helps select the next evidence and route interventions."
+    honest_wording: "A rule-based two-stage pipeline discovered a scheduler-tail cliff, froze a problem package with target/neighbors/controls, and a rule-based config-agent fixed it (+92.6% ttft_p95). NOTE: the current solver is rule-based, not an LLM; the only LLM decision point (Stage A triage) has no landed run-trace."
+    direct_evidence: [E035]
+    evidence_strength: E2_REPEATED_OR_PROFILE_SUPPORTED  # + E4 causal for P001
+    caveat: "MUST say structured/rule-based, NOT 'LLM Agent'; single incident"
+    missing_experiment: "LLM triage run-trace; more incidents"
+    recommended_figure: "pipeline diagram + P001 verification table"
+    reviewer_risk: "over-claim agency -> use precise wording"
+    writable_now: yes_with_caveat
+    disallowed_overclaim: "do NOT call config-agent or Stage A scoring an 'LLM Agent'"
+
+  - id: C6
+    claim: "Target+neighbor+control verification reduces false-accept of a fix."
+    honest_wording: "P001's config change was accepted only after checking the target improved, neighbors changed little, and a control regime did not regress (decision.json records this protocol)."
+    direct_evidence: [E035]
+    evidence_strength: E4_CAUSAL_INTERVENTION
+    caveat: "single incident; revert arm missing (P2)"
+    missing_experiment: "more problems + revert"
+    recommended_figure: "target/neighbor/control delta table"
+    reviewer_risk: "single example -> add more"
+    writable_now: yes
+
+  - id: C7
+    claim: "Serving-knob autotuning plateaus quickly; stopping (abstention) is a valid decision; re-tuning an already-covered config is a no-op."
+    honest_wording: "Without warm start, TPE reaches within 1% of the final best by config 7; the final 20 of 100 configs improve best-so-far by 0%; the validated best is +0.4% over cookbook (CIs overlap). Re-tuning an already-fallback-covered fused_moe shape is ~0 e2e across three measurement layers."
+    direct_evidence: [E034, E026, E027]
+    evidence_strength: E3_REPEATED_E2E_AB
+    caveat: "single regime/model for plateau; TPE not LLM"
+    missing_experiment: "cross-regime plateau"
+    recommended_figure: "convergence + plateau_stats; three-layer retune bars"
+    reviewer_risk: "search space too small -> note 4 standard serving knobs, 192 combos"
+    writable_now: yes
+
+  - id: C8
+    claim: "LLM-inference incidents should be routed to different system layers (config/scheduler/algorithm/communication/JIT/preprocessing/kernel), not assumed to be kernel bottlenecks."
+    honest_wording: "Diagnoses span 8 root-cause layers: scheduler/config (D01), measurement (D02/D12), gpu_kernel (D03), workload (D04/D08), configuration (D05), runtime_jit_cache (D09), cpu_preprocessing (D10), communication (D11), algorithm (D07). A kernel with high profile share is not automatically the e2e root cause (D03/D04/D07)."
+    direct_evidence: [E035, E004, E023, E025, E026, E028, E029, E030, E031, E018]
+    evidence_strength: mixed D1-D3
+    caveat: "some layers only D1 (profile-only)"
+    missing_experiment: "intervention closure for profile-only diagnoses"
+    recommended_figure: "root-cause-layer x incident matrix"
+    reviewer_risk: "some layers weak -> mark strength per incident"
+    writable_now: yes
+
+  - id: C9
+    claim: "Honest characterization of the Agent's actual contribution boundary."
+    honest_wording: "Most results here are Rule-discovered (P001), Deterministically-verified (v41/v48), Upstream-reproduced (v47-v49), or Human-designed. The only genuine LLM decision is Stage A triage, and it lacks a landed run-trace. No result can honestly be called 'Agent-discovered' (LLM-autonomous)."
+    direct_evidence: ["section 8 contribution ledger (REPOSITORY_EVIDENCE_AUDIT_ZH.md)"]
+    evidence_strength: n/a
+    caveat: "this is the honesty guardrail for the whole paper"
+    missing_experiment: "landed LLM RunTrace to support any agentic claim"
+    recommended_figure: "contribution ledger table (hypothesis/selection/execution/candidate/verification/decision)"
+    reviewer_risk: "attribution inflation is the biggest risk -> pre-empt with this table"
+    writable_now: yes
+
+strongest_writable_claims_ranked:
+  - {rank: 1, id: C3, one_liner: "Wrong-baseline artifacts silently manufacture large speedups (5-9x -> 1.0x)."}
+  - {rank: 2, id: C4, one_liner: "Cold-start/JIT-cache/small-n confounds require cache-controlled repeated A/B."}
+  - {rank: 3, id: C2, one_liner: "Isolated-kernel speedups do not transfer to serving (1.23x -> +1.17%, t-tested)."}
+  - {rank: 4, id: C1, one_liner: "The bottleneck moves across regimes; no single global bottleneck."}
+  - {rank: 5, id: C7, one_liner: "Serving-knob autotuning plateaus; stopping/no-op-retune are valid conclusions."}
+  - {rank: 6, id: C6, one_liner: "Target+neighbor+control verification catches false-accept."}
+  - {rank: 7, id: C8, one_liner: "Incidents route to different system layers, not just kernels."}
+  - {rank: 8, id: C9, one_liner: "Honest Agent-contribution boundary (structured/rule-based, not LLM-autonomous)."}
+
+do_not_write:
+  - "Our Agent autonomously discovered kernel optimizations."  # no evidence; custom kernel human-written, e2e ~0
+  - "Autotuning gives 5-9x / +50% end-to-end."               # 5-9x is baseline artifact; +34-43% is vs default heuristic and decode ~0
+  - "We discovered PR #31558/#29007/#31438 improvements."     # these are upstream-reproduced
+  - "config_agent / Stage A scoring is an LLM Agent."         # rule-based
+  - "MoE top-k reduction gives free speedup."                 # v17 speedup misleading (output length confound), accuracy drops

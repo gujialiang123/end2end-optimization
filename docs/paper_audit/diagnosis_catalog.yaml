@@ -1,0 +1,289 @@
+# Diagnosis catalog — end2end-optimization repository evidence audit
+# Diagnosis strength: D0 hypothesis-only / D1 profile-log-code / D2 +intervention / D3 +intervention+revert/control
+# Audit commit: 100ba9f6434c92779fbe7431161f820045cd5c54  branch: main  date: 2026-07-23
+
+diagnoses:
+  - diagnosis_id: D01
+    initial_symptom: "R_scheduler_tail ttft_p95 = 2282.48 ms (1512% worse than nearest neighbor)"
+    issue_status: real_issue
+    root_cause_layer: scheduler   # also configuration
+    component: "request admission / max-running-requests"
+    proposed_mechanism: "admission cap too low -> requests queue -> tail latency explodes (load-shed concurrency)"
+    affected_regimes: [R_scheduler_tail, prefill_long]
+    unaffected_regimes: [short_in_short_out_control, low-concurrency neighbors]
+    supporting_evidence:
+      - "experiments/problems_moe/P001/problem.json (symptom)"
+      - "experiments/problems_moe/P001/classification.json (concurrency_capped)"
+      - "experiments/problems_moe/P001/attempts/attempt_00{1,2,3}/decision.json"
+      - "experiments/problems_moe/P001/solution.md (ttft_p95 2282->168.7, +92.6%)"
+    counter_evidence: "none; neighbors small-change, controls no-regression"
+    missing_evidence: "explicit revert arm (set cap back to default, confirm symptom returns)"
+    recommended_intervention: "raise max-running-requests to 64 (also 96/128 equivalent)"
+    intervention_executed: true
+    intervention_result: "ttft_p95 2282.48 -> 168.68 ms (+92.6%), also_solved prefill_long +79.7%"
+    reverted: false
+    neighbor_control: "target + neighbors(con16/con32) + control(short_in_short_out) all present"
+    diagnosis_strength: D2  # D3 if revert arm added
+    confidence: high
+    manual_validation: "P2 in queue: cap=32 vs 64 + revert; pass if cap64 -%90 and revert restores ~2282"
+    paper_value: "STRONGEST causal-chain incident; admission-capacity mismatch; config-agent intervention + neighbors/controls"
+
+  - diagnosis_id: D02
+    initial_symptom: "autotuning reports '5-9x' speedup on Qwen3-30B-A3B"
+    issue_status: measurement_artifact
+    root_cause_layer: measurement
+    component: "baseline definition (cudagraph enablement)"
+    proposed_mechanism: "the '5-9x' baseline was measured with CUDA graph OFF; the framework default runs CUDA graph ON. Comparing tuned(cg-on) to a crippled(cg-off) baseline manufactures a fake speedup."
+    affected_regimes: [R_short_decode, R_medium_balanced, R_long_prefill, R_concurrent_decode]
+    unaffected_regimes: []
+    supporting_evidence:
+      - "docs/2026-06-25/autotuning_honest_results.md:85-103 (3-baseline table)"
+      - "results/2026-06-25_autotuning/cross_regime_matrix.json"
+      - "conflict with docs/2026-06-11/harness_v1_4way_findings.md headline"
+    counter_evidence: "vs real default (cg-on), Optuna best is only 0.95-1.05x (within 1-2% noise); R_concurrent best is SLOWER"
+    missing_evidence: "a clean single-variable cg-on vs cg-off A/B on identical config, n>=5"
+    recommended_intervention: "re-measure with framework-actual default (cudagraph on) as baseline"
+    intervention_executed: true
+    intervention_result: "speedup collapses to 0.95-1.05x (noise)"
+    reverted: n/a
+    neighbor_control: "all 4 regimes compared under both baselines"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "P1 in queue: cg-on vs cg-off same config n>=5; pass if cg-off >5x slower p<0.01"
+    paper_value: "CORNERSTONE false-positive-rejection case; wrong baseline manufactures speedup"
+
+  - diagnosis_id: D03
+    initial_symptom: "custom M=1 MoE kernel isolated 1.23x, expected e2e win"
+    issue_status: real_issue   # real but tiny; original overclaim was artifact
+    root_cause_layer: gpu_kernel
+    component: "fused_experts / MoE decode path"
+    proposed_mechanism: "MoE is only ~41% of decode step and step is memory-bound; cudagraph hides launch savings; so isolated kernel speedup does not scale to e2e"
+    affected_regimes: [decode b1]
+    unaffected_regimes: [decode b2, b4 - regression]
+    supporting_evidence:
+      - "results/2026-07-20_v41_noise/summary.json (b1 +1.17% t=6.51)"
+      - "docs/2026-07-20/noise_verification_custom_moe_b1.md"
+      - "results/2026-07-20_v33_decode_audit (MoE 41% of decode)"
+    counter_evidence: "b2 -4.29% (t=3.17), b4 -11.74% (t=9.92) real regressions"
+    missing_evidence: "more kernel classes (attn/dense) to generalize"
+    recommended_intervention: "plug custom kernel into sglang decode, run n=15 interleaved A/B + Welch t"
+    intervention_executed: true
+    intervention_result: "b1 +1.17% real but tiny; b>=2 net negative"
+    reverted: false
+    neighbor_control: "b1/b2/b4 batch sweep serve as controls"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "P4 in queue: repeat on 1-2 more kernel types"
+    paper_value: "micro->e2e non-transfer, t-tested; paired micro(1.23x)+e2e(1.17%)"
+
+  - diagnosis_id: D04
+    initial_symptom: "disagreement on whether decode or prefill is the bottleneck"
+    issue_status: real_issue
+    root_cause_layer: workload
+    component: "prefill vs decode phase share of wall-clock"
+    proposed_mechanism: "bottleneck is regime-dependent: in:out ratio and concurrency determine whether prefill or decode dominates wall-clock"
+    affected_regimes: "decode-heavy/agent (decode 83-99%), long-context prefill (prefill 55-89%)"
+    unaffected_regimes: []
+    supporting_evidence:
+      - "results/2026-07-20_v43_server_e2e/ (TTFT vs E2E-TTFT split)"
+      - "results/2026-07-22_v50_ncu_roofline/roofline_summary.csv (decode DRAM 87.9-89.8%, prefill compute 64.5-67.4%)"
+      - "docs/2026-07-22/prefill_vs_decode_bottleneck_report.md"
+      - "results/2026-07-15_v19_wall_sweep (decode 88-96% in short-in-long-out)"
+    counter_evidence: "long-context bench shows prefill dominant (nsys), reconciled as different regime"
+    missing_evidence: "cross-model confirmation (currently Qwen3/LFM2.5 mostly)"
+    recommended_intervention: "measure prefill/decode wall split per regime (done)"
+    intervention_executed: true
+    intervention_result: "confirmed regime-dependent shift; no single global bottleneck"
+    reverted: n/a
+    neighbor_control: "8 regimes + agent trace span the spectrum"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "sufficient; optional cross-model"
+    paper_value: "bottleneck-shift; reconciles apparent contradiction (nsys prefill vs our decode-bound)"
+
+  - diagnosis_id: D05
+    initial_symptom: "re-tuning fused_moe config for uncovered shape expected to help"
+    issue_status: real_issue   # real finding: it does NOT help
+    root_cause_layer: configuration
+    component: "fused_moe triton config"
+    proposed_mechanism: "the framework's fallback config (triton_3_2_0) for this shape is already near-optimal; re-tuning to the current triton version adds nothing e2e"
+    affected_regimes: "all (decode + prefill)"
+    unaffected_regimes: []
+    supporting_evidence:
+      - "results/2026-07-19_v23 (ours vs fallback +0.6% isolated)"
+      - "results/2026-07-20_v44_retune_e2e_ab/e2e_ab.jsonl (~0 one-batch)"
+      - "results/2026-07-21_v45_server_ours_vs_fallback/server_ab.jsonl (~0 server+agent)"
+    counter_evidence: "tiny regressions only (decode b1 -1.64%, prefill 1024 -2.75%)"
+    missing_evidence: "one more uncovered shape to generalize"
+    recommended_intervention: "put ours config in version dir, A/B vs actual fallback, n>=8 + t"
+    intervention_executed: true
+    intervention_result: "~0 across three measurement layers"
+    reverted: "removing ours config returns to fallback"
+    neighbor_control: "all regimes; three-layer (isolated/one-batch/server)"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "P5 in queue"
+    paper_value: "retune-covered-shape is a no-op e2e; strongest baseline used"
+
+  - diagnosis_id: D06
+    initial_symptom: "single-stream GPU busy only 14-19%"
+    issue_status: real_issue
+    root_cause_layer: scheduler   # + workload
+    component: "serving loop / request inter-arrival"
+    proposed_mechanism: "single-stream leaves GPU idle between requests (queueing/scheduling), distinct from per-kernel SM idle"
+    affected_regimes: [single-stream, low-concurrency]
+    unaffected_regimes: [high-concurrency/multi-stream]
+    supporting_evidence:
+      - "results/2026-07-10_v9d_nsys (idle 81-86%)"
+      - "results/2026-07-15_v11b2_multistream (util 13->32%, tput 1087->8062 tok/s)"
+      - "results/2026-07-14_v10_load_sweep (throughput 3.3-4.4x with load)"
+    counter_evidence: "per-kernel No-Eligible (SM idle) is a separate 50-90% gap not recovered by load (v9b)"
+    missing_evidence: "clean revert (lower concurrency, confirm idle returns)"
+    recommended_intervention: "raise concurrency / multi-stream"
+    intervention_executed: true
+    intervention_result: "util and throughput rise with load"
+    reverted: false
+    neighbor_control: "concurrency 1/2/4/8 sweep"
+    diagnosis_strength: D2
+    confidence: medium-high
+    manual_validation: "P7 in queue: concurrency 1->8->1 idle curve, expect reversible"
+    paper_value: "serving-layer idle distinct from kernel idle"
+
+  - diagnosis_id: D07
+    initial_symptom: "claim that n-gram spec decoding 'fills idle SM'"
+    issue_status: measurement_artifact   # misattribution of mechanism
+    root_cause_layer: algorithm_or_decoding
+    component: "speculative decoding forward passes"
+    proposed_mechanism: "spec decoding reduces the NUMBER of forward passes (verify multiple tokens per pass), NOT the per-kernel SM idle rate"
+    affected_regimes: [decode conc32]
+    unaffected_regimes: []
+    supporting_evidence:
+      - "results/2026-07-15_v12_ncu_spec/{baseline,ngram}/ncu_raw.csv (No-Eligible 77.5%->78.0% unchanged)"
+      - "docs/2026-07-15/v12_ncu_spec_mechanism.md"
+    counter_evidence: "v11 report phrased it as 'uses idle SM'; contradicted by v12 NCU"
+    missing_evidence: "intervention varying batch/concurrency to show TPOT drops while SM idle constant"
+    recommended_intervention: "NCU compare baseline vs ngram (done)"
+    intervention_executed: true
+    intervention_result: "SM idle unchanged; mechanism = fewer passes"
+    reverted: n/a
+    neighbor_control: "baseline vs ngram"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "P6 in queue"
+    paper_value: "mechanism misattribution correction; profile refutes intuitive story"
+
+  - diagnosis_id: D08
+    initial_symptom: "config tuned on synthetic regime should transfer to real load"
+    issue_status: real_issue   # it does not transfer
+    root_cause_layer: workload
+    component: "config vs real workload distribution"
+    proposed_mechanism: "synthetic-regime optimum (e.g. flashinfer_cutlass+fcfs) does not match real agent-trace distribution; worst on real load"
+    affected_regimes: [toolagent, shared_prefix]
+    unaffected_regimes: [synthetic prefill regimes]
+    supporting_evidence:
+      - "results/2026-07-09_v7_config_sweep/ + docs/2026-07-09/v7_config_sweep_on_agentic.md"
+      - "results/2026-07-09_v8_tuning (max-running-requests dominant on real load)"
+    counter_evidence: "CONFLICT: v7 said chunked8192 wins; v8 corrected to max-running-requests"
+    missing_evidence: "controlled synthetic-vs-real A/B on identical knob grid"
+    recommended_intervention: "re-tune on real trace"
+    intervention_executed: true
+    intervention_result: "real-load optimum differs from synthetic"
+    reverted: n/a
+    neighbor_control: "synthetic vs real datasets"
+    diagnosis_strength: D2
+    confidence: medium
+    manual_validation: "optional"
+    paper_value: "config transfer failure; workload-representativeness matters"
+
+  - diagnosis_id: D09
+    initial_symptom: "each new image resolution incurs ~70ms extra TTFT stall (VLM)"
+    issue_status: real_issue
+    root_cause_layer: runtime_jit_cache
+    component: "FLA l2norm Triton kernel (T: tl.constexpr)"
+    proposed_mechanism: "T as tl.constexpr specializes the kernel per token-count -> N distinct cubins compiled; each new resolution triggers a fresh Triton compile stall"
+    affected_regimes: [VLM cold-start, dynamic resolution]
+    unaffected_regimes: [fixed resolution, warm cache]
+    supporting_evidence:
+      - "results/2026-07-21_v46_l2norm_recompile/microbench.jsonl (baseline 10 compiled, patched 0)"
+      - "results/2026-07-21_v47_pr31558_server/server_ab_coldcache.jsonl (TTFT 4.005->3.454s, -13.7%, t=20.9)"
+      - "patches/pr31558_upstream_42a058c.patch"
+    counter_evidence: "fixed single-shape control ~0; warm Triton cache hides effect"
+    missing_evidence: "more resolutions + explicit revert (restore constexpr)"
+    recommended_intervention: "do_not_specialize=['T'] (upstream PR #31558)"
+    intervention_executed: true
+    intervention_result: "cold first-pass TTFT -13.7%; per-resolution stall avoided"
+    reverted: "control arm = stock l2norm.py (constexpr) is effectively the revert"
+    neighbor_control: "cold vs warm cache; fixed vs varying resolution"
+    diagnosis_strength: D3
+    confidence: high
+    manual_validation: "P3 in queue: >=8 resolutions cold, pass if cold -10% p<0.01 and fixed ~0"
+    paper_value: "cold-start/JIT-cache confound requires cache-controlled A/B; upstream PR"
+
+  - diagnosis_id: D10
+    initial_symptom: "VLM burst throughput limited under concurrency"
+    issue_status: real_issue
+    root_cause_layer: cpu_preprocessing
+    component: "multimodal tokenizer / preprocessing event loop"
+    proposed_mechanism: "serial preprocessing on the tokenizer event loop is the CPU critical path under burst; parallel worker pools relieve it"
+    affected_regimes: [VLM burst 16/4/c8, 32/4/c16]
+    unaffected_regimes: [low concurrency]
+    supporting_evidence:
+      - "results/2026-07-21_v49_pr31438_mm_preproc/ab.jsonl, analysis_full.txt"
+      - "correctness: baseline==patched True (bit-exact)"
+    counter_evidence: "4 workers HURT (-4.9%); only 2 workers help"
+    missing_evidence: "explicit revert arm; CPU profile of the critical path"
+    recommended_intervention: "parallel preprocessing worker pool (upstream PR #31438, 2 workers)"
+    intervention_executed: true
+    intervention_result: "+14.5% throughput (c8), +8.5% (c16), bit-exact"
+    reverted: false
+    neighbor_control: "2w vs 4w vs baseline; correctness control"
+    diagnosis_strength: D3
+    confidence: high
+    manual_validation: "P8 in queue"
+    paper_value: "cpu-preprocessing layer routing; upstream PR; bit-exact"
+
+  - diagnosis_id: D11
+    initial_symptom: "DeepSeek-V4 TPOT higher than expected under TP8"
+    issue_status: real_issue
+    root_cause_layer: communication
+    component: "MoE TP allreduce output allocation"
+    proposed_mechanism: "MoE output not using symmetric-memory allocation -> slower allreduce collective"
+    affected_regimes: [TP8 concurrency 1/8/16]
+    unaffected_regimes: []
+    supporting_evidence:
+      - "results/2026-07-21_v48_dsv4_pr29007/ab.jsonl (TPOT 6.92->6.33ms +9.2%, E2E +10.6%)"
+      - "docs/2026-07-21/pr29007_dsv4_symm_mem_allreduce_repro.md"
+    counter_evidence: "none; identical configs"
+    missing_evidence: "bit-exact A/B; explicit revert; NCCL/collective profile"
+    recommended_intervention: "symm-mem allocation for MoE output (upstream PR #29007)"
+    intervention_executed: true
+    intervention_result: "TPOT +9.2%, E2E +10.6%, persists c8/c16"
+    reverted: false
+    neighbor_control: "concurrency 1/8/16"
+    diagnosis_strength: D2
+    confidence: medium-high
+    manual_validation: "add bit-exact + collective profile"
+    paper_value: "communication-layer routing; upstream PR; multi-GPU"
+
+  - diagnosis_id: D12
+    initial_symptom: "LFM2.5 NCU profiling crashes / gives no valid kernels"
+    issue_status: measurement_artifact
+    root_cause_layer: measurement
+    component: "profiling harness (transformers path)"
+    proposed_mechanism: "transformers-wrapped inference does not exercise the same kernels as sglang; profiling it yields invalid conclusions about sglang"
+    affected_regimes: [LFM2.5 NCU]
+    unaffected_regimes: [sglang bench_one_batch NCU (v6)]
+    supporting_evidence:
+      - "results/2026-07-08_v5b_ncu/ (crashed)"
+      - "docs/2026-07-08/v6_ncu_sglang_experiment_report.md:12-20,160-163 (correction)"
+    counter_evidence: "v6 real-sglang NCU works and gives valid memory-bound conclusion"
+    missing_evidence: "none"
+    recommended_intervention: "profile real sglang bench_one_batch instead"
+    intervention_executed: true
+    intervention_result: "v6 valid; v5b invalid discarded"
+    reverted: n/a
+    neighbor_control: "v5b vs v6"
+    diagnosis_strength: D2
+    confidence: high
+    manual_validation: "n/a (resolved)"
+    paper_value: "tool-misuse false diagnosis; measurement-path validity"

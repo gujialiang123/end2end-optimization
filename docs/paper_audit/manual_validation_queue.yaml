@@ -1,0 +1,135 @@
+# Manual validation priority queue — end2end-optimization
+# Priority = paper_value x information_gain / experiment_cost
+# Audit commit: 100ba9f6434c92779fbe7431161f820045cd5c54  date: 2026-07-23
+# NOTE: this audit did NOT run any of these; commands are templates only.
+
+queue:
+  - priority: P1
+    diagnosis_id: D02
+    title: "Wrong-baseline artifact: clean cudagraph-on vs cudagraph-off A/B"
+    current_evidence: "docs/2026-06-25/autotuning_honest_results.md 3-baseline table (5-9x collapses to 0.95-1.05x)"
+    missing_evidence: "single-variable cg-on vs cg-off A/B on identical config, n>=5, with t-test"
+    minimal_experiment: "same server config, only toggle --disable-cuda-graph; 4 regimes; n=5 each"
+    target: "cg-off arm significantly slower than cg-on"
+    neighbors: "all 4 regimes"
+    controls: "cg-on repeated runs stable within noise"
+    revert: "re-enable cuda graph -> throughput restored"
+    expected_result: "cg-off is 5-9x slower (reproduces the artifact source)"
+    pass_fail: "PASS if cg-off/cg-on ratio > 5x on >=1 regime with p<0.01; FAIL if within 2x"
+    cost: low   # 1 model, 4 regimes, single knob
+    paper_value: high
+    reusable_command: "scripts/run_experiment.py / harness/run_bench.py with two specs differing only in disable-cuda-graph"
+
+  - priority: P2
+    diagnosis_id: D01
+    title: "Admission-capacity mismatch: cap sweep + revert"
+    current_evidence: "experiments/problems_moe/P001 (cap64 +92.6%, neighbors/controls present)"
+    missing_evidence: "explicit revert arm proving symptom returns at default cap"
+    minimal_experiment: "R_scheduler_tail: cap=default vs cap=64 vs revert-to-default; n=3 each"
+    target: "ttft_p95 drops >90% at cap=64"
+    neighbors: "scheduler_overhead con16/con32 (small change)"
+    controls: "short_in_short_out (no regression)"
+    revert: "set cap back to default -> ttft_p95 returns to ~2282ms"
+    expected_result: "cap64 -%90; revert restores symptom; neighbors small; control unchanged"
+    pass_fail: "PASS if cap64 improves >90% AND revert restores >=80% of original tail AND control within noise; else FAIL"
+    cost: low
+    paper_value: high
+    reusable_command: "scripts/solver/config_agent.py --problem experiments/problems_moe/P001 --strategy S001 --exhaustive"
+
+  - priority: P3
+    diagnosis_id: D09
+    title: "l2norm JIT recompile: cold-cache multi-resolution A/B + revert"
+    current_evidence: "v46 microbench (10->0 compiled), v47 cold TTFT -13.7% (t=20.9)"
+    missing_evidence: "more resolutions + explicit constexpr-restore revert arm"
+    minimal_experiment: ">=8 image resolutions, cold TRITON_CACHE_DIR, baseline(constexpr) vs patched(do_not_specialize) vs revert"
+    target: "cold first-pass total TTFT reduced >10%"
+    neighbors: "fixed single resolution"
+    controls: "warm cache (both arms equal); steady-state"
+    revert: "restore T: tl.constexpr -> recompile stalls return"
+    expected_result: "cold multi-res -10% p<0.01; fixed-resolution ~0; warm ~0"
+    pass_fail: "PASS if cold multi-res >10% p<0.01 AND fixed-resolution within noise; FAIL otherwise"
+    cost: medium   # VLM, cold cache setup
+    paper_value: high
+    reusable_command: "scripts/run_v47_pr31558_server_ab.py (must clear TRITON_CACHE_DIR)"
+
+  - priority: P4
+    diagnosis_id: D03
+    title: "micro->e2e non-transfer generalization to more kernels"
+    current_evidence: "v41 custom MoE b1 +1.17% (t=6.51) vs isolated 1.23x"
+    missing_evidence: "same pattern on attention/dense kernels"
+    minimal_experiment: "pick 1-2 kernels with isolated >10% speedup; measure isolated + e2e n>=8"
+    target: "e2e gain << isolated gain"
+    neighbors: "b1/b2/b4"
+    controls: "unpatched baseline"
+    revert: "disable patch"
+    expected_result: "isolated >10% but e2e <3%"
+    pass_fail: "PASS if isolated>10% and e2e<3% with CI excluding isolated value; FAIL if e2e ~ isolated"
+    cost: medium
+    paper_value: medium-high
+    reusable_command: "scripts/run_v41_noise_verify.py (adapt kernel)"
+
+  - priority: P5
+    diagnosis_id: D05
+    title: "retune-covered-shape no-op on a new uncovered shape"
+    current_evidence: "v44/v45 three-layer ~0 on Qwen3-30B shape"
+    missing_evidence: "one additional uncovered shape to generalize"
+    minimal_experiment: "tune fused_moe config for a 2nd uncovered shape; server A/B ours vs fallback n=3 + t"
+    target: "|delta| < 2% all regimes"
+    neighbors: "all regimes"
+    controls: "fallback config"
+    revert: "remove ours config -> fallback"
+    expected_result: "~0 e2e"
+    pass_fail: "PASS if |delta|<2% all regimes (confirms no-op); FAIL if any regime >2% consistent"
+    cost: medium   # includes tuning wall-time
+    paper_value: medium-high
+    reusable_command: "scripts/run_v45_server_ours_vs_fallback.py + analyze_v45_server_ab.py"
+
+  - priority: P6
+    diagnosis_id: D07
+    title: "spec-decoding mechanism: TPOT drop without SM-idle change"
+    current_evidence: "v12 No-Eligible 77.5->78.0% unchanged"
+    missing_evidence: "intervention across concurrency showing decoupling"
+    minimal_experiment: "baseline vs ngram at conc 8/16/32; record TPOT + NCU No-Eligible"
+    target: "TPOT drops but No-Eligible constant"
+    neighbors: "baseline vs ngram"
+    controls: "accept-length reported"
+    revert: "disable spec"
+    expected_result: "TPOT < baseline while SM idle unchanged (mechanism = fewer passes)"
+    pass_fail: "PASS if TPOT improves AND No-Eligible delta <2pp; FAIL if SM idle drops materially"
+    cost: medium
+    paper_value: medium
+    reusable_command: "scripts/run_v11a1b_ngram + run_v12 NCU"
+
+  - priority: P7
+    diagnosis_id: D06
+    title: "serving idle reversibility under concurrency"
+    current_evidence: "v9d idle 81-86%, v11b2 util 13->32%"
+    missing_evidence: "clean reversible sweep 1->8->1"
+    minimal_experiment: "concurrency 1,2,4,8 then back to 1; nsys/util each"
+    target: "idle decreases monotonically with concurrency"
+    neighbors: "n/a"
+    controls: "return to conc1 restores idle"
+    revert: "lower concurrency"
+    expected_result: "idle reversible and monotone in concurrency"
+    pass_fail: "PASS if idle monotone-decreasing and reversible; FAIL if hysteresis/non-monotone"
+    cost: medium
+    paper_value: medium
+    reusable_command: "scripts/run_v9d_nsys_serveridle.sh + run_v10 load sweep"
+
+  - priority: P8
+    diagnosis_id: D10
+    title: "mm preprocessing parallel: add revert + CPU profile"
+    current_evidence: "v49 +14.5% bit-exact, 2w best"
+    missing_evidence: "explicit revert arm + CPU critical-path profile"
+    minimal_experiment: "serial vs 2w vs revert-to-serial; py-spy/CPU profile of preprocessing"
+    target: "burst throughput +>10% with 2w"
+    neighbors: "2w vs 4w"
+    controls: "bit-exact correctness"
+    revert: "restore serial preprocessing"
+    expected_result: "+>10%, bit-exact, revert removes gain"
+    pass_fail: "PASS if 2w >10% and bit-exact and revert removes gain; FAIL otherwise"
+    cost: medium   # VLM
+    paper_value: medium-high
+    reusable_command: "scripts/run_v49_pr31438_* "
+
+recommendation: "Do P1 + P2 first: lowest cost, highest paper value, replayable/light GPU. They cement the two cornerstone claims (wrong-baseline artifact, admission-capacity intervention)."
