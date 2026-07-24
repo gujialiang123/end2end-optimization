@@ -59,3 +59,9 @@ logs/
 *.trace.json.gz
 results/2026-07-21_v46_retune/ab/fallback_cfgdir/
 results/2026-07-23_high_concurrency_ttft_rerun/*/*/C*_rep*.json
+
+# serving-ceiling campaign: bulky raw artifacts (per-request parquet is kept)
+results/2026-07-24_serving_ceiling/raw/**/*.jsonl
+results/2026-07-24_serving_ceiling/raw/**/server.log
+results/_smoke_serving_ceiling/
+logs/serving_ceiling/

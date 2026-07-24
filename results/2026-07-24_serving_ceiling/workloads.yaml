@@ -1,0 +1,24 @@
+# Frozen canonical workload suite for 2026-07-24_serving_ceiling
+# Unified streaming client: sglang.bench_serving --output-details
+seed: 20260724
+client: sglang.bench_serving
+streaming: true
+workloads:
+  R_short_decode:
+    note: "synthetic: in~100 tok, out 256, conc 1, n 8 (v4 R_short_decode)"
+    bench_serving_args: ["--dataset-name", "random-ids", "--random-input-len", "100", "--random-output-len", "256", "--random-range-ratio", "1.0", "--num-prompts", "8", "--max-concurrency", "1"]
+  R_medium_balanced:
+    note: "synthetic: in~800 tok, out 256, conc 8, n 16 (v4 R_medium_balanced)"
+    bench_serving_args: ["--dataset-name", "random-ids", "--random-input-len", "800", "--random-output-len", "256", "--random-range-ratio", "1.0", "--num-prompts", "16", "--max-concurrency", "8"]
+  R_long_prefill:
+    note: "synthetic: in~4000 tok, out 32, conc 4, n 4 (v4 R_long_prefill)"
+    bench_serving_args: ["--dataset-name", "random-ids", "--random-input-len", "4000", "--random-output-len", "32", "--random-range-ratio", "1.0", "--num-prompts", "4", "--max-concurrency", "4"]
+  R_concurrent_decode:
+    note: "synthetic: in~200 tok, out 256, conc 32, n 32 (v4 R_concurrent_decode)"
+    bench_serving_args: ["--dataset-name", "random-ids", "--random-input-len", "200", "--random-output-len", "256", "--random-range-ratio", "1.0", "--num-prompts", "32", "--max-concurrency", "32"]
+  shared_prefix:
+    note: "agentic: 8 groups x16, sys 2048 / q 128 / out 256 (v7 shared_prefix)"
+    bench_serving_args: ["--dataset-name", "generated-shared-prefix", "--gsp-num-groups", "8", "--gsp-prompts-per-group", "16", "--gsp-system-prompt-len", "2048", "--gsp-question-len", "128", "--gsp-output-len", "256", "--max-concurrency", "64"]
+  tool_agent:
+    note: "agentic: mooncake toolagent trace, n 200 (v7 toolagent)"
+    bench_serving_args: ["--dataset-name", "mooncake", "--mooncake-workload", "toolagent", "--num-prompts", "200", "--max-concurrency", "64"]

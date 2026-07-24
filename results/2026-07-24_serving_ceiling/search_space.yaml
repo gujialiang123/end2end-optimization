@@ -1,0 +1,15 @@
+# Serving-only search space (4 knobs, full grid)
+sampler: optuna.samplers.GridSampler (full enumeration, deterministic order)
+seed: 20260724
+knobs:
+  cap: [8, 16, 24, 32, 48, 64, 96, 128]
+  chunk: [-1, 2048, 8192]
+  policy: ["lpm", "fcfs"]
+  mem: [0.75, 0.8, 0.85, 0.9]
+total_configurations: 192
+warm_start: none
+knob_to_server_arg:
+  cap: --max-running-requests
+  chunk: --chunked-prefill-size
+  policy: --schedule-policy
+  mem: --mem-fraction-static

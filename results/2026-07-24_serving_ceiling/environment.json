@@ -1,0 +1,56 @@
+{
+  "campaign": "2026-07-24_serving_ceiling",
+  "git_sha": "915f636bd02c107d33ef5fdad1779dbd2db5c612",
+  "git_branch": "main",
+  "host": "aifx-clou00000M",
+  "gpu_model": "NVIDIA H200",
+  "gpu_uuids": [
+    "0, GPU-c1593c4e-0f5f-7bf7-3567-6c3c19703afd",
+    "1, GPU-dbecbd7a-fcd4-7a20-89f1-a897e52339b7",
+    "2, GPU-b5c13b89-03ad-e3f7-6715-fb1e3d54caab",
+    "3, GPU-38eac315-6ffb-8cb1-c68f-521767e9ba3e",
+    "4, GPU-68170cb3-c9ea-a588-7558-ae82635d9173",
+    "5, GPU-50a5b4b6-74d9-f89d-32c7-1908ca1a161b",
+    "6, GPU-1106bd41-73d7-bb34-0b96-02922e019661",
+    "7, GPU-0e70e969-bbfc-80c5-d582-88be134632ea"
+  ],
+  "driver": "580.105.08",
+  "cuda_toolkit": "Cuda compilation tools, release 12.8, V12.8.93",
+  "python": "Python 3.11.15",
+  "torch": "2.9.1+cu128",
+  "torch_cuda": "12.8",
+  "triton": "3.5.1",
+  "flashinfer": "0.6.3",
+  "sglang_version": "0.5.12.post1",
+  "sglang_src": "/home/t-jialianggu/work/sglang/python/sglang",
+  "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+  "optuna": "4.9.0",
+  "models": {
+    "qwen": {
+      "path": "/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
+      "dtype": "bfloat16",
+      "tp": 1
+    },
+    "lfm25": {
+      "path": "/data/hf/LFM2.5-8B-A1B",
+      "dtype": "bfloat16",
+      "tp": 1,
+      "extra_args": [
+        "--max-prefill-tokens",
+        "16384"
+      ]
+    }
+  },
+  "fixed_execution_path": {
+    "gpus_used": "H200 x1 per worker (workers on GPU 4,5,6)",
+    "tensor_parallel_size": 1,
+    "context_length": 8192,
+    "moe_runner_backend": "auto (resolves to triton on H200 SM90)",
+    "attention_backend": "auto (resolves to fa3, verified in server log)",
+    "cuda_graph": "enabled (disable_cuda_graph=False, capture verified)",
+    "schedule_conservativeness": 1.0,
+    "trust_remote_code": true
+  },
+  "benchmark_client": "sglang.bench_serving (streaming, --output-details)",
+  "seed": 20260724
+}
