@@ -189,6 +189,18 @@ def process_task(model, cfg, gpu, port, outroot, reps, worker, dbpath, keep_raw)
     p, argv = L.launch_server(model, cfg, gpu, port, log_path)
     ok, info = L.wait_health(p, port, t=700)
     if not ok:
+        # infrastructure failure (e.g. SIGKILL during load): retry once
+        L.kill_server(p)
+        L.wait_port_free(port, 120)
+        L.wait_gpu_free(gpu, need_free_mib=110000, t=240)
+        append_csv(failures_csv, dict(model=model, config_id=cfg["config_id"],
+                   hash=cfg["hash"], stage="launch-attempt1", cause=str(info)),
+                   ["model", "config_id", "hash", "stage", "cause"])
+        print(f"[{worker}] launch retry for {tag} ({info})", flush=True)
+        time.sleep(20)
+        p, argv = L.launch_server(model, cfg, gpu, port, log_path)
+        ok, info = L.wait_health(p, port, t=700)
+    if not ok:
         L.kill_server(p); L.wait_port_free(port, 120)
         append_csv(failures_csv, dict(model=model, config_id=cfg["config_id"],
                    hash=cfg["hash"], stage="launch", cause=str(info)),
