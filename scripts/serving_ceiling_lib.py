@@ -92,17 +92,19 @@ WORKLOADS = {
 
 # Unscored warm-up passes per workload, run before the scored repetitions.
 # Short workloads are dominated by first-touch effects (Triton JIT, radix-cache
-# population): R_long_prefill runs for only ~0.33 s with 4 requests and was
+# population): R_long_prefill runs for only ~0.3 s with 4 requests and was
 # measured drifting +36.5 % between the first and fifth scored repetition, while
-# the long agentic traces (~40 s) drift < 1 %. Warm-up count is therefore scaled
-# to the measurement window rather than applied uniformly.
+# the long agentic trace (~42 s) drifts < 1 % and needs no warm-up at all.
+# Warm-up is therefore budgeted by measurement window, not applied uniformly:
+# cheap short workloads get several passes, expensive already-steady ones get
+# none, which keeps the warm-up cost far below the scored cost.
 WARMUP_RUNS = {
-    "R_short_decode": 1,
-    "R_medium_balanced": 2,
-    "R_long_prefill": 4,
-    "R_concurrent_decode": 2,
-    "shared_prefix": 2,
-    "tool_agent": 1,
+    "R_short_decode": 1,        # ~7 s/run, drift 0.9 %
+    "R_medium_balanced": 2,     # ~3 s/run, drift 2.1 %
+    "R_long_prefill": 4,        # ~0.3 s/run, drift 36.5 % -> needs the most
+    "R_concurrent_decode": 2,   # ~5 s/run, drift 1.5 %
+    "shared_prefix": 1,         # ~20 s/run, one pass populates the radix cache
+    "tool_agent": 0,            # ~42 s/run, drift 0.7 % -> already steady state
 }
 
 
