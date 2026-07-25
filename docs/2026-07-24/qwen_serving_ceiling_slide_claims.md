@@ -61,31 +61,35 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
 * **Slide:** 5
 * **Source:** `results/2026-07-24_serving_ceiling/summary_matrix.csv`, rows
   `R_medium_balanced` and `R_long_prefill`, column `d_request_throughput`
-* **Values:** LFM2.5 +1.1 % / +0.5 %; Qwen +0.7 % / +0.5 %. Supporting columns:
-  `pct_dominated_by_cookbook` = 90.1 % / 97.9 % (LFM) and 69.8 % / 97.9 % (Qwen).
+* **Values (warmed coverage):** the saturated regimes are `short decode`,
+  `concurrent decode` and `tool agent`: LFM2.5 +0.4 % / +1.6 % / +0.4 %; Qwen
+  +0.8 % / +0.8 % / +0.2 %. Supporting column `pct_dominated_by_cookbook` =
+  79.7 % (LFM concurrent decode) and 52.1 % (Qwen concurrent decode).
 * **Calculation:** best of 192 configurations divided by cookbook, minus 1.
 * **Limitation:** coverage-pass values are single measurements; the ±1 % figure
   is inside the noise band, which is exactly the point — it is reported as
   **FLAT / inconclusive**, not as a gain. Validation repeats confirm the band.
 * **Type:** direct evidence.
 
-## C5 — "Where it is mismatched, the cliff is large: shared-prefix +78.6 % (LFM2.5) / +27.7 % (Qwen)"
+## C5 — "Where it is mismatched, the cliff is large: shared-prefix +94.1 % (LFM2.5) / +25.5 % (Qwen)"
 
 * **Slide:** 5
 * **Source:** `summary_matrix.csv`, row `shared_prefix`
-* **Values:** `d_request_throughput` 0.786 / 0.277; `d_ttft_p95` 0.840 / 0.796;
-  `d_tpot_p95` −0.215 / −0.317.
-* **Winning knobs:** `cap96 · chunk2048 · lpm · mem0.90` (LFM) and
-  `cap96 · chunk2048 · fcfs · mem0.90` (Qwen).
+* **Values:** `d_request_throughput` 0.941 / 0.255; `d_ttft_p95` 0.948 / 0.847;
+  `d_tpot_p95` −0.038 / −0.462. `long_prefill` is a second cliff:
+  +77.5 % / +19.7 %.
+* **Winning knobs:** `cap96 · chunk2048 · lpm · mem0.75` (LFM) and
+  `cap128 · chunk8192 · lpm · mem0.75` (Qwen).
 * **Limitation:** **this is a multi-knob configuration.** It must not be
-  described as "chunked prefill gives +78.6 %". Both winners raise the admission
-  cap from 32 to 96 *and* set chunking to 2048 *and* raise the memory fraction.
+  described as "chunked prefill gives +94.1 %". Both winners raise the admission
+  cap above the cookbook's 32 *and* change chunking *and* change the memory
+  fraction.
 * **Type:** direct evidence.
 
 ## C6 — "The shared-prefix winner is a trade-off, not a free win"
 
 * **Slide:** 5
-* **Source:** same row; `d_tpot_p95` = −21.5 % (LFM) and −31.7 % (Qwen)
+* **Source:** same row; `d_tpot_p95` = −3.8 % (LFM) and **−46.2 %** (Qwen)
 * **Calculation:** classification rule — one primary metric improves
   (throughput, TTFT p95) while another worsens (TPOT p95) ⇒ TRADE-OFF.
 * **Limitation:** a trade-off is only claimed because both directions are large
@@ -93,11 +97,12 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
   trade-offs.
 * **Type:** direct evidence.
 
-## C7 — "Honest negative: the LFM tool-agent throughput winner gains +0.5 % and costs 82.6 % of TPOT p95"
+## C7 — "Honest negative: the tool-agent throughput winner gains ~0 % and wrecks TPOT p95"
 
 * **Slide:** 5
 * **Source:** `summary_matrix.csv`, row `tool_agent`, model `lfm25`
-* **Values:** `d_request_throughput` +0.0046, `d_tpot_p95` −0.826 ⇒ REGRESSION.
+* **Values:** LFM `d_request_throughput` +0.0045 with `d_tpot_p95` −2.21;
+  Qwen +0.0024 with `d_tpot_p95` −0.380 ⇒ REGRESSION on both models.
 * **Limitation:** this is the *throughput-selected* configuration; the
   lowest-TPOT configuration for the same regime is different and is reported in
   `lowest_tpot_p95_config_id`. The claim is about the danger of optimising a
@@ -109,9 +114,10 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
 * **Slide:** 5 (speaker notes) / 2 (gain-distribution chart)
 * **Source:** `summary_matrix.csv` column `worst_vs_cookbook`;
   `analysis/*/gain_distribution.csv`
-* **Values:** worst configuration loses 60.3 % (LFM long-prefill), 67.8 % (LFM
-  concurrent decode), 72.4 % (Qwen long-prefill), 70.6 % (Qwen concurrent
-  decode), against best gains of +0.5 % to +2.9 %.
+* **Values:** worst configuration loses 64.9 % (LFM concurrent decode), 61.9 %
+  (Qwen concurrent decode), 63.9 % (Qwen shared-prefix), 53.9 % (LFM
+  shared-prefix), against best gains of +0.2 % to +1.6 % in the saturated
+  regimes.
 * **Calculation:** min over the 192 configurations, divided by cookbook, −1.
 * **Limitation:** the cliff is dominated by `max_running_requests = 8`; naming
   that mechanism is an **inference** supported by the v48 plateau study, which
@@ -145,8 +151,9 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
 * **Slide:** 5 / `cross_model_same_strategy.png`
 * **Source:** `summary_matrix.csv`, both models
 * **Reasoning:** both models agree on which regimes are saturated
-  (long-prefill, medium-balanced: +0.5 %…+1.1 %) and which has a cliff
-  (shared-prefix), but differ ~3× in the size of that cliff (78.6 % vs 27.7 %).
+  (short decode, concurrent decode, tool agent: +0.2 %…+1.6 %) and which have
+  cliffs (shared-prefix, long-prefill), but differ 3–4× in the size of those
+  cliffs (94.1 % vs 25.5 %, and 77.5 % vs 19.7 %).
 * **Limitation:** raw values for the two models are never merged; only ratios
   against each model's own cookbook are compared. Two models is not a
   population — this is a consistent observation, not a law.
@@ -176,7 +183,7 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
 ## C14 — "Serving search selects points on the frontier; profiling is needed to move it"
 
 * **Slide:** 6 (hand-off banner)
-* **Reasoning:** in four of twelve model × regime cells the full 192-point grid
+* **Reasoning:** in six of twelve model × regime cells the full 192-point grid
   moves request throughput by < 2 %, and the transfer matrices show no
   configuration that is good everywhere. Therefore the residual end-to-end gap
   is not reachable by serving configuration.
@@ -191,9 +198,9 @@ latency    improvement = 1 − candidate / baseline     (positive == lower laten
 
 | forbidden | why | use instead |
 |---|---|---|
-| "serving tuning has no value" | contradicted by +78.6 % shared-prefix and the high-concurrency stress result | "serving tuning removes workload-specific cliffs" |
-| "all serving optimization space is exhausted" | only 4 knobs and 6 regimes were searched | "within this four-knob space and these six regimes, the ceiling is ~1 % in the saturated regimes" |
-| "chunked prefill gives +78.6 %" | the winner changes cap, chunk and memory fraction together | "a long-context/high-capacity tuned configuration gives +78.6 %" |
+| "serving tuning has no value" | contradicted by +94.1 % shared-prefix, +77.5 % long-prefill and the high-concurrency stress result | "serving tuning removes workload-specific cliffs" |
+| "all serving optimization space is exhausted" | only 4 knobs and 6 regimes were searched | "within this four-knob space and these six regimes, the ceiling is ~1 % in the three saturated regimes" |
+| "chunked prefill gives +94.1 %" | the winner changes cap, chunk and memory fraction together | "a high-capacity tuned configuration gives +94.1 %" |
 | "5–9× from autotuning" | retracted; CUDA-Graph-disabled baseline artifact | "1.00–1.05× against a correctly configured default" |
 | "Qwen long-input tuning gives 1.36–2.21×" | that data is LFM2.5, not Qwen | cite it as LFM2.5, multi-knob |
 | "the agent discovered this configuration" | the search is a deterministic grid plus rule-based scoring, not an LLM decision | "grid enumeration identified" |
