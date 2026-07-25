@@ -1,0 +1,19 @@
+{
+  "name": "cookbook baseline (frozen external reference, NOT seeded into sampler)",
+  "source": "sglang_cookbook_deployment_baselines.md + scripts/run_v7_agentic_bench.py SERVER_ARGS",
+  "knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  },
+  "config_id": 74,
+  "hash": "cap32_chunk-1_pollpm_mem0.85",
+  "resolved_expected": {
+    "attention_backend": "fa3",
+    "moe_runner_backend": "auto",
+    "disable_cuda_graph": false,
+    "context_length": 8192
+  },
+  "note": "Present inside the 192-grid as config_id 74 so it is measured under the identical protocol."
+}

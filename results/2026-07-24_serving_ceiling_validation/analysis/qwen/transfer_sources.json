@@ -1,0 +1,13 @@
+{
+  "model": "qwen",
+  "source_configs": {
+    "cookbook": 74,
+    "R_short_decode_winner": 145,
+    "R_medium_balanced_winner": 145,
+    "R_long_prefill_winner": 156,
+    "R_concurrent_decode_winner": 145,
+    "shared_prefix_winner": 159,
+    "tool_agent_winner": 89
+  },
+  "n_rows_per_run": 162
+}
