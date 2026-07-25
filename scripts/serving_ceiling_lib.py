@@ -90,6 +90,21 @@ WORKLOADS = {
     ),
 }
 
+# Unscored warm-up passes per workload, run before the scored repetitions.
+# Short workloads are dominated by first-touch effects (Triton JIT, radix-cache
+# population): R_long_prefill runs for only ~0.33 s with 4 requests and was
+# measured drifting +36.5 % between the first and fifth scored repetition, while
+# the long agentic traces (~40 s) drift < 1 %. Warm-up count is therefore scaled
+# to the measurement window rather than applied uniformly.
+WARMUP_RUNS = {
+    "R_short_decode": 1,
+    "R_medium_balanced": 2,
+    "R_long_prefill": 4,
+    "R_concurrent_decode": 2,
+    "shared_prefix": 2,
+    "tool_agent": 1,
+}
+
 
 def build_configs():
     """Deterministic ordered list of the 192 unique serving configs."""

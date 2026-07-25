@@ -1,0 +1,329 @@
+{
+  "selected": {
+    "qwen": [
+      0,
+      2,
+      4,
+      7,
+      10,
+      12,
+      14,
+      17,
+      21,
+      24,
+      40,
+      67,
+      74,
+      75,
+      81,
+      89,
+      98,
+      110,
+      126,
+      133,
+      138,
+      145,
+      148,
+      156,
+      159,
+      167,
+      191
+    ],
+    "lfm25": [
+      1,
+      2,
+      3,
+      6,
+      7,
+      10,
+      13,
+      15,
+      18,
+      21,
+      22,
+      25,
+      27,
+      31,
+      42,
+      44,
+      45,
+      53,
+      62,
+      74,
+      77,
+      89,
+      95,
+      103,
+      117,
+      118,
+      140,
+      142,
+      147,
+      155,
+      158,
+      184,
+      186,
+      187,
+      191
+    ]
+  },
+  "rationale": {
+    "qwen": {
+      "74": [
+        "R_short_decode: clear regression",
+        "cookbook baseline"
+      ],
+      "148": [
+        "R_short_decode: Pareto point",
+        "R_short_decode: balanced/Pareto pick",
+        "R_short_decode: best output throughput",
+        "R_short_decode: best request throughput",
+        "R_short_decode: lowest E2E p95"
+      ],
+      "191": [
+        "R_short_decode: Pareto point",
+        "R_short_decode: lowest TTFT p95"
+      ],
+      "110": [
+        "R_short_decode: lowest TPOT p95"
+      ],
+      "81": [
+        "R_long_prefill: clear regression",
+        "R_short_decode: clear regression"
+      ],
+      "4": [
+        "R_medium_balanced: Pareto point",
+        "R_medium_balanced: balanced/Pareto pick",
+        "R_medium_balanced: best output throughput",
+        "R_medium_balanced: best request throughput",
+        "R_medium_balanced: lowest E2E p95",
+        "R_medium_balanced: lowest TTFT p95",
+        "tool_agent: lowest TPOT p95"
+      ],
+      "89": [
+        "R_medium_balanced: lowest TPOT p95",
+        "tool_agent: lowest TTFT p95"
+      ],
+      "10": [
+        "R_medium_balanced: clear regression"
+      ],
+      "2": [
+        "R_medium_balanced: clear regression",
+        "tool_agent: clear regression"
+      ],
+      "145": [
+        "R_concurrent_decode: Pareto point",
+        "R_concurrent_decode: lowest TTFT p95",
+        "R_long_prefill: Pareto point",
+        "R_long_prefill: balanced/Pareto pick",
+        "R_long_prefill: best output throughput",
+        "R_long_prefill: best request throughput",
+        "R_long_prefill: lowest E2E p95",
+        "R_long_prefill: lowest TTFT p95"
+      ],
+      "24": [
+        "R_long_prefill: lowest TPOT p95"
+      ],
+      "40": [
+        "R_long_prefill: clear regression"
+      ],
+      "126": [
+        "R_concurrent_decode: Pareto point",
+        "R_concurrent_decode: balanced/Pareto pick",
+        "R_concurrent_decode: best output throughput",
+        "R_concurrent_decode: best request throughput",
+        "R_concurrent_decode: lowest E2E p95"
+      ],
+      "21": [
+        "R_concurrent_decode: lowest TPOT p95"
+      ],
+      "7": [
+        "R_concurrent_decode: clear regression"
+      ],
+      "12": [
+        "R_concurrent_decode: clear regression",
+        "shared_prefix: clear regression"
+      ],
+      "159": [
+        "shared_prefix: Pareto point",
+        "shared_prefix: balanced/Pareto pick",
+        "shared_prefix: best output throughput",
+        "shared_prefix: best request throughput"
+      ],
+      "133": [
+        "shared_prefix: Pareto point",
+        "shared_prefix: lowest E2E p95",
+        "shared_prefix: lowest TTFT p95"
+      ],
+      "17": [
+        "shared_prefix: lowest TPOT p95"
+      ],
+      "156": [
+        "shared_prefix: Pareto point"
+      ],
+      "14": [
+        "shared_prefix: clear regression"
+      ],
+      "67": [
+        "tool_agent: Pareto point",
+        "tool_agent: balanced/Pareto pick",
+        "tool_agent: best output throughput",
+        "tool_agent: best request throughput"
+      ],
+      "75": [
+        "tool_agent: lowest E2E p95"
+      ],
+      "167": [
+        "tool_agent: Pareto point"
+      ],
+      "98": [
+        "tool_agent: Pareto point"
+      ],
+      "138": [
+        "tool_agent: Pareto point"
+      ],
+      "0": [
+        "tool_agent: clear regression"
+      ]
+    },
+    "lfm25": {
+      "74": [
+        "cookbook baseline"
+      ],
+      "191": [
+        "R_short_decode: Pareto point",
+        "R_short_decode: balanced/Pareto pick",
+        "R_short_decode: best output throughput",
+        "R_short_decode: best request throughput",
+        "R_short_decode: lowest E2E p95",
+        "R_short_decode: lowest TTFT p95"
+      ],
+      "158": [
+        "R_short_decode: lowest TPOT p95"
+      ],
+      "53": [
+        "R_short_decode: clear regression"
+      ],
+      "7": [
+        "R_concurrent_decode: clear regression",
+        "R_short_decode: clear regression"
+      ],
+      "103": [
+        "R_medium_balanced: Pareto point",
+        "R_medium_balanced: balanced/Pareto pick",
+        "R_medium_balanced: best output throughput",
+        "R_medium_balanced: best request throughput"
+      ],
+      "89": [
+        "R_concurrent_decode: Pareto point",
+        "R_medium_balanced: Pareto point",
+        "R_medium_balanced: lowest TTFT p95"
+      ],
+      "147": [
+        "R_medium_balanced: lowest TPOT p95"
+      ],
+      "184": [
+        "R_medium_balanced: lowest E2E p95"
+      ],
+      "118": [
+        "R_medium_balanced: Pareto point"
+      ],
+      "187": [
+        "R_medium_balanced: Pareto point"
+      ],
+      "62": [
+        "R_medium_balanced: clear regression"
+      ],
+      "22": [
+        "R_medium_balanced: clear regression"
+      ],
+      "3": [
+        "R_long_prefill: Pareto point",
+        "R_long_prefill: balanced/Pareto pick",
+        "R_long_prefill: best output throughput",
+        "R_long_prefill: best request throughput"
+      ],
+      "27": [
+        "R_long_prefill: Pareto point",
+        "R_long_prefill: lowest E2E p95",
+        "R_long_prefill: lowest TTFT p95"
+      ],
+      "25": [
+        "R_long_prefill: lowest TPOT p95"
+      ],
+      "77": [
+        "R_long_prefill: Pareto point"
+      ],
+      "31": [
+        "R_long_prefill: clear regression"
+      ],
+      "6": [
+        "R_long_prefill: clear regression"
+      ],
+      "140": [
+        "R_concurrent_decode: Pareto point",
+        "R_concurrent_decode: balanced/Pareto pick",
+        "R_concurrent_decode: best output throughput",
+        "R_concurrent_decode: best request throughput",
+        "R_concurrent_decode: lowest E2E p95"
+      ],
+      "117": [
+        "R_concurrent_decode: Pareto point",
+        "R_concurrent_decode: lowest TTFT p95"
+      ],
+      "18": [
+        "R_concurrent_decode: lowest TPOT p95",
+        "tool_agent: lowest TPOT p95"
+      ],
+      "95": [
+        "R_concurrent_decode: Pareto point"
+      ],
+      "10": [
+        "R_concurrent_decode: clear regression"
+      ],
+      "155": [
+        "shared_prefix: Pareto point",
+        "shared_prefix: balanced/Pareto pick",
+        "shared_prefix: best output throughput",
+        "shared_prefix: best request throughput",
+        "shared_prefix: lowest E2E p95",
+        "shared_prefix: lowest TTFT p95"
+      ],
+      "21": [
+        "shared_prefix: lowest TPOT p95"
+      ],
+      "1": [
+        "shared_prefix: clear regression"
+      ],
+      "2": [
+        "shared_prefix: clear regression"
+      ],
+      "186": [
+        "tool_agent: Pareto point",
+        "tool_agent: balanced/Pareto pick",
+        "tool_agent: best output throughput",
+        "tool_agent: best request throughput"
+      ],
+      "42": [
+        "tool_agent: lowest TTFT p95"
+      ],
+      "142": [
+        "tool_agent: Pareto point",
+        "tool_agent: lowest E2E p95"
+      ],
+      "45": [
+        "tool_agent: Pareto point"
+      ],
+      "44": [
+        "tool_agent: Pareto point"
+      ],
+      "13": [
+        "tool_agent: clear regression"
+      ],
+      "15": [
+        "tool_agent: clear regression"
+      ]
+    }
+  },
+  "reps": 5
+}

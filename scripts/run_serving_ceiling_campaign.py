@@ -241,6 +241,16 @@ def process_task(model, cfg, gpu, port, outroot, reps, worker, dbpath, keep_raw)
     order = WORKLOAD_ORDER[:]
     random.Random(L.SEED + cfg["config_id"]).shuffle(order)
     for wl in order:
+        # Unscored warm-up. Very short workloads (R_long_prefill runs for ~0.3 s
+        # with 4 requests) are dominated by first-touch effects such as Triton
+        # JIT and radix-cache population, which we measured as a 36 % drift
+        # between the first and fifth repetition. Give those workloads extra
+        # warm-up passes so the scored repetitions sample a steady state.
+        n_warm = L.WARMUP_RUNS.get(wl, 1)
+        for w in range(n_warm):
+            tmp = raw_dir / f"{wl}_warmup{w}.jsonl"
+            L.run_workload(model, wl, port, tmp)
+            tmp.unlink(missing_ok=True)
         for rep in range(reps):
             tmp = raw_dir / f"{wl}_rep{rep}.jsonl"
             if tmp.exists():
