@@ -111,3 +111,32 @@ sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，pre
 ## 关键方法学教训
 - 对比 kernel 性能**必须对标 sglang 真实 GPU 代码 + cudagraph**，不能用朴素 PyTorch baseline（否则得出误导性"加速"，如已撤回的 SwiGLU）。
 - 所有数字都是**我们实测**，非 PR 自称。
+
+## 2026-07-24/25 serving-ceiling campaign（全网格 · 双模型 · 六 regime）
+**目标**：量化"仅靠 serving 配置能关闭多少端到端 gap",作为 profiling/kernel 线的交接依据。
+
+**设计**（`docs/2026-07-24/qwen_serving_ceiling_methodology.md`）：
+- 空间 = 4 个 serving knob 全网格 **192 配置/模型**(cap 8..128 × chunk{−1,2048,8192} × policy{lpm,fcfs} × mem{.75..*.90}),Qwen3-30B-A3B + LFM2.5-8B-A1B,单 H200 TP1 BF16。
+- **backend/CUDA graph 冻结并逐配置从 server log 核验**(fa3 / auto / capture 完成),无 warm start,cookbook = 网格内 config 74。
+- **六 regime 统一用一个流式客户端** `sglang.bench_serving --output-details`;一次 server 启动跑完六个 → transfer matrix 全是实测而非外推。
+- sqlite 工作队列 → 多 GPU 并行 + 断点续跑 + 失败分类(基础设施故障重试一次,绝不假打分)。
+
+**关键方法学发现(本轮最重要产出)**:
+- 短 workload **未达稳态**会产生完全错误的结论。`R_long_prefill` 每次仅跑 0.33s/4 请求,rep0→rep4 漂移 **+36.5%**;同一配置单次 coverage 与 5-rep validation 最坏差 **5.2×**。丢弃 rep0 不足以解决。
+- 修复 = 按**实测漂移**分配预热轮次(long_prefill 4 / medium·concurrent 2 / short·shared_prefix 1 / tool_agent 0)。
+- 修复后漂移 → **≤1.2%**,5-rep 95% CI **≤2.6%**,且预热后的 1-rep coverage 与 5-rep validation 一致到 **0.978–1.000**。
+- 两个未预热版本完整保留为证据:`results/2026-07-24_serving_ceiling{,_validation}_nowarmup/`。
+- **教训固化:benchmark 必须先证明处于稳态,再谈配置差异;测量窗口 <1s 的 workload 尤其危险。**
+
+**结果**(未预热版初步,预热版重跑中):
+- cookbook 已匹配的 regime(medium_balanced / long_prefill)**天花板 ≈1%**,98% 配置被 cookbook 支配。
+- 错配的 regime 有真实断崖:shared_prefix **+78.6%**(LFM)/**+27.7%**(Qwen),但 TPOT p95 **−21.5%/−31.7%** → 是 **TRADE-OFF 不是白拿**。
+- 诚实负结果:LFM tool_agent 吞吐赢家仅 +0.5%,却让 TPOT p95 恶化 **82.6%**。
+- **下行远大于上行**:最差配置在饱和 regime 掉 **60–72%**(cap=8 饿死批处理),而最好只涨 0.5–2.9%。
+- **Transfer matrix 是最强证据**:long_prefill 赢家迁到 concurrent_decode 只有 **0.36×**;off-diagonal 几乎没有 >1.00×。
+- 结论口径(见 `qwen_serving_ceiling_slide_claims.md` 的 14 条 claim + 禁用措辞表):
+  "serving tuning 消除 workload 特定的配置断崖并在延迟/吞吐前沿上选点,但不提供通用配置,也不能把端到端前沿整体外推" → 交接 profiling。
+
+**产物**:`results/2026-07-24_serving_ceiling/`(summary/pareto/5 个 transfer matrix/18 图 PNG+SVG/逐请求 parquet)、
+`docs/2026-07-24/{serving_tuning_data_audit,qwen_serving_ceiling_methodology,qwen_serving_ceiling_results,qwen_serving_ceiling_slide_claims}.md`、
+六页 slide 草稿 `performance_gap_slides_1to6_draft.pptx`、脚本 `scripts/{serving_ceiling_lib,run_serving_ceiling_campaign,run_serving_ceiling_validation,analyze_serving_ceiling,render_serving_ceiling_figures,update_performance_gap_slides}.py`。
