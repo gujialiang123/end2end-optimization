@@ -111,8 +111,19 @@ def config_hash(c):
 
 # ---- server lifecycle -------------------------------------------------------
 def port_free(p):
+    """True only if we can actually BIND the port.
+
+    A connect() probe is not sufficient: a shutting-down server can still hold
+    the listening socket while refusing new connections, which later produces
+    `[Errno 98] address already in use` in the next server. Binding is the same
+    operation the next server performs, so it is the correct test.
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(("127.0.0.1", p)) != 0
+        try:
+            s.bind(("127.0.0.1", p))
+            return True
+        except OSError:
+            return False
 
 
 def wait_port_free(p, t=120):
@@ -184,6 +195,8 @@ def kill_server(p):
             os.killpg(os.getpgid(p.pid), signal.SIGKILL)
         except Exception:
             pass
+    # let the kernel finish tearing the listening socket down
+    time.sleep(4)
 
 
 def parse_resolved(log_path):

@@ -122,6 +122,18 @@ PER_RUN_HEADER = [
 ]
 
 
+def next_free_port(base, span=40, tries=3):
+    """Return a bindable port near `base`, rotating to avoid reuse of a port
+    whose previous listener has not finished shutting down."""
+    for _ in range(tries):
+        for off in range(span):
+            p = base + off
+            if L.port_free(p):
+                return p
+        time.sleep(10)
+    return None
+
+
 def summarize(res, cfg, model, workload, rep, worker):
     """Compute per-run row + per-request records from bench_serving details."""
     ttfts = [t * 1000 for t in res.get("ttfts", [])]                 # ms
@@ -180,8 +192,11 @@ def process_task(model, cfg, gpu, port, outroot, reps, worker, dbpath, keep_raw)
     per_config_csv = outroot / f"per_config_log_{worker}.csv"
     failures_csv = outroot / f"failures_{worker}.csv"
 
-    if not L.wait_port_free(port, 120):
-        return "failed", "port-busy"
+    # Pick a port that we can actually bind right now. Rotating avoids reusing a
+    # port whose previous listener is still being torn down (Errno 98).
+    port = next_free_port(port)
+    if port is None:
+        return "failed", "no-free-port"
     if not L.wait_gpu_free(gpu, need_free_mib=110000, t=240):
         return "failed", "gpu-busy"
 
@@ -189,19 +204,21 @@ def process_task(model, cfg, gpu, port, outroot, reps, worker, dbpath, keep_raw)
     p, argv = L.launch_server(model, cfg, gpu, port, log_path)
     ok, info = L.wait_health(p, port, t=700)
     if not ok:
-        # infrastructure failure (e.g. SIGKILL during load): retry once
+        # infrastructure failure (e.g. bind race, SIGKILL during load): retry once
         L.kill_server(p)
-        L.wait_port_free(port, 120)
         L.wait_gpu_free(gpu, need_free_mib=110000, t=240)
         append_csv(failures_csv, dict(model=model, config_id=cfg["config_id"],
                    hash=cfg["hash"], stage="launch-attempt1", cause=str(info)),
                    ["model", "config_id", "hash", "stage", "cause"])
         print(f"[{worker}] launch retry for {tag} ({info})", flush=True)
         time.sleep(20)
+        port = next_free_port(port)      # never reuse the port that just failed
+        if port is None:
+            return "failed", "no-free-port-on-retry"
         p, argv = L.launch_server(model, cfg, gpu, port, log_path)
         ok, info = L.wait_health(p, port, t=700)
     if not ok:
-        L.kill_server(p); L.wait_port_free(port, 120)
+        L.kill_server(p)
         append_csv(failures_csv, dict(model=model, config_id=cfg["config_id"],
                    hash=cfg["hash"], stage="launch", cause=str(info)),
                    ["model", "config_id", "hash", "stage", "cause"])
@@ -244,7 +261,6 @@ def process_task(model, cfg, gpu, port, outroot, reps, worker, dbpath, keep_raw)
             if not keep_raw:
                 tmp.unlink(missing_ok=True)  # drop bulky raw jsonl in coverage
     L.kill_server(p)
-    L.wait_port_free(port, 120)
 
     # write per-request parquet shard for this task
     if all_per_req:
