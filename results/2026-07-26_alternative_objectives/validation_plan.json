@@ -1,0 +1,342 @@
+{
+  "unique_missing": 56,
+  "estimated_gpu_hours": 12.507,
+  "missing": [
+    {
+      "model": "lfm25",
+      "config_id": 5,
+      "hash": "cap8_chunk-1_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 8,
+      "hash": "cap8_chunk2048_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 9,
+      "hash": "cap8_chunk2048_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 17,
+      "hash": "cap8_chunk8192_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 32,
+      "hash": "cap16_chunk2048_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 36,
+      "hash": "cap16_chunk2048_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 41,
+      "hash": "cap16_chunk8192_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 47,
+      "hash": "cap16_chunk8192_polfcfs_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 59,
+      "hash": "cap24_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 60,
+      "hash": "cap24_chunk2048_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 65,
+      "hash": "cap24_chunk8192_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 66,
+      "hash": "cap24_chunk8192_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 68,
+      "hash": "cap24_chunk8192_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 70,
+      "hash": "cap24_chunk8192_polfcfs_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 78,
+      "hash": "cap32_chunk-1_polfcfs_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 83,
+      "hash": "cap32_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 85,
+      "hash": "cap32_chunk2048_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 90,
+      "hash": "cap32_chunk8192_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 100,
+      "hash": "cap48_chunk-1_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 105,
+      "hash": "cap48_chunk2048_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 106,
+      "hash": "cap48_chunk2048_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 125,
+      "hash": "cap64_chunk-1_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 132,
+      "hash": "cap64_chunk2048_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 137,
+      "hash": "cap64_chunk8192_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 152,
+      "hash": "cap96_chunk2048_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 167,
+      "hash": "cap96_chunk8192_polfcfs_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 168,
+      "hash": "cap128_chunk-1_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 170,
+      "hash": "cap128_chunk-1_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "lfm25",
+      "config_id": 179,
+      "hash": "cap128_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 5,
+      "hash": "cap8_chunk-1_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 9,
+      "hash": "cap8_chunk2048_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 18,
+      "hash": "cap8_chunk8192_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 39,
+      "hash": "cap16_chunk2048_polfcfs_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 46,
+      "hash": "cap16_chunk8192_polfcfs_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 48,
+      "hash": "cap24_chunk-1_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 60,
+      "hash": "cap24_chunk2048_polfcfs_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 71,
+      "hash": "cap24_chunk8192_polfcfs_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 72,
+      "hash": "cap32_chunk-1_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 73,
+      "hash": "cap32_chunk-1_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 77,
+      "hash": "cap32_chunk-1_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 82,
+      "hash": "cap32_chunk2048_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 83,
+      "hash": "cap32_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 97,
+      "hash": "cap48_chunk-1_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 101,
+      "hash": "cap48_chunk-1_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 102,
+      "hash": "cap48_chunk-1_polfcfs_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 115,
+      "hash": "cap48_chunk8192_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 120,
+      "hash": "cap64_chunk-1_pollpm_mem0.75",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 137,
+      "hash": "cap64_chunk8192_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 139,
+      "hash": "cap64_chunk8192_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 154,
+      "hash": "cap96_chunk2048_pollpm_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 155,
+      "hash": "cap96_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 165,
+      "hash": "cap96_chunk8192_polfcfs_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 169,
+      "hash": "cap128_chunk-1_pollpm_mem0.8",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 174,
+      "hash": "cap128_chunk-1_polfcfs_mem0.85",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 179,
+      "hash": "cap128_chunk2048_pollpm_mem0.9",
+      "additional_reps_required": 5
+    },
+    {
+      "model": "qwen",
+      "config_id": 184,
+      "hash": "cap128_chunk8192_pollpm_mem0.75",
+      "additional_reps_required": 5
+    }
+  ]
+}
