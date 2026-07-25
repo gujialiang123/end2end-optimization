@@ -140,3 +140,23 @@ sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，pre
 **产物**:`results/2026-07-24_serving_ceiling/`(summary/pareto/5 个 transfer matrix/18 图 PNG+SVG/逐请求 parquet)、
 `docs/2026-07-24/{serving_tuning_data_audit,qwen_serving_ceiling_methodology,qwen_serving_ceiling_results,qwen_serving_ceiling_slide_claims}.md`、
 六页 slide 草稿 `performance_gap_slides_1to6_draft.pptx`、脚本 `scripts/{serving_ceiling_lib,run_serving_ceiling_campaign,run_serving_ceiling_validation,analyze_serving_ceiling,render_serving_ceiling_figures,update_performance_gap_slides}.py`。
+
+## 2026-07-26 alternative-objective study（换 tuning 目标会怎样?）
+**问题**:如果 autotuner 的目标不是 request throughput,而是 TTFT / TPOT / E2E / 平衡分,会选出不同的 config 吗?
+
+**方法**:**不重跑网格、不新开 Optuna**。warmed 192 网格已把每个 config × 每个 workload 测完,换目标只是换"选谁"。离线重选 + 只补跑缺失验证(58 config × 6 workload × 5 rep = 1740 run,112,520 逐请求记录,零失败)。8 个策略:纯单指标 p95/p50、SLO 约束吞吐(1/3/5%)、约束 TTFT/TPOT/E2E、maximin、几何均值、strict/noise-tolerant 全指标、Pareto knee。
+
+**答案**:
+- **不同目标选不同 config**:12 单元平均 **4.8 个不同**(最多 7)。
+- **吞吐赢家从来不是 TPOT 赢家(0/12)**,与 TTFT/E2E 赢家仅 3/12 重合。TPOT 优先反复选 `cap=8`,用 **−45%~−64% 吞吐**换 +24%~+47% TPOT —— 吞吐优先失效模式的镜像。
+- **maximin 显著优于吞吐优先**:全指标胜 **8 vs 4**,回归 **2 vs 5**。→ **优化"最差指标"比优化"最好指标"稳健得多**(已存 memory)。
+- 10/12 单元存在验证过的全指标赢家;lfm25 short-decode 与 qwen tool-agent 只有权衡。
+
+**诚实负面结果**:
+- **吞吐优先在 5/12 单元验证时回归** = 普通 **selection-on-noise**(192 含噪点取 argmax 系统性高估),集中在真实差异仅 ~1% 的饱和 regime。已用 cookbook anchor 排除时间窗漂移(new/old 0.995–1.043)。→ **教训:绝不能只凭单次网格搜索发布 serving tuning 结果。**
+- coverage 级 12/12 有"全指标赢家",验证后剩 10/12 且来自**不同**策略(比值 1.001 是噪声)。
+- 旧 62-config 验证集**大部分不可复用**(76 选中里仅 14 个有 5 rep),因为它选自修预热缺陷**之前**的网格。→ **选择集不能跨测量协议变更迁移。**
+
+**主结论未变、反被强化**:换目标让你**沿着**前沿移动(且无需重搜),但**移不动前沿**;大幅收益仍只在 long-prefill / shared-prefix 两个断崖 regime。
+
+**产物**:`results/2026-07-26_alternative_objectives/`(audit/plan/validated/comparison matrix/knobs/17 图/parquet/reproduce.sh)、`docs/2026-07-26/{alternative_objective_validation_audit,alternative_serving_objectives}.md`、脚本 `scripts/{analyze_alternative_serving_objectives,run_alternative_objective_validation,finalize_alternative_objectives,render_alternative_objective_figures}.py`。
