@@ -100,11 +100,11 @@ def fig_search_space(outdir, meta):
 def fig_result_heatmap(outdir, sm: pd.DataFrame, source):
     style()
     models = sorted(sm.model.unique())
-    cols = [("d_request_throughput", "request\nthroughput"),
-            ("d_output_throughput", "output\nthroughput"),
+    cols = [("d_request_throughput", "req/s"),
+            ("d_output_throughput", "out tok/s"),
             ("d_ttft_p95", "TTFT p95"), ("d_tpot_p95", "TPOT p95"),
             ("d_e2e_p95", "E2E p95")]
-    fig, axes = plt.subplots(1, len(models), figsize=(7.4 * len(models), 5.6),
+    fig, axes = plt.subplots(1, len(models), figsize=(8.6 * len(models), 5.6),
                              squeeze=False)
     for ax, model in zip(axes[0], models):
         d = sm[sm.model == model].set_index("workload").reindex(WORKLOADS)
@@ -120,12 +120,16 @@ def fig_result_heatmap(outdir, sm: pd.DataFrame, source):
                     continue
                 ax.text(j, i, f"{v:+.0f}%", ha="center", va="center", fontsize=11.5,
                         color="black", fontweight="bold")
+        # classification printed OUTSIDE the axes so nothing overlaps the cells
         for i, wl in enumerate(WORKLOADS):
             if wl in d.index and isinstance(d.loc[wl, "classification"], str):
                 ax.text(len(cols) - 0.35, i, d.loc[wl, "classification"],
-                        fontsize=9.5, color=NAVY, va="center")
+                        fontsize=10, color=NAVY, va="center", ha="left",
+                        fontweight="bold")
+        ax.set_xlim(-0.5, len(cols) + 1.35)
         ax.set_title(f"{model} — best-throughput config vs cookbook")
-        fig.colorbar(im, ax=ax, shrink=0.82, label="change (%), green = better")
+        fig.colorbar(im, ax=ax, shrink=0.82, pad=0.13,
+                     label="change (%), green = better")
     fig.suptitle("Serving tuning: gains are regime-specific, not universal",
                  fontsize=17, fontweight="bold", color=NAVY, y=1.03)
     save(fig, outdir, "full_result_matrix_heatmap", source)
