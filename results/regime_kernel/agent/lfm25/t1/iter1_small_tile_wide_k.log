@@ -1,0 +1,24 @@
+<frozen importlib._bootstrap_external>:1241: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+<frozen importlib._bootstrap_external>:1241: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+[2026-07-26 13:25:06] INFO server_args.py:1835: Attention backend not specified. Use fa3 backend by default.
+[2026-07-26 13:25:06] WARNING fused_moe_triton_config.py:128: Using default MoE kernel config. Performance might be sub-optimal! Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=32,N=1792,device_name=NVIDIA_H200.json, you can create them with https://github.com/sgl-project/sglang/tree/main/benchmark/kernels/fused_moe_triton
+[2026-07-26 13:25:06] WARNING fused_moe_triton_config.py:120: Using MoE kernel config with down_moe=False. Performance might be sub-optimal! Config file not found at /home/t-jialianggu/work/sglang/python/sglang/srt/layers/moe/fused_moe_triton/configs/triton_3_5_1/E=32,N=1792,device_name=NVIDIA_H200_down.json, you can create them with https://github.com/sgl-project/sglang/tree/main/benchmark/kernels/fused_moe_triton
+{
+  "model": "lfm25",
+  "tokens": 1,
+  "top_k": 4,
+  "M": 4,
+  "E": 32,
+  "N": 1792,
+  "K": 2048,
+  "routing": "uniform",
+  "n_candidates": 24,
+  "warmup": 25,
+  "iters": 100,
+  "repeats": 5,
+  "out": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/regime_kernel/agent/lfm25/t1/iter1_small_tile_wide_k.json"
+}
+
+default median 0.2381 ms
+best    median 0.2371 ms  (1.004x)  bm16_bn64_bk128_gm1_w4_s2
+ok=24 failures=0 -> /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/regime_kernel/agent/lfm25/t1/iter1_small_tile_wide_k.json

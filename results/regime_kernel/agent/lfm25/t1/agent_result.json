@@ -1,0 +1,98 @@
+{
+  "model": "lfm25",
+  "tokens": 1,
+  "M": 4,
+  "diagnosis": {
+    "bottleneck": "low_occupancy_launch_bound",
+    "evidence": {
+      "M": 4,
+      "tokens": 1,
+      "top_k": 4,
+      "default_ms": 0.2555519938468933,
+      "config_spread": 1.33,
+      "arithmetic_intensity": 0.0833,
+      "cv_expert_load": 2.646,
+      "active_experts": 4,
+      "num_experts": 32
+    },
+    "rationale": "M=4 cannot fill the GPU: the grouped GEMM has far fewer rows than a single tile, so latency is dominated by launch and weight streaming rather than math (arithmetic intensity 0.083)."
+  },
+  "default_ms": 0.2555519938468933,
+  "selected": {
+    "name": "bm16_bn64_bk64_gm1_w4_s4",
+    "config": {
+      "BLOCK_SIZE_M": 16,
+      "BLOCK_SIZE_N": 64,
+      "BLOCK_SIZE_K": 64,
+      "GROUP_SIZE_M": 1,
+      "num_warps": 4,
+      "num_stages": 4
+    },
+    "median_ms": 0.23641599714756012
+  },
+  "total_speedup": 1.08094205523406,
+  "iterations": [
+    {
+      "iteration": 0,
+      "action": "small_tile_deep_pipeline",
+      "rationale": "keep the M tile minimal to avoid wasted rows and raise num_stages so weight loads overlap the tiny amount of math",
+      "bottleneck": "low_occupancy_launch_bound",
+      "n_candidates": 24,
+      "n_passed": 24,
+      "n_failed": 0,
+      "best_key": "bm16_bn64_bk64_gm1_w4_s4",
+      "best_ms": 0.23641599714756012,
+      "incumbent_ms": 0.23641599714756012,
+      "speedup": 1.08094205523406,
+      "decision": "accept",
+      "reason": "1.081x faster than the incumbent (default) and correctness passed",
+      "wall_s": 14.3
+    },
+    {
+      "iteration": 1,
+      "action": "small_tile_wide_k",
+      "rationale": "widen the K tile so each launch streams more contiguous weight per unit of index overhead",
+      "bottleneck": "low_occupancy_launch_bound",
+      "n_candidates": 24,
+      "n_passed": 24,
+      "n_failed": 0,
+      "best_key": "bm16_bn64_bk128_gm1_w4_s2",
+      "best_ms": 0.23708799481391907,
+      "incumbent_ms": 0.23641599714756012,
+      "speedup": 0.9971656191749128,
+      "decision": "reject",
+      "reason": "best candidate only 0.997x vs incumbent; below the 1.01x acceptance threshold",
+      "wall_s": 14.1
+    }
+  ],
+  "rejected": [
+    {
+      "iteration": 1,
+      "action": "small_tile_wide_k",
+      "rationale": "widen the K tile so each launch streams more contiguous weight per unit of index overhead",
+      "bottleneck": "low_occupancy_launch_bound",
+      "n_candidates": 24,
+      "n_passed": 24,
+      "n_failed": 0,
+      "best_key": "bm16_bn64_bk128_gm1_w4_s2",
+      "best_ms": 0.23708799481391907,
+      "incumbent_ms": 0.23641599714756012,
+      "speedup": 0.9971656191749128,
+      "decision": "reject",
+      "reason": "best candidate only 0.997x vs incumbent; below the 1.01x acceptance threshold",
+      "wall_s": 14.1
+    }
+  ],
+  "environment": {
+    "git_sha": "977dee3606d75593175d9a3eb3a032794abff71e",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "model": "lfm25",
+  "tokens": 2048,
+  "M": 8192,
+  "diagnosis": {
+    "bottleneck": "compute_bound",
+    "evidence": {
+      "M": 8192,
+      "tokens": 2048,
+      "top_k": 4,
+      "default_ms": 0.7879679799079895,
+      "config_spread": 7.547,
+      "arithmetic_intensity": 170.6667,
+      "cv_expert_load": 0.052,
+      "active_experts": 32,
+      "num_experts": 32
+    },
+    "rationale": "M=8192 with arithmetic intensity 170.67: enough work per byte to keep the Tensor Cores busy, so tile size and pipelining dominate."
+  },
+  "default_ms": 0.7879679799079895,
+  "selected": {
+    "name": "bm64_bn256_bk64_gm16_w8_s4",
+    "config": {
+      "BLOCK_SIZE_M": 64,
+      "BLOCK_SIZE_N": 256,
+      "BLOCK_SIZE_K": 64,
+      "GROUP_SIZE_M": 16,
+      "num_warps": 8,
+      "num_stages": 4
+    },
+    "median_ms": 0.5900160074234009
+  },
+  "total_speedup": 1.3355027151704657,
+  "iterations": [
+    {
+      "iteration": 0,
+      "action": "large_tile_more_warps",
+      "rationale": "at high arithmetic intensity, larger tiles and more warps raise Tensor-Core utilisation",
+      "bottleneck": "compute_bound",
+      "n_candidates": 24,
+      "n_passed": 24,
+      "n_failed": 0,
+      "best_key": "bm64_bn256_bk64_gm16_w8_s2",
+      "best_ms": 0.6226239800453186,
+      "incumbent_ms": 0.6226239800453186,
+      "speedup": 1.2655599610066997,
+      "decision": "accept",
+      "reason": "1.266x faster than the incumbent (default) and correctness passed",
+      "wall_s": 20.7
+    },
+    {
+      "iteration": 1,
+      "action": "large_tile_deep_pipeline",
+      "rationale": "deep pipelining hides global-memory latency behind math",
+      "bottleneck": "compute_bound",
+      "n_candidates": 24,
+      "n_passed": 24,
+      "n_failed": 0,
+      "best_key": "bm64_bn256_bk64_gm16_w8_s4",
+      "best_ms": 0.5900160074234009,
+      "incumbent_ms": 0.5900160074234009,
+      "speedup": 1.0552662507654949,
+      "decision": "accept",
+      "reason": "1.055x faster than the incumbent (bm64_bn256_bk64_gm16_w8_s2) and correctness passed",
+      "wall_s": 19.9
+    }
+  ],
+  "rejected": [],
+  "environment": {
+    "git_sha": "977dee3606d75593175d9a3eb3a032794abff71e",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  }
+}
