@@ -20,7 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rk_lib as L
 
 
-def build_workload(shape: dict, num_tokens: int, routing: str, torch, gen):
+def build_workload(shape: dict, num_tokens: int, routing: str, torch, gen,
+                   with_bias: bool = False):
     """Allocate the MoE inputs for one invocation."""
     E = shape["num_experts"]
     K = shape["hidden_size"]
@@ -29,11 +30,18 @@ def build_workload(shape: dict, num_tokens: int, routing: str, torch, gen):
     dt = torch.bfloat16
 
     x = torch.randn(num_tokens, K, dtype=dt, device="cuda", generator=gen) / 10
+    # Expert bias: LFM2.5 sets use_expert_bias=true, so the serving path runs the
+    # WITH-BIAS kernel variant. Tuning the no-bias variant and deploying the
+    # result is a real source of microbenchmark -> end-to-end mismatch.
     # w1 holds the fused gate+up projection => 2N rows
     w1 = torch.randn(E, 2 * N, K, dtype=dt, device="cuda", generator=gen) / 20
     w2 = torch.randn(E, K, N, dtype=dt, device="cuda", generator=gen) / 20
     gating = L.make_gating(num_tokens, E, routing, torch, gen)
-    return x, w1, w2, gating, topk, N, K
+    b1 = b2 = None
+    if with_bias:
+        b1 = torch.randn(E, 2 * N, dtype=dt, device="cuda", generator=gen) / 50
+        b2 = torch.randn(E, K, dtype=dt, device="cuda", generator=gen) / 50
+    return x, w1, w2, gating, topk, N, K, b1, b2
 
 
 def make_topk(x, gating, topk):
@@ -56,12 +64,14 @@ def init_sglang_context(model_path: str):
     return sa
 
 
-def run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch):
+def run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch,
+             b1=None, b2=None):
     from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
     mrc = MoeRunnerConfig(inplace=False)
     ctx = override_config(cfg) if cfg is not None else _null()
     with ctx:
-        return fused_moe(x, w1, w2, topk_output, moe_runner_config=mrc)
+        return fused_moe(x, w1, w2, topk_output, moe_runner_config=mrc,
+                         b1=b1, b2=b2)
 
 
 class _null:
@@ -73,10 +83,10 @@ class _null:
 
 
 def time_config(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch,
-                warmup: int, iters: int, repeats: int):
+                warmup: int, iters: int, repeats: int, b1=None, b2=None):
     """CUDA-event timing: `repeats` independent rounds of `iters` iterations."""
     for _ in range(warmup):
-        run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch)
+        run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch, b1, b2)
     torch.cuda.synchronize()
 
     per_round = []
@@ -85,7 +95,7 @@ def time_config(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch,
         en = [torch.cuda.Event(enable_timing=True) for _ in range(iters)]
         for i in range(iters):
             st[i].record()
-            run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch)
+            run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch, b1, b2)
             en[i].record()
         torch.cuda.synchronize()
         ts = [s.elapsed_time(e) for s, e in zip(st, en)]
@@ -127,6 +137,8 @@ def main():
     ap.add_argument("--iters", type=int, default=100)
     ap.add_argument("--repeats", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0, help="cap candidates (smoke)")
+    ap.add_argument("--bias", action="store_true",
+                    help="pass expert bias, matching models with use_expert_bias")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
@@ -144,7 +156,7 @@ def main():
         cands = cands[:a.limit]
 
     plan = dict(model=a.model, tokens=a.tokens, top_k=topk, M=M, E=E, N=N, K=K,
-                routing=a.routing, n_candidates=len(cands),
+                routing=a.routing, with_bias=a.bias, n_candidates=len(cands),
                 warmup=a.warmup, iters=a.iters, repeats=a.repeats, out=a.out)
     print(json.dumps(plan, indent=2))
     if a.dry_run:
@@ -159,16 +171,17 @@ def main():
 
     init_sglang_context(shape["path"])
     gen = torch.Generator(device="cuda"); gen.manual_seed(L.SEED)
-    x, w1, w2, gating, topk, N, K = build_workload(shape, a.tokens, a.routing,
-                                                   torch, gen)
+    x, w1, w2, gating, topk, N, K, b1, b2 = build_workload(
+        shape, a.tokens, a.routing, torch, gen, with_bias=a.bias)
     topk_output = make_topk(x, gating, topk)
     routing_stats = L.expert_load_stats(topk_output.topk_ids, E, torch)
 
     # reference = the DEFAULT path, i.e. exactly what the server does today
-    ref = run_once(fused_moe, override_config, x, w1, w2, topk_output, None, torch)
+    ref = run_once(fused_moe, override_config, x, w1, w2, topk_output, None, torch,
+                   b1, b2)
     torch.cuda.synchronize()
     base_rounds = time_config(fused_moe, override_config, x, w1, w2, topk_output,
-                              None, torch, a.warmup, a.iters, a.repeats)
+                              None, torch, a.warmup, a.iters, a.repeats, b1, b2)
     base = L.summarize(base_rounds)
 
     rows, failures = [], []
@@ -176,7 +189,7 @@ def main():
     for i, cfg in enumerate(cands):
         try:
             out = run_once(fused_moe, override_config, x, w1, w2, topk_output,
-                           cfg, torch)
+                           cfg, torch, b1, b2)
             torch.cuda.synchronize()
         except Exception as e:
             failures.append(dict(config=cfg, stage="runtime",
@@ -191,7 +204,7 @@ def main():
         try:
             rounds = time_config(fused_moe, override_config, x, w1, w2,
                                  topk_output, cfg, torch, a.warmup, a.iters,
-                                 a.repeats)
+                                 a.repeats, b1, b2)
         except Exception as e:
             failures.append(dict(config=cfg, stage="timing",
                                  kind="runtime_failure", error=str(e)[:300]))

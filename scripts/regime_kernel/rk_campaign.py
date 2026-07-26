@@ -86,6 +86,15 @@ def init_queue(models, stages):
                 con.execute("INSERT OR IGNORE INTO jobs(stage,model,tokens,routing,tag)"
                             " VALUES('sweep',?,?,'uniform','full')", (model, t))
                 n += 1
+        if "bias" in stages:
+            # Re-tune the WITH-BIAS kernel variant: LFM2.5 sets
+            # use_expert_bias=true, so this is the variant the server actually
+            # executes. Tuning the no-bias variant produced a config that cost
+            # 25 % end-to-end throughput in low-batch decode.
+            for t in SWEEP_TOKENS:
+                con.execute("INSERT OR IGNORE INTO jobs(stage,model,tokens,routing,tag)"
+                            " VALUES('bias',?,?,'uniform','full')", (model, t))
+                n += 1
         if "routing" in stages:
             # fixed M, different routing distributions
             for t in (8, 32, 64, 512):
@@ -128,6 +137,10 @@ def run_job(row, gpu, warmup, iters, repeats, dry):
            "--repeats", str(repeats)]
     if stage == "transfer":
         cmd += ["--configs", str(L.CONFIGS / f"{model}_profiles.json")]
+    if stage in ("bias", "transfer_bias"):
+        cmd += ["--bias"]
+    if stage == "transfer_bias":
+        cmd += ["--configs", str(L.CONFIGS / f"{model}_bias_profiles.json")]
     if dry:
         print("[dry-run]", " ".join(cmd))
         return "done", "dry-run"
