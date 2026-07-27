@@ -2,7 +2,7 @@
 
 **日期:** 2026-07-27 · **仓库:** `/home/t-jialianggu/work/EndtoEnd-auto-optimization`
 **远端:** `github.com/gujialiang123/end2end-optimization`,分支 `main`
-**最新 commit:** `7604ba3` · **未提交文件:0**(除长期存在的 `result.jsonl`)
+**最新 commit:** 见 `git log`(2026-07-27 追加 K1 跨模型 + LFM2.5 fusion 两条线) · **未提交文件:0**(除长期存在的 `result.jsonl`)
 
 这份文档给接手的新会话用。读完这一份就能继续工作,不需要回看之前的对话。
 
@@ -209,17 +209,38 @@ if M <= E:
 
 ## 8. 剩余可做的工作(按价值排序)
 
-### 8.1 Qwen 的 backend 对比(**最推荐**)
-K1 目前只在 LFM2.5 上做过。Qwen 是 E=128/top-8,MoE 形态完全不同,**很可能给出不同的 backend 排序**。若成立,K1 结论从"单模型观察"升级为"跨模型规律"。
-```bash
-python scripts/regime_kernel/rk_backends.py --model qwen --regime C_long_prefill \
-  --gpu <free> --port 51000 --reps 5 --backends auto,triton,triton_kernel,flashinfer_cutlass
-```
-成本:3 regime × 4 backend × 5 rep ≈ 2 GPU-h。
+> **2026-07-27 更新**:§8.1 已完成(见下方 §8.0),并且新开了一条 fusion 线
+> (`docs/lfm_fusion_results.md`),拿到本项目第一个同模型正向 kernel e2e 结果。
+
+### 8.0 ✅ 已完成:Qwen 的 backend 对比(原 §8.1)
+3 regime × 4 backend × 5 rep,0 失败。**结论比预期更强:regime→backend 规则不可迁移。**
+
+| backend | A decode LFM/Qwen | B 并发 LFM/Qwen | C 长 prefill LFM/Qwen |
+|---|---:|---:|---:|
+| **triton_kernel** | **0.650 / 0.641** | 0.966 / 1.008 | 0.996 / **0.647** |
+| **flashinfer_cutlass** | 0.965 / 0.934 | **1.017 / 1.047** | **0.664** / **1.027** |
+
+两个 regime 两模型一致(triton_kernel 低批 decode 都灾难;cutlass 并发 decode 都最好),
+但**长 prefill 完全反转** —— 断崖换到了另一个 backend。把一个模型的规则用到另一个
+模型,最差 **−34%**。→ 静态查找表有害,必须按部署实测。详见 results 文档 §11c。
+
+### 8.0b ✅ 新增:LFM2.5 fusion gap(`docs/lfm_fusion_results.md`)
+v33 的"sglang 热路径已全部融合"是**在 Qwen 一个模型上**得出的。LFM2.5 每 forward
+有 **61 个未融合 RMSNorm + 48 个独立 residual add + 36 个 gating mul**(Qwen 对照:
+1 / 0 / 0)。改用 `fused_add_rmsnorm` + 跳过"乘以 1.0" → **低批 decode +3.82%、
+并发 decode +3.96%、长 prefill +0.91%**,GSM8K 无回归。
+**收益方向与 config 研究相反**(fusion 帮 decode,config 帮 prefill)。
 
 ### 8.2 把 backend 纳入 agent 候选动作
 `rk_agent.py` 现在只会调 config。计划 §十 明确要求 agent 能 "switch backend"。
 考虑到 §5.5 显示 backend 是避坑杠杆,agent 应该学会**排除**坏 backend 而不是追求最优。
+**§8.0 的跨模型结果让这条的优先级上升**:既然规则不可迁移,就只能靠 agent 按部署实测。
+
+### 8.2b 把 fusion 审计做成 agent 的机械检查(**新增,推荐**)
+gap 的 signature 是"**随层数线性增长的 kernel 计数**"(48 = 2 × 24 层),而 Qwen 对照组
+给出了"干净"长什么样(1 / 0 / 0)。这是 agent 可以对**任何新加入的架构**机械应用的规则,
+不需要人读模型源码。成本:每个模型一次 profiled `bench_one_batch`。
+脚本已就绪:`scripts/lfm_fusion/lf_audit.py`。
 
 ### 8.3 验证 waterfall 的非叠加机制
 用 tracer 在 tuned serving(`chunk=2048`)下测 M 分布,和 cookbook 对比,验证"serving tuning 改变了 M 分布"这个假设。约 20 分钟。
@@ -255,9 +276,23 @@ TMA 路径在这台机器上**是激活的**(`support_tensor_descriptor()=True`)
 ## 10. 给新会话的开场建议
 
 ```
-读 docs/regime_kernel_results.md(主报告)和 HANDOFF_regime_kernel.md(本文件)。
-P0 已完成,现在做 §8.1:Qwen 的 backend 对比。
+读 docs/regime_kernel_results.md(主报告)、docs/lfm_fusion_results.md
+(fusion 线主报告)和 HANDOFF_regime_kernel.md(本文件)。
+P0 与 §8.1 已完成。建议接 §8.2b(把 fusion 审计做成 agent 的机械检查)
+或 §8.4/§9.1(ShortConv 的 layout copy 与 gating 融合)。
 ```
+
+### 新增的坑(fusion 线,2026-07-27)
+- **token-identity 对 LFM2.5 是结构性不可用的正确性门禁**。它 top-4/32 专家路由是
+  **离散 argmax**,任何 bf16 级扰动都可能翻转选中的专家 → 输出不连续变化。
+  用任务指标(GSM8K)代替。
+- **用一个 bit-exact 的 arm 免费标定 harness 噪声底**。`scale`(乘以 1.0)必然与
+  baseline 数学相同,但 GSM8K 读数低 0.8 点 → 这就是 `--parallel 32` 的 batch 组成
+  差异造成的系统噪声。**任何精度相关的结论都应该配一个 bit-exact 对照。**
+- **patch 必须校验真的生效**。`lf_e2e.py` 会在 server log 里找 patch marker,
+  否则一个静默失效的 patch 会被当成"与 baseline 相同"记录下来。
+- 模型类是被 model registry **懒加载**的,sitecustomize 里用定时器打 patch 是竞态;
+  用 `sys.meta_path` finder 在模块 exec 完成的瞬间打(`lf_inject/sitecustomize.py`)。
 
 关键 CSV 一览:
 - `processed/sweep_headroom_bias.csv` — 真实变体下每个 M 的可调空间(**看这个判断哪里值得调**)
