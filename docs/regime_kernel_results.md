@@ -458,6 +458,48 @@ decode.
 
 Figure: `plots/backend_by_regime.png`.
 
+### 11c. K1 cross-model — the ranking is (model × regime)-dependent, and a rule learned on one model is *harmful* on the other
+
+The K1 result above is a single-model observation. Repeating the identical
+protocol on Qwen3-30B-A3B (E=128, top-8 — a very different MoE shape) turns it
+into something sharper. 3 regimes × 4 backends × 5 repetitions, 0 failures
+(`scripts/regime_kernel/rk_backends.py`, table rebuilt by
+`rk_backend_table.py` into `processed/backend_comparison_all.csv`):
+
+| backend | A decode LFM / Qwen | B concurrent LFM / Qwen | C long prefill LFM / Qwen |
+|---|---:|---:|---:|
+| auto | 1.000 / 1.000 | 1.000 / 1.000 | 1.000 / 1.000 |
+| triton | 0.999 / 1.001 | 1.006 / **1.033** | 1.004 / 0.987 |
+| **triton_kernel** | **0.650 / 0.641** | 0.966 / 1.008 | 0.996 / **0.647** |
+| **flashinfer_cutlass** | 0.965 / 0.934 | **1.017 / 1.047** | **0.664** / **1.027** |
+
+Two of the three regimes give the *same* answer on both models:
+
+* `triton_kernel` on low-batch decode is catastrophic on both (0.650 / 0.641);
+* `flashinfer_cutlass` is the best backend for concurrent decode on both
+  (1.017 / 1.047).
+
+**Long prefill inverts completely.** The cliff does not merely shrink, it moves
+to the *other* backend:
+
+* on LFM2.5, `flashinfer_cutlass` is the worst option (0.664×) and
+  `triton_kernel` is harmless (0.996×);
+* on Qwen, `flashinfer_cutlass` is the *best* option (1.027×) and
+  `triton_kernel` is the catastrophe (0.647×).
+
+So the transferable claim is **not** "regime → backend". Applying LFM2.5's
+long-prefill rule ("avoid cutlass") to Qwen forfeits its best available backend;
+applying Qwen's rule ("prefer cutlass, avoid triton_kernel") to LFM2.5 costs
+**−34 %**. A static regime→backend lookup table is therefore not just incomplete
+but actively dangerous, which is a direct argument for measuring per deployment
+rather than shipping a rule.
+
+The asymmetry survives and slightly widens: best case is now +4.7 % (Qwen,
+concurrent decode, cutlass), worst case −36 %. **Backend selection remains a
+downside-avoidance lever.**
+
+Raw: `results/regime_kernel/backends/{lfm25,qwen}/*/backend_runs.json`.
+
 ## 12. Does this support the hypothesis?
 
 | claim | verdict | evidence |
@@ -466,6 +508,7 @@ Figure: `plots/backend_by_regime.png`.
 | regime-tuned configs do not transfer | **strongly supported** | 0.123× worst-case cross-regime |
 | a few regime profiles beat one global profile | **supported** | global 0.618×/0.388× at large M; 3 profiles reach 73–100 % of oracle |
 | the best kernel IMPLEMENTATION differs by regime | **supported** | backend ranking flips: cutlass 1.017× on concurrent decode vs 0.664× on long prefill; triton_kernel 0.650× on low-batch decode |
+| a regime→backend rule transfers across models | **refuted** | on long prefill the cliff moves to the *other* backend: cutlass is LFM2.5's worst (0.664×) and Qwen's best (1.027×); applying either model's rule to the other costs up to −34 % (§11c) |
 | specialization improves end-to-end serving | **supported, with a guardrail** | M-corrected guarded profile: **+22.3 %** long prefill (6/6 non-overlapping), **+1.4 %** concurrent decode, neutral low-batch decode — no regression anywhere |
 | an agent can close the loop | **supported** | different diagnoses → different action sequences, with accept/reject and rollback |
 
