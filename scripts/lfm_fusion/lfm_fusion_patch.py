@@ -144,6 +144,77 @@ def _patched_moe_forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
 # (1.2x); 2048 is chosen so the guard only fires where the win is unambiguous.
 CONV_FUSION_MIN_TOKENS = int(os.environ.get("LFM_FUSION_CONV_MIN_TOKENS", "2048"))
 
+_APPLIED_SET: set[str] = set()
+
+
+def _cached_int32_indices(forward_batch, req_pool_indices):
+    """`req_pool_indices.to(torch.int32)` once per forward, not once per layer.
+
+    Every one of the 18 conv layers re-casts the same tensor. The cast moves
+    12 bytes, so it is pure launch overhead — but 18 launches per forward is
+    ~1.3 % of low-batch decode kernel time, which is the same order as the gaps
+    this study set out to close. Cached on the ForwardBatch, keyed by the
+    identity of the source tensor so a stale cache can never be returned.
+    """
+    if "idx" not in _APPLIED_SET:
+        return req_pool_indices.to(torch.int32)
+    cached = getattr(forward_batch, "_lfm_int32_idx", None)
+    if cached is not None and cached[0] is req_pool_indices:
+        return cached[1]
+    out = req_pool_indices.to(torch.int32)
+    try:
+        forward_batch._lfm_int32_idx = (req_pool_indices, out)
+    except AttributeError:      # slotted ForwardBatch — fall back silently
+        pass
+    return out
+
+
+# ---------------------------------------------------------------------------
+# G4 — reuse the shipped fused QK-norm + RoPE CUDA kernel
+# ---------------------------------------------------------------------------
+# `sgl_kernel.fused_qk_norm_rope` combines both head-wise RMSNorms and RoPE into
+# one in-place kernel over the packed QKV tensor. Qwen3-MoE already calls it;
+# LFM2.5 instead splits QKV, reshapes, runs two separate RMSNorm kernels and
+# then a separate RoPE. Same pattern as G1: the fused primitive exists and the
+# call site does not use it.
+def _patched_attention_forward(self, positions, hidden_states, forward_batch):
+    from sgl_kernel import fused_qk_norm_rope
+
+    T = hidden_states.shape[0]
+    qkv, _ = self.qkv_proj(hidden_states)
+
+    q_size = self.num_local_q_heads * self.head_dim
+    kv_size = self.num_local_kv_heads * self.head_dim
+
+    if qkv.dtype == torch.bfloat16 and self.head_dim == 64:
+        pos = positions.view(-1).to(dtype=torch.int32,
+                                    device=qkv.device).contiguous()
+        # LFM2.5 declares rope_type "default" with no rope_scaling, so the yarn
+        # parameters degenerate to the identity (factor 1, no ramp).
+        fused_qk_norm_rope(
+            qkv, self.num_local_q_heads, self.num_local_kv_heads,
+            self.num_local_kv_heads, self.head_dim,
+            self.q_layernorm.variance_epsilon,
+            self.q_layernorm.weight, self.k_layernorm.weight,
+            self._lfm_rope_theta, self.rotary_emb.is_neox_style, pos,
+            1.0, 0, 0, 1.0)
+        q, k, v = torch.split(qkv, [q_size, kv_size, kv_size], dim=-1)
+        attn_out = self.attn(q, k, v, forward_batch)
+        out, _ = self.out_proj(attn_out)
+        return out
+
+    q, k, v = torch.split(qkv, [q_size, kv_size, kv_size], dim=-1)
+    q = q.reshape(T, self.num_local_q_heads, self.head_dim)
+    k = k.reshape(T, self.num_local_kv_heads, self.head_dim)
+    q = self.q_layernorm(q.reshape(-1, self.head_dim)).reshape(
+        T, self.num_local_q_heads, self.head_dim)
+    k = self.k_layernorm(k.reshape(-1, self.head_dim)).reshape(
+        T, self.num_local_kv_heads, self.head_dim)
+    q, k = self.rotary_emb(positions, q, k)
+    attn_out = self.attn(q.reshape(T, -1), k.reshape(T, -1), v, forward_batch)
+    out, _ = self.out_proj(attn_out)
+    return out
+
 
 def _patched_shortconv_forward(self, hidden_states: torch.Tensor,
                                forward_batch) -> torch.Tensor:
@@ -165,16 +236,26 @@ def _patched_shortconv_forward(self, hidden_states: torch.Tensor,
     if forward_batch.forward_mode.is_decode():
         # Decode consumes [T, H] directly — there is no transpose to absorb, and
         # T is the batch size, so the tiled kernel would only add overhead.
-        B_gate, C_gate, x = proj.chunk(3, dim=-1)
-        Bx = B_gate * x
+        # The gate multiply is still worth replacing: `B_gate * x` reads two
+        # *strided rows* of `proj`, which defeats TensorIterator's vectorisation
+        # and leaves it at roughly half the bandwidth of an equivalent
+        # contiguous multiply. One Triton kernel reading `proj` directly avoids
+        # that without changing the number of launches.
+        if "gate" in _APPLIED_SET:
+            Bx = K.fused_gate_mul(proj, H)
+            C_gate = proj[:, H:2 * H]
+        else:
+            B_gate, C_gate, x = proj.chunk(3, dim=-1)
+            Bx = B_gate * x
         conv_out = causal_conv1d_update(
             Bx, conv_state, self.conv_weight, self.conv_bias, activation=None,
-            conv_state_indices=req_pool_indices.to(torch.int32))
+            conv_state_indices=_cached_int32_indices(forward_batch,
+                                                     req_pool_indices))
         output, _ = self.out_proj(C_gate * conv_out)
         return output
 
     T = hidden_states.shape[0]
-    if T < CONV_FUSION_MIN_TOKENS:
+    if "conv" not in _APPLIED_SET or T < CONV_FUSION_MIN_TOKENS:
         return _stock_shortconv_prefill(self, hidden_states, forward_batch,
                                         proj, causal_conv1d_fn)
 
@@ -186,7 +267,7 @@ def _patched_shortconv_forward(self, hidden_states: torch.Tensor,
         query_start_loc = extend_start_loc.new_empty(len(extend_start_loc) + 1)
         query_start_loc[:-1] = extend_start_loc
         query_start_loc[-1] = T
-        cache_indices = req_pool_indices.to(torch.int32)
+        cache_indices = _cached_int32_indices(forward_batch, req_pool_indices)
     else:
         query_start_loc = hidden_states.new_tensor([0, T], dtype=torch.int32)
         cache_indices = req_pool_indices[:1].to(torch.int32)
@@ -240,6 +321,12 @@ def apply() -> list[str]:
         return []
     from sglang.srt.models import lfm2_moe as M
 
+    known = {"norm", "scale", "conv", "gate", "idx", "qkrope"}
+    unknown = want - known
+    if unknown:
+        raise ValueError(f"unknown LFM_FUSION_PATCH components: {sorted(unknown)}")
+    _APPLIED_SET.update(want)
+
     if "norm" in want:
         M.Lfm2MoeDecoderLayer.forward = _patched_layer_forward
         M.Lfm2MoeModel.forward = _patched_model_forward
@@ -247,12 +334,36 @@ def apply() -> list[str]:
     if "scale" in want:
         M.Lfm2MoeSparseMoeBlock.forward = _patched_moe_forward
         _APPLIED.append("scale")
-    if "conv" in want:
+    # `gate` and `idx` both live inside the patched ShortConv, so that method
+    # has to be installed whenever any of the three is requested.
+    if want & {"conv", "gate", "idx"}:
         M.Lfm2MoeShortConv.forward = _patched_shortconv_forward
-        _APPLIED.append(f"conv(min_tokens={CONV_FUSION_MIN_TOKENS})")
+        if "conv" in want:
+            _APPLIED.append(f"conv(min_tokens={CONV_FUSION_MIN_TOKENS})")
+        if "gate" in want:
+            _APPLIED.append("gate")
+        if "idx" in want:
+            _APPLIED.append("idx")
+    if "qkrope" in want:
+        _install_rope_theta(M)
+        M.Lfm2MoeAttention.forward = _patched_attention_forward
+        _APPLIED.append("qkrope")
 
-    unknown = want - {"norm", "scale", "conv"}
-    if unknown:
-        raise ValueError(f"unknown LFM_FUSION_PATCH components: {sorted(unknown)}")
     print(f"[lfm_fusion_patch] applied: {_APPLIED}", flush=True)
     return list(_APPLIED)
+
+
+def _install_rope_theta(M):
+    """Cache rope theta on the attention module at construction time."""
+    orig_init = M.Lfm2MoeAttention.__init__
+
+    def patched_init(self, config, layer_id, quant_config=None, prefix=""):
+        orig_init(self, config, layer_id, quant_config=quant_config,
+                  prefix=prefix)
+        rp = getattr(config, "rope_parameters", None)
+        if rp is not None and "rope_theta" in rp:
+            self._lfm_rope_theta = float(rp["rope_theta"])
+        else:
+            self._lfm_rope_theta = float(getattr(config, "rope_theta", 1000000.0))
+
+    M.Lfm2MoeAttention.__init__ = patched_init

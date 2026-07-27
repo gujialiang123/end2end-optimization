@@ -1,0 +1,5 @@
+run,model_layer_kernels,model_layer_kernel_us,model_layer_span_sum_us,model_layer_device_idle_sum_us,device_idle_avg_per_layer_us,model_layer_launch_api_sum_us,launch_api_avg_per_layer_us,full_capture_device_idle_us,full_capture_kernel_launch_api_us,full_capture_graph_launch_api_us
+decode_b1_nograph,366,1756.711,18302.771,16546.06,689.419,1886.614,78.609,20188.022,2047.649,0.0
+decode_b1_graph,354,1788.565,1820.227,35.886,1.495,0.0,0.0,1808.786,132.347,682.631
+prefill_b4x4000_nograph,416,154752.241,156687.863,1865.638,77.735,2145.181,89.383,4295.149,2637.356,0.0
+prefill_b4x4000_graph,416,154272.941,156502.869,2158.855,89.952,2155.709,89.821,4569.007,2674.37,0.0

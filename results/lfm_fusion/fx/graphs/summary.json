@@ -1,0 +1,44 @@
+{
+  "shortconv_decode": {
+    "T": 8,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  },
+  "shortconv_prefill": {
+    "T": 2048,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  },
+  "layer_stock_decode": {
+    "T": 8,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  },
+  "layer_patched_decode": {
+    "T": 8,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  },
+  "layer_stock_prefill": {
+    "T": 512,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  },
+  "layer_patched_prefill": {
+    "T": 512,
+    "dynamo_graphs": 1,
+    "aot_graphs": 1,
+    "dynamo_error": false,
+    "inductor_ok": true
+  }
+}

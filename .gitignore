@@ -106,3 +106,8 @@ results/regime_kernel/backends/**/server_*.log
 # nsys scratch dirs
 **/.nsys_tmp/
 **/.triton_cache/
+
+# nsys/FX raw captures: keep FINDINGS + derived CSVs, drop the multi-MB dumps
+results/lfm_fusion/nsys/*.sqlite
+results/lfm_fusion/nsys/*.nsys-rep
+results/lfm_fusion/fx/inductor_cache/

@@ -1,0 +1,47 @@
+# torch.fx.symbolic_trace of shortconv_prefill
+# (causal_conv1d_* wrapped with torch.fx.wrap -> single opaque leaf node)
+
+==== graph.print_tabular() ====
+opcode         name              target                                       args                                                                         kwargs
+-------------  ----------------  -------------------------------------------  ---------------------------------------------------------------------------  -----------
+placeholder    hidden_states     hidden_states                                ()                                                                           {}
+placeholder    conv_state        conv_state                                   ()                                                                           {}
+placeholder    req_pool_indices  req_pool_indices                             ()                                                                           {}
+placeholder    query_start_loc   query_start_loc                              (None,)                                                                      {}
+placeholder    cache_indices     cache_indices                                (None,)                                                                      {}
+call_module    in_proj           in_proj                                      (hidden_states,)                                                             {}
+call_method    chunk             chunk                                        (in_proj, 3)                                                                 {'dim': -1}
+call_function  getitem           <built-in function getitem>                  (chunk, 0)                                                                   {}
+call_function  getitem_1         <built-in function getitem>                  (chunk, 1)                                                                   {}
+call_function  getitem_2         <built-in function getitem>                  (chunk, 2)                                                                   {}
+call_function  mul               <built-in function mul>                      (getitem, getitem_2)                                                         {}
+call_method    transpose         transpose                                    (mul, 0, 1)                                                                  {}
+call_method    contiguous        contiguous                                   (transpose,)                                                                 {}
+get_attr       conv_weight       conv_weight                                  ()                                                                           {}
+call_function  conv1d_fn_leaf    <function conv1d_fn_leaf at 0x7fd30188e7a0>  (contiguous, conv_weight, None, query_start_loc, cache_indices, conv_state)  {}
+call_method    transpose_1       transpose                                    (conv1d_fn_leaf, 0, 1)                                                       {}
+call_function  mul_1             <built-in function mul>                      (getitem_1, transpose_1)                                                     {}
+call_module    out_proj          out_proj                                     (mul_1,)                                                                     {}
+output         output            output                                       (out_proj,)                                                                  {}
+
+==== print_readable() ====
+class GraphModule(torch.nn.Module):
+    torch.fx._symbolic_trace.wrap("fx_common_conv1d_fn_leaf")
+    
+    def forward(self, hidden_states, conv_state, req_pool_indices, query_start_loc = None, cache_indices = None):
+        # No stacktrace found for following nodes
+        in_proj = self.in_proj(hidden_states);  hidden_states = None
+        chunk = in_proj.chunk(3, dim = -1);  in_proj = None
+        getitem = chunk[0]
+        getitem_1 = chunk[1]
+        getitem_2 = chunk[2];  chunk = None
+        mul = getitem * getitem_2;  getitem = getitem_2 = None
+        transpose = mul.transpose(0, 1);  mul = None
+        contiguous = transpose.contiguous();  transpose = None
+        conv_weight = self.conv_weight
+        conv1d_fn_leaf = fx_common_conv1d_fn_leaf(contiguous, conv_weight, None, query_start_loc, cache_indices, conv_state);  contiguous = conv_weight = query_start_loc = cache_indices = conv_state = None
+        transpose_1 = conv1d_fn_leaf.transpose(0, 1);  conv1d_fn_leaf = None
+        mul_1 = getitem_1 * transpose_1;  getitem_1 = transpose_1 = None
+        out_proj = self.out_proj(mul_1);  mul_1 = None
+        return out_proj
+        

@@ -1,0 +1,26 @@
+{
+  "date_utc": "2026-07-27",
+  "model": "/data/hf/LFM2.5-8B-A1B",
+  "gpu": {
+    "visible_device": 5,
+    "uuid": "GPU-50a5b4b6-74d9-f89d-32c7-1908ca1a161b",
+    "name": "NVIDIA H200",
+    "driver": "580.105.08"
+  },
+  "software": {
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "sglang": "0.5.12.post1",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "nsys": "2025.1.1.0"
+  },
+  "patch": "LFM_FUSION_PATCH=norm,scale",
+  "nsys_flags": "profile --trace=cuda,nvtx --sample=none --cpuctxsw=none --cuda-graph-trace=node --capture-range=cudaProfilerApi --capture-range-end=stop --force-overwrite=true --export=sqlite",
+  "common_bench_flags": "--tensor-parallel-size 1 --mem-fraction-static 0.85 --trust-remote-code --max-prefill-tokens 16384 --profile --profile-activities CUDA_PROFILER",
+  "runs": [
+    {"stem": "decode_b1_nograph", "batch": 1, "input_len": 100, "output_len": 32, "profile_stage": "decode", "disable_cuda_graph": true},
+    {"stem": "decode_b1_graph", "batch": 1, "input_len": 100, "output_len": 32, "profile_stage": "decode", "disable_cuda_graph": false},
+    {"stem": "prefill_b4x4000_nograph", "batch": 4, "input_len": 4000, "output_len": 8, "profile_stage": "prefill", "disable_cuda_graph": true},
+    {"stem": "prefill_b4x4000_graph", "batch": 4, "input_len": 4000, "output_len": 8, "profile_stage": "prefill", "disable_cuda_graph": false}
+  ]
+}

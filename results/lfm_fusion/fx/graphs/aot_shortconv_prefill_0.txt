@@ -1,0 +1,65 @@
+# aot graph #0 for shortconv_prefill
+# nodes=25
+
+==== graph.print_tabular() ====
+opcode         name                    target                       args                                                                    kwargs
+-------------  ----------------------  ---------------------------  ----------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+placeholder    arg0_1                  arg0_1                       ()                                                                      {}
+placeholder    arg1_1                  arg1_1                       ()                                                                      {}
+placeholder    arg2_1                  arg2_1                       ()                                                                      {}
+placeholder    arg3_1                  arg3_1                       ()                                                                      {}
+placeholder    arg4_1                  arg4_1                       ()                                                                      {}
+placeholder    arg5_1                  arg5_1                       ()                                                                      {}
+placeholder    arg6_1                  arg6_1                       ()                                                                      {}
+call_function  t                       aten.t.default               (arg0_1,)                                                               {}
+call_function  mm                      aten.mm.default              (arg1_1, t)                                                             {}
+call_function  split                   aten.split.Tensor            (mm, 2048, -1)                                                          {}
+call_function  getitem                 <built-in function getitem>  (split, 0)                                                              {}
+call_function  getitem_1               <built-in function getitem>  (split, 1)                                                              {}
+call_function  getitem_2               <built-in function getitem>  (split, 2)                                                              {}
+call_function  mul                     aten.mul.Tensor              (getitem, getitem_2)                                                    {}
+call_function  transpose               aten.transpose.int           (mul, 0, 1)                                                             {}
+call_function  clone                   aten.clone.default           (transpose,)                                                            {'memory_format': torch.contiguous_format}
+call_function  auto_functionalized_v2  auto_functionalized_v2       (<OpOverload(op='sgl_kernel.causal_conv1d_fwd', overload='default')>,)  {'bias_': None, 'query_start_loc': arg4_1, 'cache_indices': arg5_1, 'has_initial_state': None, 'silu_activation': False, 'pad_slot_id': -1, '_x_base_index': 0, '_weight_base_index': 1, '_conv_states_base_index': 2, '_all_bases': [clone, arg2_1, arg3_1]}
+call_function  getitem_4               <built-in function getitem>  (auto_functionalized_v2, 1)                                             {}
+call_function  getitem_5               <built-in function getitem>  (auto_functionalized_v2, 2)                                             {}
+call_function  getitem_6               <built-in function getitem>  (auto_functionalized_v2, 3)                                             {}
+call_function  transpose_2             aten.transpose.int           (getitem_4, 0, 1)                                                       {}
+call_function  mul_1                   aten.mul.Tensor              (getitem_1, transpose_2)                                                {}
+call_function  t_1                     aten.t.default               (arg6_1,)                                                               {}
+call_function  mm_1                    aten.mm.default              (mul_1, t_1)                                                            {}
+output         output                  output                       ((getitem_5, getitem_6, mm_1),)                                         {}
+
+==== print_readable() ====
+class <lambda>(torch.nn.Module):
+    def forward(self, arg0_1: "bf16[6144, 2048]", arg1_1: "bf16[2048, 2048]", arg2_1: "bf16[2048, 3]", arg3_1: "bf16[64, 2048, 3]", arg4_1: "i32[2]", arg5_1: "i32[1]", arg6_1: "bf16[2048, 2048]"):
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:141 in forward, code: proj = self.in_proj(hidden_states)
+        t: "bf16[2048, 6144]" = torch.ops.aten.t.default(arg0_1);  arg0_1 = None
+        mm: "bf16[2048, 6144]" = torch.ops.aten.mm.default(arg1_1, t);  arg1_1 = t = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:142 in forward, code: B_gate, C_gate, x = proj.chunk(3, dim=-1)
+        split = torch.ops.aten.split.Tensor(mm, 2048, -1);  mm = None
+        getitem: "bf16[2048, 2048]" = split[0]
+        getitem_1: "bf16[2048, 2048]" = split[1]
+        getitem_2: "bf16[2048, 2048]" = split[2];  split = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:143 in forward, code: Bx = B_gate * x
+        mul: "bf16[2048, 2048]" = torch.ops.aten.mul.Tensor(getitem, getitem_2);  getitem = getitem_2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:154 in forward, code: Bx_t = Bx.transpose(0, 1).contiguous()
+        transpose: "bf16[2048, 2048]" = torch.ops.aten.transpose.int(mul, 0, 1);  mul = None
+        clone: "bf16[2048, 2048]" = torch.ops.aten.clone.default(transpose, memory_format = torch.contiguous_format);  transpose = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/mamba.py:18 in causal_conv1d_fwd, code: torch.ops.sgl_kernel.causal_conv1d_fwd(
+        auto_functionalized_v2 = torch.ops.higher_order.auto_functionalized_v2(torch.ops.sgl_kernel.causal_conv1d_fwd.default, bias_ = None, query_start_loc = arg4_1, cache_indices = arg5_1, has_initial_state = None, silu_activation = False, pad_slot_id = -1, _x_base_index = 0, _weight_base_index = 1, _conv_states_base_index = 2, _all_bases = [clone, arg2_1, arg3_1]);  arg4_1 = arg5_1 = clone = arg2_1 = arg3_1 = None
+        getitem_4: "bf16[2048, 2048]" = auto_functionalized_v2[1]
+        getitem_5: "bf16[2048, 3]" = auto_functionalized_v2[2]
+        getitem_6: "bf16[64, 2048, 3]" = auto_functionalized_v2[3];  auto_functionalized_v2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:164 in forward, code: return self.out_proj(C_gate * conv_out)
+        transpose_2: "bf16[2048, 2048]" = torch.ops.aten.transpose.int(getitem_4, 0, 1);  getitem_4 = None
+        mul_1: "bf16[2048, 2048]" = torch.ops.aten.mul.Tensor(getitem_1, transpose_2);  getitem_1 = transpose_2 = None
+        t_1: "bf16[2048, 2048]" = torch.ops.aten.t.default(arg6_1);  arg6_1 = None
+        mm_1: "bf16[2048, 2048]" = torch.ops.aten.mm.default(mul_1, t_1);  mul_1 = t_1 = None
+        return (getitem_5, getitem_6, mm_1)
+        

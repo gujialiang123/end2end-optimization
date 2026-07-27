@@ -1,0 +1,5 @@
+run,stage,cuda_graph,kernels,kernel_us,gpu_activities,gpu_busy_union_us,gpu_span_us,device_idle_between_activities_us,kernel_launch_api_us,graph_launch_api_us,measured_wall_us,kernel_pct_wall
+decode_b1_nograph,decode,False,385,1930.696,388,1933.128,22121.15,20188.022,2047.649,0.0,17374.168,11.112
+decode_b1_graph,decode,True,374,1966.55,384,1970.422,3779.208,1808.786,132.347,682.631,2613.469,75.247
+prefill_b4x4000_nograph,prefill,False,519,155206.995,639,155311.603,159606.752,4295.149,2637.356,0.0,161125.245,96.327
+prefill_b4x4000_graph,prefill,True,519,154730.349,639,154840.334,159409.341,4569.007,2674.37,0.0,160850.091,96.195

@@ -1,0 +1,37 @@
+candidate,kernels_removed,extra_gpu_ops_removed,hbm_bytes_saved,measured_us,status,assumption,run,stage,cuda_graph,total_kernel_us,measured_chain_pct_kernel,wall_equivalent_hard_ceiling_pct
+shortconv_gate_layout_fusion,36,0,294912,36.64,candidate,"B*x, prefill layout copy, and C*conv_out move into causal_conv1d",decode_b1_nograph,decode,False,1930.696,1.8978,0.2109
+fused_qk_layout_norm_rope,11,0,61428,30.944,candidate,reuse existing fused kernel plus one hoisted int64-to-int32 positions cast,decode_b1_nograph,decode,False,1930.696,1.6027,0.1781
+moe_activation_in_down_gemm,22,0,630784,28.288,candidate,down GEMM loads gate/up and applies SiLU*up in its input prologue,decode_b1_nograph,decode,False,1930.696,1.4652,0.1628
+moe_sum_plus_next_rmsnorm,22,0,180224,70.626,candidate,"one kernel reduces top-4 outputs, adds residual, and computes RMSNorm",decode_b1_nograph,decode,False,1930.696,3.6581,0.4065
+moe_sum_in_down_gemm,22,0,720896,21.378,rejected_atomic_complexity,down GEMM atomically accumulates four weighted expert outputs per token,decode_b1_nograph,decode,False,1930.696,1.1073,0.123
+rope_plus_kv_store,6,0,12288,6.336,low_ceiling,reuse existing fused_set_kv_buffer rotary call path,decode_b1_nograph,decode,False,1930.696,0.3282,0.0365
+topk_plus_moe_alignment,22,0,352,142.497,rejected_launch_only,top-k kernel also emits alignment metadata; topk_ids remain materialized,decode_b1_nograph,decode,False,1930.696,7.3806,0.8202
+hoist_conv_metadata,17,0,204,20.288,rejected_default_graph_or_tiny,"build query_start_loc and int32 cache indices once, not in 18 layers",decode_b1_nograph,decode,False,1930.696,1.0508,0.1168
+main_rmsnorm_into_consumers,49,0,401408,102.624,rejected_impractical,conservative two activation-tensor passes removed per norm,decode_b1_nograph,decode,False,1930.696,5.3154,0.5907
+shortconv_gate_layout_fusion,36,0,294912,38.88,candidate,"B*x, prefill layout copy, and C*conv_out move into causal_conv1d",decode_b1_graph,decode,True,1966.55,1.9771,1.4877
+fused_qk_layout_norm_rope,11,0,61428,32.512,candidate,reuse existing fused kernel plus one hoisted int64-to-int32 positions cast,decode_b1_graph,decode,True,1966.55,1.6533,1.244
+moe_activation_in_down_gemm,22,0,630784,32.089,candidate,down GEMM loads gate/up and applies SiLU*up in its input prologue,decode_b1_graph,decode,True,1966.55,1.6317,1.2278
+moe_sum_plus_next_rmsnorm,22,0,180224,75.424,candidate,"one kernel reduces top-4 outputs, adds residual, and computes RMSNorm",decode_b1_graph,decode,True,1966.55,3.8353,2.886
+moe_sum_in_down_gemm,22,0,720896,23.264,rejected_atomic_complexity,down GEMM atomically accumulates four weighted expert outputs per token,decode_b1_graph,decode,True,1966.55,1.183,0.8902
+rope_plus_kv_store,6,0,12288,6.592,low_ceiling,reuse existing fused_set_kv_buffer rotary call path,decode_b1_graph,decode,True,1966.55,0.3352,0.2522
+topk_plus_moe_alignment,22,0,352,147.905,rejected_launch_only,top-k kernel also emits alignment metadata; topk_ids remain materialized,decode_b1_graph,decode,True,1966.55,7.521,5.6593
+hoist_conv_metadata,0,0,204,0,rejected_default_graph_or_tiny,"build query_start_loc and int32 cache indices once, not in 18 layers",decode_b1_graph,decode,True,1966.55,0.0,0.0
+main_rmsnorm_into_consumers,49,0,401408,108.768,rejected_impractical,conservative two activation-tensor passes removed per norm,decode_b1_graph,decode,True,1966.55,5.5309,4.1618
+shortconv_gate_layout_fusion,54,0,7077888000,9739.293,candidate,"B*x, prefill layout copy, and C*conv_out move into causal_conv1d",prefill_b4x4000_nograph,prefill,False,155206.995,6.275,6.0445
+fused_qk_layout_norm_rope,23,0,1965888000,5592.08,candidate,reuse existing fused kernel plus one hoisted int64-to-int32 positions cast,prefill_b4x4000_nograph,prefill,False,155206.995,3.603,3.4706
+moe_activation_in_down_gemm,22,0,10092544000,3411.365,candidate,down GEMM loads gate/up and applies SiLU*up in its input prologue,prefill_b4x4000_nograph,prefill,False,155206.995,2.1979,2.1172
+moe_sum_plus_next_rmsnorm,22,0,2883584000,3052.937,candidate,"one kernel reduces top-4 outputs, adds residual, and computes RMSNorm",prefill_b4x4000_nograph,prefill,False,155206.995,1.967,1.8948
+moe_sum_in_down_gemm,22,0,11534336000,1658.275,rejected_atomic_complexity,down GEMM atomically accumulates four weighted expert outputs per token,prefill_b4x4000_nograph,prefill,False,155206.995,1.0684,1.0292
+rope_plus_kv_store,6,0,196608000,95.584,low_ceiling,reuse existing fused_set_kv_buffer rotary call path,prefill_b4x4000_nograph,prefill,False,155206.995,0.0616,0.0593
+topk_plus_moe_alignment,44,0,5632000,1028.003,rejected_launch_only,top-k kernel also emits alignment metadata; topk_ids remain materialized,prefill_b4x4000_nograph,prefill,False,155206.995,0.6623,0.638
+hoist_conv_metadata,17,34,1156,21.344,rejected_default_graph_or_tiny,"build query_start_loc and int32 cache indices once, not in 18 layers",prefill_b4x4000_nograph,prefill,False,155206.995,0.0138,0.0132
+main_rmsnorm_into_consumers,49,0,6422528000,3054.697,rejected_impractical,conservative two activation-tensor passes removed per norm,prefill_b4x4000_nograph,prefill,False,155206.995,1.9681,1.8959
+shortconv_gate_layout_fusion,54,0,7077888000,9698.397,candidate,"B*x, prefill layout copy, and C*conv_out move into causal_conv1d",prefill_b4x4000_graph,prefill,True,154730.349,6.2679,6.0295
+fused_qk_layout_norm_rope,23,0,1965888000,5581.104,candidate,reuse existing fused kernel plus one hoisted int64-to-int32 positions cast,prefill_b4x4000_graph,prefill,True,154730.349,3.607,3.4698
+moe_activation_in_down_gemm,22,0,10092544000,3410.028,candidate,down GEMM loads gate/up and applies SiLU*up in its input prologue,prefill_b4x4000_graph,prefill,True,154730.349,2.2039,2.12
+moe_sum_plus_next_rmsnorm,22,0,2883584000,3050.282,candidate,"one kernel reduces top-4 outputs, adds residual, and computes RMSNorm",prefill_b4x4000_graph,prefill,True,154730.349,1.9714,1.8964
+moe_sum_in_down_gemm,22,0,11534336000,1662.725,rejected_atomic_complexity,down GEMM atomically accumulates four weighted expert outputs per token,prefill_b4x4000_graph,prefill,True,154730.349,1.0746,1.0337
+rope_plus_kv_store,6,0,196608000,98.656,low_ceiling,reuse existing fused_set_kv_buffer rotary call path,prefill_b4x4000_graph,prefill,True,154730.349,0.0638,0.0613
+topk_plus_moe_alignment,44,0,5632000,1025.956,rejected_launch_only,top-k kernel also emits alignment metadata; topk_ids remain materialized,prefill_b4x4000_graph,prefill,True,154730.349,0.6631,0.6378
+hoist_conv_metadata,17,34,1156,21.568,rejected_default_graph_or_tiny,"build query_start_loc and int32 cache indices once, not in 18 layers",prefill_b4x4000_graph,prefill,True,154730.349,0.0139,0.0134
+main_rmsnorm_into_consumers,49,0,6422528000,3038.312,rejected_impractical,conservative two activation-tensor passes removed per norm,prefill_b4x4000_graph,prefill,True,154730.349,1.9636,1.8889

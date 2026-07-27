@@ -1,0 +1,43 @@
+# torch.fx.symbolic_trace of shortconv_decode
+# (causal_conv1d_* wrapped with torch.fx.wrap -> single opaque leaf node)
+
+==== graph.print_tabular() ====
+opcode         name                target                                           args                                      kwargs
+-------------  ------------------  -----------------------------------------------  ----------------------------------------  -----------
+placeholder    hidden_states       hidden_states                                    ()                                        {}
+placeholder    conv_state          conv_state                                       ()                                        {}
+placeholder    req_pool_indices    req_pool_indices                                 ()                                        {}
+placeholder    query_start_loc     query_start_loc                                  (None,)                                   {}
+placeholder    cache_indices       cache_indices                                    (None,)                                   {}
+call_module    in_proj             in_proj                                          (hidden_states,)                          {}
+call_method    chunk               chunk                                            (in_proj, 3)                              {'dim': -1}
+call_function  getitem             <built-in function getitem>                      (chunk, 0)                                {}
+call_function  getitem_1           <built-in function getitem>                      (chunk, 1)                                {}
+call_function  getitem_2           <built-in function getitem>                      (chunk, 2)                                {}
+call_function  mul                 <built-in function mul>                          (getitem, getitem_2)                      {}
+get_attr       conv_weight         conv_weight                                      ()                                        {}
+call_method    to                  to                                               (req_pool_indices, torch.int32)           {}
+call_function  conv1d_update_leaf  <function conv1d_update_leaf at 0x7fd30186ca40>  (mul, conv_state, conv_weight, None, to)  {}
+call_function  mul_1               <built-in function mul>                          (getitem_1, conv1d_update_leaf)           {}
+call_module    out_proj            out_proj                                         (mul_1,)                                  {}
+output         output              output                                           (out_proj,)                               {}
+
+==== print_readable() ====
+class GraphModule(torch.nn.Module):
+    torch.fx._symbolic_trace.wrap("fx_common_conv1d_update_leaf")
+    
+    def forward(self, hidden_states, conv_state, req_pool_indices, query_start_loc = None, cache_indices = None):
+        # No stacktrace found for following nodes
+        in_proj = self.in_proj(hidden_states);  hidden_states = None
+        chunk = in_proj.chunk(3, dim = -1);  in_proj = None
+        getitem = chunk[0]
+        getitem_1 = chunk[1]
+        getitem_2 = chunk[2];  chunk = None
+        mul = getitem * getitem_2;  getitem = getitem_2 = None
+        conv_weight = self.conv_weight
+        to = req_pool_indices.to(torch.int32);  req_pool_indices = None
+        conv1d_update_leaf = fx_common_conv1d_update_leaf(mul, conv_state, conv_weight, None, to);  mul = conv_state = conv_weight = to = None
+        mul_1 = getitem_1 * conv1d_update_leaf;  getitem_1 = conv1d_update_leaf = None
+        out_proj = self.out_proj(mul_1);  mul_1 = None
+        return out_proj
+        

@@ -1,0 +1,136 @@
+{
+  "n_checks": 26,
+  "n_fail": 0,
+  "checks": [
+    {
+      "name": "prefill fuse-in bit-exact output      T=16000 seqs=4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in+out bit-exact output  T=16000 seqs=4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill conv_state identical          T=16000 seqs=4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in bit-exact output      T=3248 seqs=5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in+out bit-exact output  T=3248 seqs=5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill conv_state identical          T=3248 seqs=5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in bit-exact output      T=3 seqs=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in+out bit-exact output  T=3 seqs=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill conv_state identical          T=3 seqs=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in bit-exact output      T=16 seqs=2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill fuse-in+out bit-exact output  T=16 seqs=2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "prefill conv_state identical          T=16 seqs=2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode fused-gate bit-exact output    B=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode conv_state identical           B=1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode fused-gate bit-exact output    B=4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode conv_state identical           B=4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode fused-gate bit-exact output    B=8",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode conv_state identical           B=8",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode fused-gate bit-exact output    B=33",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode conv_state identical           B=33",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode fused-gate bit-exact output    B=128",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "decode conv_state identical           B=128",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "gate_transpose output is [H,T] with stride(-1)==1",
+      "ok": true,
+      "detail": "shape=(2048, 777) strides=(777, 1)"
+    },
+    {
+      "name": "gate_transpose == eager mul+transpose+contiguous (bit-exact)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "out_gate_untranspose == eager C_gate*conv_out (bit-exact)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "gate_only == eager B_gate*x (bit-exact)",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

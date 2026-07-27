@@ -1,0 +1,231 @@
+# aot graph #0 for layer_stock_prefill
+# nodes=90
+
+==== graph.print_tabular() ====
+opcode         name                      target                       args                                                                    kwargs
+-------------  ------------------------  ---------------------------  ----------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+placeholder    arg0_1                    arg0_1                       ()                                                                      {}
+placeholder    arg1_1                    arg1_1                       ()                                                                      {}
+placeholder    arg2_1                    arg2_1                       ()                                                                      {}
+placeholder    arg3_1                    arg3_1                       ()                                                                      {}
+placeholder    arg4_1                    arg4_1                       ()                                                                      {}
+placeholder    arg5_1                    arg5_1                       ()                                                                      {}
+placeholder    arg6_1                    arg6_1                       ()                                                                      {}
+placeholder    arg7_1                    arg7_1                       ()                                                                      {}
+placeholder    arg8_1                    arg8_1                       ()                                                                      {}
+placeholder    arg9_1                    arg9_1                       ()                                                                      {}
+placeholder    arg10_1                   arg10_1                      ()                                                                      {}
+placeholder    arg11_1                   arg11_1                      ()                                                                      {}
+placeholder    arg12_1                   arg12_1                      ()                                                                      {}
+call_function  detach                    aten.detach.default          (arg1_1,)                                                               {}
+call_function  empty_like                aten.empty_like.default      (arg0_1,)                                                               {'pin_memory': False}
+call_function  auto_functionalized_v2    auto_functionalized_v2       (<OpOverload(op='sgl_kernel.rmsnorm', overload='default')>,)            {'input': arg0_1, 'weight': detach, 'eps': 1e-05, 'enable_pdl': True, '_output_base_index': 0, '_all_bases': [empty_like]}
+call_function  getitem_1                 <built-in function getitem>  (auto_functionalized_v2, 1)                                             {}
+call_function  t                         aten.t.default               (arg2_1,)                                                               {}
+call_function  mm                        aten.mm.default              (getitem_1, t)                                                          {}
+call_function  split                     aten.split.Tensor            (mm, 2048, -1)                                                          {}
+call_function  getitem_2                 <built-in function getitem>  (split, 0)                                                              {}
+call_function  getitem_3                 <built-in function getitem>  (split, 1)                                                              {}
+call_function  getitem_4                 <built-in function getitem>  (split, 2)                                                              {}
+call_function  mul                       aten.mul.Tensor              (getitem_2, getitem_4)                                                  {}
+call_function  transpose                 aten.transpose.int           (mul, 0, 1)                                                             {}
+call_function  clone                     aten.clone.default           (transpose,)                                                            {'memory_format': torch.contiguous_format}
+call_function  auto_functionalized_v2_1  auto_functionalized_v2       (<OpOverload(op='sgl_kernel.causal_conv1d_fwd', overload='default')>,)  {'bias_': None, 'query_start_loc': arg5_1, 'cache_indices': arg6_1, 'has_initial_state': None, 'silu_activation': False, 'pad_slot_id': -1, '_x_base_index': 0, '_weight_base_index': 1, '_conv_states_base_index': 2, '_all_bases': [clone, arg3_1, arg4_1]}
+call_function  getitem_6                 <built-in function getitem>  (auto_functionalized_v2_1, 1)                                           {}
+call_function  getitem_7                 <built-in function getitem>  (auto_functionalized_v2_1, 2)                                           {}
+call_function  getitem_8                 <built-in function getitem>  (auto_functionalized_v2_1, 3)                                           {}
+call_function  transpose_2               aten.transpose.int           (getitem_6, 0, 1)                                                       {}
+call_function  mul_1                     aten.mul.Tensor              (getitem_3, transpose_2)                                                {}
+call_function  t_1                       aten.t.default               (arg7_1,)                                                               {}
+call_function  mm_1                      aten.mm.default              (mul_1, t_1)                                                            {}
+call_function  add                       aten.add.Tensor              (mm_1, arg0_1)                                                          {}
+call_function  detach_1                  aten.detach.default          (arg8_1,)                                                               {}
+call_function  empty_like_1              aten.empty_like.default      (add,)                                                                  {'pin_memory': False}
+call_function  auto_functionalized_v2_2  auto_functionalized_v2       (<OpOverload(op='sgl_kernel.rmsnorm', overload='default')>,)            {'input': add, 'weight': detach_1, 'eps': 1e-05, 'enable_pdl': True, '_output_base_index': 0, '_all_bases': [empty_like_1]}
+call_function  getitem_10                <built-in function getitem>  (auto_functionalized_v2_2, 1)                                           {}
+call_function  t_2                       aten.t.default               (arg9_1,)                                                               {}
+call_function  mm_2                      aten.mm.default              (getitem_10, t_2)                                                       {}
+call_function  _to_copy                  aten._to_copy.default        (mm_2,)                                                                 {'dtype': torch.float32}
+call_function  sigmoid                   aten.sigmoid.default         (_to_copy,)                                                             {}
+call_function  add_1                     aten.add.Tensor              (sigmoid, arg10_1)                                                      {}
+call_function  topk                      aten.topk.default            (add_1, 4)                                                              {}
+call_function  getitem_12                <built-in function getitem>  (topk, 1)                                                               {}
+call_function  gather                    aten.gather.default          (sigmoid, 1, getitem_12)                                                {}
+call_function  sum_1                     aten.sum.dim_IntList         (gather, [-1], True)                                                    {}
+call_function  div                       aten.div.Tensor              (gather, sum_1)                                                         {}
+call_function  _to_copy_1                aten._to_copy.default        (div,)                                                                  {'dtype': torch.bfloat16}
+call_function  select                    aten.select.int              (getitem_12, 0, 0)                                                      {}
+call_function  index                     aten.index.Tensor            (arg11_1, [select])                                                     {}
+call_function  unsqueeze_2               aten.unsqueeze.default       (index, 3)                                                              {}
+call_function  permute_1                 aten.permute.default         (unsqueeze_2, [3, 0, 1, 2])                                             {}
+call_function  permute_3                 aten.permute.default         (permute_1, [3, 1, 2, 0])                                               {}
+call_function  view_1                    aten.view.default            (permute_3, [1, 2048, 14336])                                           {}
+call_function  unsqueeze_3               aten.unsqueeze.default       (getitem_10, 2)                                                         {}
+call_function  unsqueeze_4               aten.unsqueeze.default       (unsqueeze_3, 3)                                                        {}
+call_function  permute_4                 aten.permute.default         (unsqueeze_4, [0, 2, 3, 1])                                             {}
+call_function  permute_5                 aten.permute.default         (permute_4, [0, 3, 1, 2])                                               {}
+call_function  view_2                    aten.view.default            (permute_5, [1, 512, 2048])                                             {}
+call_function  bmm                       aten.bmm.default             (view_2, view_1)                                                        {}
+call_function  view_3                    aten.view.default            (bmm, [512, 1, 4, 3584])                                                {}
+call_function  permute_6                 aten.permute.default         (view_3, [0, 2, 3, 1])                                                  {}
+call_function  view_4                    aten.view.default            (permute_6, [512, 4, 3584])                                             {}
+call_function  split_1                   aten.split.Tensor            (view_4, 1792, -1)                                                      {}
+call_function  getitem_13                <built-in function getitem>  (split_1, 0)                                                            {}
+call_function  getitem_14                <built-in function getitem>  (split_1, 1)                                                            {}
+call_function  silu                      aten.silu.default            (getitem_13,)                                                           {}
+call_function  mul_2                     aten.mul.Tensor              (silu, getitem_14)                                                      {}
+call_function  select_1                  aten.select.int              (getitem_12, 0, 0)                                                      {}
+call_function  index_1                   aten.index.Tensor            (arg12_1, [select_1])                                                   {}
+call_function  unsqueeze_5               aten.unsqueeze.default       (mul_2, 3)                                                              {}
+call_function  permute_7                 aten.permute.default         (unsqueeze_5, [0, 1, 3, 2])                                             {}
+call_function  unsqueeze_6               aten.unsqueeze.default       (index_1, 3)                                                            {}
+call_function  permute_8                 aten.permute.default         (unsqueeze_6, [3, 0, 1, 2])                                             {}
+call_function  permute_9                 aten.permute.default         (permute_7, [1, 0, 3, 2])                                               {}
+call_function  view_5                    aten.view.default            (permute_9, [4, 512, 1792])                                             {}
+call_function  permute_10                aten.permute.default         (permute_8, [1, 3, 2, 0])                                               {}
+call_function  view_6                    aten.view.default            (permute_10, [4, 1792, 2048])                                           {}
+call_function  bmm_1                     aten.bmm.default             (view_5, view_6)                                                        {}
+call_function  view_7                    aten.view.default            (bmm_1, [4, 512, 1, 2048])                                              {}
+call_function  permute_11                aten.permute.default         (view_7, [1, 0, 3, 2])                                                  {}
+call_function  view_8                    aten.view.default            (permute_11, [512, 4, 2048])                                            {}
+call_function  unsqueeze_7               aten.unsqueeze.default       (_to_copy_1, -1)                                                        {}
+call_function  mul_3                     aten.mul.Tensor              (view_8, unsqueeze_7)                                                   {}
+call_function  sum_2                     aten.sum.dim_IntList         (mul_3, [1])                                                            {}
+call_function  mul_4                     aten.mul.Tensor              (sum_2, 1.0)                                                            {}
+call_function  add_2                     aten.add.Tensor              (add, mul_4)                                                            {}
+output         output                    output                       ((getitem_7, getitem_8, add_2),)                                        {}
+
+==== print_readable() ====
+class <lambda>(torch.nn.Module):
+    def forward(self, arg0_1: "bf16[512, 2048]", arg1_1: "bf16[2048]", arg2_1: "bf16[6144, 2048]", arg3_1: "bf16[2048, 3]", arg4_1: "bf16[64, 2048, 3]", arg5_1: "i32[2]", arg6_1: "i32[1]", arg7_1: "bf16[2048, 2048]", arg8_1: "bf16[2048]", arg9_1: "bf16[32, 2048]", arg10_1: "f32[32]", arg11_1: "bf16[32, 3584, 2048]", arg12_1: "bf16[32, 2048, 1792]"):
+         # File: /home/t-jialianggu/work/sglang/python/sglang/srt/layers/layernorm.py:148 in forward_cuda, code: out = rmsnorm(x, self.weight.data, self.variance_epsilon)
+        detach: "bf16[2048]" = torch.ops.aten.detach.default(arg1_1);  arg1_1 = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/elementwise.py:42 in rmsnorm, code: out = torch.empty_like(input)
+        empty_like: "bf16[512, 2048]" = torch.ops.aten.empty_like.default(arg0_1, pin_memory = False)
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/elementwise.py:45 in rmsnorm, code: torch.ops.sgl_kernel.rmsnorm.default(out, input, weight, eps, enable_pdl)
+        auto_functionalized_v2 = torch.ops.higher_order.auto_functionalized_v2(torch.ops.sgl_kernel.rmsnorm.default, input = arg0_1, weight = detach, eps = 1e-05, enable_pdl = True, _output_base_index = 0, _all_bases = [empty_like]);  detach = empty_like = None
+        getitem_1: "bf16[512, 2048]" = auto_functionalized_v2[1];  auto_functionalized_v2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:141 in forward, code: proj = self.in_proj(hidden_states)
+        t: "bf16[2048, 6144]" = torch.ops.aten.t.default(arg2_1);  arg2_1 = None
+        mm: "bf16[512, 6144]" = torch.ops.aten.mm.default(getitem_1, t);  getitem_1 = t = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:142 in forward, code: B_gate, C_gate, x = proj.chunk(3, dim=-1)
+        split = torch.ops.aten.split.Tensor(mm, 2048, -1);  mm = None
+        getitem_2: "bf16[512, 2048]" = split[0]
+        getitem_3: "bf16[512, 2048]" = split[1]
+        getitem_4: "bf16[512, 2048]" = split[2];  split = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:143 in forward, code: Bx = B_gate * x
+        mul: "bf16[512, 2048]" = torch.ops.aten.mul.Tensor(getitem_2, getitem_4);  getitem_2 = getitem_4 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:154 in forward, code: Bx_t = Bx.transpose(0, 1).contiguous()
+        transpose: "bf16[2048, 512]" = torch.ops.aten.transpose.int(mul, 0, 1);  mul = None
+        clone: "bf16[2048, 512]" = torch.ops.aten.clone.default(transpose, memory_format = torch.contiguous_format);  transpose = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/mamba.py:18 in causal_conv1d_fwd, code: torch.ops.sgl_kernel.causal_conv1d_fwd(
+        auto_functionalized_v2_1 = torch.ops.higher_order.auto_functionalized_v2(torch.ops.sgl_kernel.causal_conv1d_fwd.default, bias_ = None, query_start_loc = arg5_1, cache_indices = arg6_1, has_initial_state = None, silu_activation = False, pad_slot_id = -1, _x_base_index = 0, _weight_base_index = 1, _conv_states_base_index = 2, _all_bases = [clone, arg3_1, arg4_1]);  arg5_1 = arg6_1 = clone = arg3_1 = arg4_1 = None
+        getitem_6: "bf16[2048, 512]" = auto_functionalized_v2_1[1]
+        getitem_7: "bf16[2048, 3]" = auto_functionalized_v2_1[2]
+        getitem_8: "bf16[64, 2048, 3]" = auto_functionalized_v2_1[3];  auto_functionalized_v2_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:164 in forward, code: return self.out_proj(C_gate * conv_out)
+        transpose_2: "bf16[512, 2048]" = torch.ops.aten.transpose.int(getitem_6, 0, 1);  getitem_6 = None
+        mul_1: "bf16[512, 2048]" = torch.ops.aten.mul.Tensor(getitem_3, transpose_2);  getitem_3 = transpose_2 = None
+        t_1: "bf16[2048, 2048]" = torch.ops.aten.t.default(arg7_1);  arg7_1 = None
+        mm_1: "bf16[512, 2048]" = torch.ops.aten.mm.default(mul_1, t_1);  mul_1 = t_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_export_graphs.py:222 in forward, code: hidden_states = hidden_states + residual
+        add: "bf16[512, 2048]" = torch.ops.aten.add.Tensor(mm_1, arg0_1);  mm_1 = arg0_1 = None
+        
+         # File: /home/t-jialianggu/work/sglang/python/sglang/srt/layers/layernorm.py:148 in forward_cuda, code: out = rmsnorm(x, self.weight.data, self.variance_epsilon)
+        detach_1: "bf16[2048]" = torch.ops.aten.detach.default(arg8_1);  arg8_1 = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/elementwise.py:42 in rmsnorm, code: out = torch.empty_like(input)
+        empty_like_1: "bf16[512, 2048]" = torch.ops.aten.empty_like.default(add, pin_memory = False)
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/elementwise.py:45 in rmsnorm, code: torch.ops.sgl_kernel.rmsnorm.default(out, input, weight, eps, enable_pdl)
+        auto_functionalized_v2_2 = torch.ops.higher_order.auto_functionalized_v2(torch.ops.sgl_kernel.rmsnorm.default, input = add, weight = detach_1, eps = 1e-05, enable_pdl = True, _output_base_index = 0, _all_bases = [empty_like_1]);  detach_1 = empty_like_1 = None
+        getitem_10: "bf16[512, 2048]" = auto_functionalized_v2_2[1];  auto_functionalized_v2_2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:195 in forward, code: router_logits = self.gate(hidden_states)
+        t_2: "bf16[2048, 32]" = torch.ops.aten.t.default(arg9_1);  arg9_1 = None
+        mm_2: "bf16[512, 32]" = torch.ops.aten.mm.default(getitem_10, t_2);  t_2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:196 in forward, code: scores = torch.sigmoid(router_logits.float())
+        _to_copy: "f32[512, 32]" = torch.ops.aten._to_copy.default(mm_2, dtype = torch.float32);  mm_2 = None
+        sigmoid: "f32[512, 32]" = torch.ops.aten.sigmoid.default(_to_copy);  _to_copy = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:197 in forward, code: scores_for_choice = scores + self.expert_bias
+        add_1: "f32[512, 32]" = torch.ops.aten.add.Tensor(sigmoid, arg10_1);  arg10_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:198 in forward, code: _, topk_ids = torch.topk(scores_for_choice, k=self.top_k, dim=-1)
+        topk = torch.ops.aten.topk.default(add_1, 4);  add_1 = None
+        getitem_12: "i64[512, 4]" = topk[1];  topk = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:199 in forward, code: topk_w = scores.gather(1, topk_ids)
+        gather: "f32[512, 4]" = torch.ops.aten.gather.default(sigmoid, 1, getitem_12);  sigmoid = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:200 in forward, code: topk_w = topk_w / topk_w.sum(dim=-1, keepdim=True)
+        sum_1: "f32[512, 1]" = torch.ops.aten.sum.dim_IntList(gather, [-1], True)
+        div: "f32[512, 4]" = torch.ops.aten.div.Tensor(gather, sum_1);  gather = sum_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:201 in forward, code: topk_w = topk_w.to(hidden_states.dtype)
+        _to_copy_1: "bf16[512, 4]" = torch.ops.aten._to_copy.default(div, dtype = torch.bfloat16);  div = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:204 in forward, code: gate_up = torch.einsum("th,eih->tei", hidden_states, self.w13[topk_ids[0]])
+        select: "i64[4]" = torch.ops.aten.select.int(getitem_12, 0, 0)
+        index: "bf16[4, 3584, 2048]" = torch.ops.aten.index.Tensor(arg11_1, [select]);  arg11_1 = select = None
+        unsqueeze_2: "bf16[4, 3584, 2048, 1]" = torch.ops.aten.unsqueeze.default(index, 3);  index = None
+        permute_1: "bf16[1, 4, 3584, 2048]" = torch.ops.aten.permute.default(unsqueeze_2, [3, 0, 1, 2]);  unsqueeze_2 = None
+        permute_3: "bf16[2048, 4, 3584, 1]" = torch.ops.aten.permute.default(permute_1, [3, 1, 2, 0]);  permute_1 = None
+        view_1: "bf16[1, 2048, 14336]" = torch.ops.aten.view.default(permute_3, [1, 2048, 14336]);  permute_3 = None
+        unsqueeze_3: "bf16[512, 2048, 1]" = torch.ops.aten.unsqueeze.default(getitem_10, 2);  getitem_10 = None
+        unsqueeze_4: "bf16[512, 2048, 1, 1]" = torch.ops.aten.unsqueeze.default(unsqueeze_3, 3);  unsqueeze_3 = None
+        permute_4: "bf16[512, 1, 1, 2048]" = torch.ops.aten.permute.default(unsqueeze_4, [0, 2, 3, 1]);  unsqueeze_4 = None
+        permute_5: "bf16[512, 2048, 1, 1]" = torch.ops.aten.permute.default(permute_4, [0, 3, 1, 2]);  permute_4 = None
+        view_2: "bf16[1, 512, 2048]" = torch.ops.aten.view.default(permute_5, [1, 512, 2048]);  permute_5 = None
+        bmm: "bf16[1, 512, 14336]" = torch.ops.aten.bmm.default(view_2, view_1);  view_2 = view_1 = None
+        view_3: "bf16[512, 1, 4, 3584]" = torch.ops.aten.view.default(bmm, [512, 1, 4, 3584]);  bmm = None
+        permute_6: "bf16[512, 4, 3584, 1]" = torch.ops.aten.permute.default(view_3, [0, 2, 3, 1]);  view_3 = None
+        view_4: "bf16[512, 4, 3584]" = torch.ops.aten.view.default(permute_6, [512, 4, 3584]);  permute_6 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:205 in forward, code: g, u = gate_up.chunk(2, dim=-1)
+        split_1 = torch.ops.aten.split.Tensor(view_4, 1792, -1);  view_4 = None
+        getitem_13: "bf16[512, 4, 1792]" = split_1[0]
+        getitem_14: "bf16[512, 4, 1792]" = split_1[1];  split_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:206 in forward, code: act = torch.nn.functional.silu(g) * u
+        silu: "bf16[512, 4, 1792]" = torch.ops.aten.silu.default(getitem_13);  getitem_13 = None
+        mul_2: "bf16[512, 4, 1792]" = torch.ops.aten.mul.Tensor(silu, getitem_14);  silu = getitem_14 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:207 in forward, code: per_expert = torch.einsum("tei,ehi->teh", act, self.w2[topk_ids[0]])
+        select_1: "i64[4]" = torch.ops.aten.select.int(getitem_12, 0, 0);  getitem_12 = None
+        index_1: "bf16[4, 2048, 1792]" = torch.ops.aten.index.Tensor(arg12_1, [select_1]);  arg12_1 = select_1 = None
+        unsqueeze_5: "bf16[512, 4, 1792, 1]" = torch.ops.aten.unsqueeze.default(mul_2, 3);  mul_2 = None
+        permute_7: "bf16[512, 4, 1, 1792]" = torch.ops.aten.permute.default(unsqueeze_5, [0, 1, 3, 2]);  unsqueeze_5 = None
+        unsqueeze_6: "bf16[4, 2048, 1792, 1]" = torch.ops.aten.unsqueeze.default(index_1, 3);  index_1 = None
+        permute_8: "bf16[1, 4, 2048, 1792]" = torch.ops.aten.permute.default(unsqueeze_6, [3, 0, 1, 2]);  unsqueeze_6 = None
+        permute_9: "bf16[4, 512, 1792, 1]" = torch.ops.aten.permute.default(permute_7, [1, 0, 3, 2]);  permute_7 = None
+        view_5: "bf16[4, 512, 1792]" = torch.ops.aten.view.default(permute_9, [4, 512, 1792]);  permute_9 = None
+        permute_10: "bf16[4, 1792, 2048, 1]" = torch.ops.aten.permute.default(permute_8, [1, 3, 2, 0]);  permute_8 = None
+        view_6: "bf16[4, 1792, 2048]" = torch.ops.aten.view.default(permute_10, [4, 1792, 2048]);  permute_10 = None
+        bmm_1: "bf16[4, 512, 2048]" = torch.ops.aten.bmm.default(view_5, view_6);  view_5 = view_6 = None
+        view_7: "bf16[4, 512, 1, 2048]" = torch.ops.aten.view.default(bmm_1, [4, 512, 1, 2048]);  bmm_1 = None
+        permute_11: "bf16[512, 4, 2048, 1]" = torch.ops.aten.permute.default(view_7, [1, 0, 3, 2]);  view_7 = None
+        view_8: "bf16[512, 4, 2048]" = torch.ops.aten.view.default(permute_11, [512, 4, 2048]);  permute_11 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:208 in forward, code: out = (per_expert * topk_w.unsqueeze(-1)).sum(dim=1)
+        unsqueeze_7: "bf16[512, 4, 1]" = torch.ops.aten.unsqueeze.default(_to_copy_1, -1);  _to_copy_1 = None
+        mul_3: "bf16[512, 4, 2048]" = torch.ops.aten.mul.Tensor(view_8, unsqueeze_7);  view_8 = unsqueeze_7 = None
+        sum_2: "bf16[512, 2048]" = torch.ops.aten.sum.dim_IntList(mul_3, [1]);  mul_3 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:210 in forward, code: out = out * self.routed_scaling
+        mul_4: "bf16[512, 2048]" = torch.ops.aten.mul.Tensor(sum_2, 1.0);  sum_2 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_export_graphs.py:223 in forward, code: hidden_states = hidden_states + self.feed_forward(self.ffn_norm(hidden_states))
+        add_2: "bf16[512, 2048]" = torch.ops.aten.add.Tensor(add, mul_4);  add = mul_4 = None
+        return (getitem_7, getitem_8, add_2)
+        

@@ -1,0 +1,65 @@
+# dynamo graph #0 for shortconv_prefill
+# nodes=20
+
+==== graph.print_tabular() ====
+opcode         name                                        target                                      args                                                                                                                kwargs
+-------------  ------------------------------------------  ------------------------------------------  ------------------------------------------------------------------------------------------------------------------  -----------
+placeholder    l_self_modules_in_proj_parameters_weight_   L_self_modules_in_proj_parameters_weight_   ()                                                                                                                  {}
+placeholder    l_hidden_states_                            L_hidden_states_                            ()                                                                                                                  {}
+placeholder    l_self_parameters_conv_weight_              L_self_parameters_conv_weight_              ()                                                                                                                  {}
+placeholder    l_conv_state_                               L_conv_state_                               ()                                                                                                                  {}
+placeholder    l_query_start_loc_                          L_query_start_loc_                          ()                                                                                                                  {}
+placeholder    l_cache_indices_                            L_cache_indices_                            ()                                                                                                                  {}
+placeholder    l_self_modules_out_proj_parameters_weight_  L_self_modules_out_proj_parameters_weight_  ()                                                                                                                  {}
+call_function  proj                                        <built-in function linear>                  (l_hidden_states_, l_self_modules_in_proj_parameters_weight_, None)                                                 {}
+call_method    chunk                                       chunk                                       (proj, 3)                                                                                                           {'dim': -1}
+call_function  B_gate                                      <built-in function getitem>                 (chunk, 0)                                                                                                          {}
+call_function  C_gate                                      <built-in function getitem>                 (chunk, 1)                                                                                                          {}
+call_function  x                                           <built-in function getitem>                 (chunk, 2)                                                                                                          {}
+call_function  Bx                                          <built-in function mul>                     (B_gate, x)                                                                                                         {}
+call_method    transpose                                   transpose                                   (Bx, 0, 1)                                                                                                          {}
+call_method    Bx_t                                        contiguous                                  (transpose,)                                                                                                        {}
+call_function  causal_conv1d_fwd                           sgl_kernel.causal_conv1d_fwd                (Bx_t, l_self_parameters_conv_weight_, None, l_conv_state_, l_query_start_loc_, l_cache_indices_, None, False, -1)  {}
+call_method    conv_out                                    transpose                                   (Bx_t, 0, 1)                                                                                                        {}
+call_function  mul_1                                       <built-in function mul>                     (C_gate, conv_out)                                                                                                  {}
+call_function  linear_1                                    <built-in function linear>                  (mul_1, l_self_modules_out_proj_parameters_weight_, None)                                                           {}
+output         output                                      output                                      ((linear_1,),)                                                                                                      {}
+
+==== print_readable() ====
+class GraphModule(torch.nn.Module):
+    def forward(self, L_self_modules_in_proj_parameters_weight_: "bf16[6144, 2048]", L_hidden_states_: "bf16[2048, 2048]", L_self_parameters_conv_weight_: "bf16[2048, 3]", L_conv_state_: "bf16[64, 2048, 3]", L_query_start_loc_: "i32[2]", L_cache_indices_: "i32[1]", L_self_modules_out_proj_parameters_weight_: "bf16[2048, 2048]"):
+        l_self_modules_in_proj_parameters_weight_ = L_self_modules_in_proj_parameters_weight_
+        l_hidden_states_ = L_hidden_states_
+        l_self_parameters_conv_weight_ = L_self_parameters_conv_weight_
+        l_conv_state_ = L_conv_state_
+        l_query_start_loc_ = L_query_start_loc_
+        l_cache_indices_ = L_cache_indices_
+        l_self_modules_out_proj_parameters_weight_ = L_self_modules_out_proj_parameters_weight_
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:141 in forward, code: proj = self.in_proj(hidden_states)
+        proj: "bf16[2048, 6144]" = torch._C._nn.linear(l_hidden_states_, l_self_modules_in_proj_parameters_weight_, None);  l_hidden_states_ = l_self_modules_in_proj_parameters_weight_ = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:142 in forward, code: B_gate, C_gate, x = proj.chunk(3, dim=-1)
+        chunk = proj.chunk(3, dim = -1);  proj = None
+        B_gate: "bf16[2048, 2048]" = chunk[0]
+        C_gate: "bf16[2048, 2048]" = chunk[1]
+        x: "bf16[2048, 2048]" = chunk[2];  chunk = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:143 in forward, code: Bx = B_gate * x
+        Bx: "bf16[2048, 2048]" = B_gate * x;  B_gate = x = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:154 in forward, code: Bx_t = Bx.transpose(0, 1).contiguous()
+        transpose: "bf16[2048, 2048]" = Bx.transpose(0, 1);  Bx = None
+        Bx_t: "bf16[2048, 2048]" = transpose.contiguous();  transpose = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/mamba.py:18 in causal_conv1d_fwd, code: torch.ops.sgl_kernel.causal_conv1d_fwd(
+        causal_conv1d_fwd = torch.ops.sgl_kernel.causal_conv1d_fwd(Bx_t, l_self_parameters_conv_weight_, None, l_conv_state_, l_query_start_loc_, l_cache_indices_, None, False, -1);  l_self_parameters_conv_weight_ = l_conv_state_ = l_query_start_loc_ = l_cache_indices_ = causal_conv1d_fwd = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:162 in forward, code: ).transpose(0, 1)
+        conv_out: "bf16[2048, 2048]" = Bx_t.transpose(0, 1);  Bx_t = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:164 in forward, code: return self.out_proj(C_gate * conv_out)
+        mul_1: "bf16[2048, 2048]" = C_gate * conv_out;  C_gate = conv_out = None
+        linear_1: "bf16[2048, 2048]" = torch._C._nn.linear(mul_1, l_self_modules_out_proj_parameters_weight_, None);  mul_1 = l_self_modules_out_proj_parameters_weight_ = None
+        return (linear_1,)
+        

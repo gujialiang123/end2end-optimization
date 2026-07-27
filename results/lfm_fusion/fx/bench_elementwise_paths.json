@@ -1,0 +1,47 @@
+[
+  {
+    "T": 4096,
+    "contiguous_add_us": 11.761833230654398,
+    "contiguous_mul_us": 12.12850014368693,
+    "b_gate_mul_strided_us": 23.5656996568044,
+    "c_gate_mul_transposed_us": 63.330864906311035,
+    "transpose_contiguous_us": 51.71076854070028,
+    "gbps": {
+      "contiguous_add": 4279,
+      "contiguous_mul": 4150,
+      "b_gate_mul_strided": 2136,
+      "c_gate_mul_transposed": 795,
+      "transpose_contiguous": 649
+    }
+  },
+  {
+    "T": 8192,
+    "contiguous_add_us": 24.784966309865315,
+    "contiguous_mul_us": 24.775999784469604,
+    "b_gate_mul_strided_us": 45.89996735254923,
+    "c_gate_mul_transposed_us": 121.15320364634196,
+    "transpose_contiguous_us": 104.81506983439128,
+    "gbps": {
+      "contiguous_add": 4061,
+      "contiguous_mul": 4063,
+      "b_gate_mul_strided": 2193,
+      "c_gate_mul_transposed": 831,
+      "transpose_contiguous": 640
+    }
+  },
+  {
+    "T": 16000,
+    "contiguous_add_us": 46.445767084757485,
+    "contiguous_mul_us": 46.45556608835856,
+    "b_gate_mul_strided_us": 86.73257033030193,
+    "c_gate_mul_transposed_us": 225.00707308451334,
+    "transpose_contiguous_us": 222.8438377380371,
+    "gbps": {
+      "contiguous_add": 4233,
+      "contiguous_mul": 4232,
+      "b_gate_mul_strided": 2267,
+      "c_gate_mul_transposed": 874,
+      "transpose_contiguous": 588
+    }
+  }
+]

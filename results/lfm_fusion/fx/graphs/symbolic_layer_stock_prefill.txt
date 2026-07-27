@@ -1,0 +1,115 @@
+# torch.fx.symbolic_trace of layer_stock_prefill
+# (causal_conv1d_* wrapped with torch.fx.wrap -> single opaque leaf node)
+
+==== graph.print_tabular() ====
+opcode         name                      target                                                      args                                                       kwargs
+-------------  ------------------------  ----------------------------------------------------------  ---------------------------------------------------------  ----------------------------
+placeholder    hidden_states             hidden_states                                               ()                                                         {}
+placeholder    conv_state                conv_state                                                  ()                                                         {}
+placeholder    rpi                       rpi                                                         ()                                                         {}
+placeholder    qsl                       qsl                                                         (None,)                                                    {}
+placeholder    ci                        ci                                                          (None,)                                                    {}
+call_module    operator_norm             operator_norm                                               (hidden_states,)                                           {}
+call_module    conv_in_proj              conv.in_proj                                                (operator_norm,)                                           {}
+call_method    chunk                     chunk                                                       (conv_in_proj, 3)                                          {'dim': -1}
+call_function  getitem                   <built-in function getitem>                                 (chunk, 0)                                                 {}
+call_function  getitem_1                 <built-in function getitem>                                 (chunk, 1)                                                 {}
+call_function  getitem_2                 <built-in function getitem>                                 (chunk, 2)                                                 {}
+call_function  mul                       <built-in function mul>                                     (getitem, getitem_2)                                       {}
+call_method    transpose                 transpose                                                   (mul, 0, 1)                                                {}
+call_method    contiguous                contiguous                                                  (transpose,)                                               {}
+get_attr       conv_conv_weight          conv.conv_weight                                            ()                                                         {}
+call_function  conv1d_fn_leaf            <function conv1d_fn_leaf at 0x7fd30188e7a0>                 (contiguous, conv_conv_weight, None, qsl, ci, conv_state)  {}
+call_method    transpose_1               transpose                                                   (conv1d_fn_leaf, 0, 1)                                     {}
+call_function  mul_1                     <built-in function mul>                                     (getitem_1, transpose_1)                                   {}
+call_module    conv_out_proj             conv.out_proj                                               (mul_1,)                                                   {}
+call_function  add                       <built-in function add>                                     (conv_out_proj, hidden_states)                             {}
+call_module    ffn_norm                  ffn_norm                                                    (add,)                                                     {}
+call_module    feed_forward_gate         feed_forward.gate                                           (ffn_norm,)                                                {}
+call_method    float_1                   float                                                       (feed_forward_gate,)                                       {}
+call_function  sigmoid                   <built-in method sigmoid of type object at 0x7fd4a73e7a60>  (float_1,)                                                 {}
+get_attr       feed_forward_expert_bias  feed_forward.expert_bias                                    ()                                                         {}
+call_function  add_1                     <built-in function add>                                     (sigmoid, feed_forward_expert_bias)                        {}
+call_function  topk                      <built-in method topk of type object at 0x7fd4a73e7a60>     (add_1,)                                                   {'k': 4, 'dim': -1}
+call_function  getitem_3                 <built-in function getitem>                                 (topk, 0)                                                  {}
+call_function  getitem_4                 <built-in function getitem>                                 (topk, 1)                                                  {}
+call_method    gather                    gather                                                      (sigmoid, 1, getitem_4)                                    {}
+call_method    sum_1                     sum                                                         (gather,)                                                  {'dim': -1, 'keepdim': True}
+call_function  truediv                   <built-in function truediv>                                 (gather, sum_1)                                            {}
+call_function  getattr_1                 <built-in function getattr>                                 (ffn_norm, 'dtype')                                        {}
+call_method    to                        to                                                          (truediv, getattr_1)                                       {}
+get_attr       feed_forward_w13          feed_forward.w13                                            ()                                                         {}
+call_function  getitem_5                 <built-in function getitem>                                 (getitem_4, 0)                                             {}
+call_function  getitem_6                 <built-in function getitem>                                 (feed_forward_w13, getitem_5)                              {}
+call_function  einsum                    <function einsum at 0x7fd30329b060>                         ('th,eih->tei', ffn_norm, getitem_6)                       {}
+call_method    chunk_1                   chunk                                                       (einsum, 2)                                                {'dim': -1}
+call_function  getitem_7                 <built-in function getitem>                                 (chunk_1, 0)                                               {}
+call_function  getitem_8                 <built-in function getitem>                                 (chunk_1, 1)                                               {}
+call_function  silu                      <function silu at 0x7fd3035fff60>                           (getitem_7,)                                               {'inplace': False}
+call_function  mul_2                     <built-in function mul>                                     (silu, getitem_8)                                          {}
+get_attr       feed_forward_w2           feed_forward.w2                                             ()                                                         {}
+call_function  getitem_9                 <built-in function getitem>                                 (getitem_4, 0)                                             {}
+call_function  getitem_10                <built-in function getitem>                                 (feed_forward_w2, getitem_9)                               {}
+call_function  einsum_1                  <function einsum at 0x7fd30329b060>                         ('tei,ehi->teh', mul_2, getitem_10)                        {}
+call_method    unsqueeze                 unsqueeze                                                   (to, -1)                                                   {}
+call_function  mul_3                     <built-in function mul>                                     (einsum_1, unsqueeze)                                      {}
+call_method    sum_2                     sum                                                         (mul_3,)                                                   {'dim': 1}
+call_function  mul_4                     <built-in function mul>                                     (sum_2, 1.0)                                               {}
+call_function  add_2                     <built-in function add>                                     (add, mul_4)                                               {}
+output         output                    output                                                      ((add_2, hidden_states),)                                  {}
+
+==== print_readable() ====
+class GraphModule(torch.nn.Module):
+    torch.fx._symbolic_trace.wrap("fx_common_conv1d_fn_leaf")
+    
+    def forward(self, hidden_states, conv_state, rpi, qsl = None, ci = None):
+        # No stacktrace found for following nodes
+        operator_norm = self.operator_norm(hidden_states)
+        conv_in_proj = self.conv.in_proj(operator_norm);  operator_norm = None
+        chunk = conv_in_proj.chunk(3, dim = -1);  conv_in_proj = None
+        getitem = chunk[0]
+        getitem_1 = chunk[1]
+        getitem_2 = chunk[2];  chunk = None
+        mul = getitem * getitem_2;  getitem = getitem_2 = None
+        transpose = mul.transpose(0, 1);  mul = None
+        contiguous = transpose.contiguous();  transpose = None
+        conv_conv_weight = self.conv.conv_weight
+        conv1d_fn_leaf = fx_common_conv1d_fn_leaf(contiguous, conv_conv_weight, None, qsl, ci, conv_state);  contiguous = conv_conv_weight = qsl = ci = conv_state = None
+        transpose_1 = conv1d_fn_leaf.transpose(0, 1);  conv1d_fn_leaf = None
+        mul_1 = getitem_1 * transpose_1;  getitem_1 = transpose_1 = None
+        conv_out_proj = self.conv.out_proj(mul_1);  mul_1 = None
+        add = conv_out_proj + hidden_states;  conv_out_proj = None
+        ffn_norm = self.ffn_norm(add)
+        feed_forward_gate = self.feed_forward.gate(ffn_norm)
+        float_1 = feed_forward_gate.float();  feed_forward_gate = None
+        sigmoid = torch.sigmoid(float_1);  float_1 = None
+        feed_forward_expert_bias = self.feed_forward.expert_bias
+        add_1 = sigmoid + feed_forward_expert_bias;  feed_forward_expert_bias = None
+        topk = torch.topk(add_1, k = 4, dim = -1);  add_1 = None
+        getitem_3 = topk[0];  getitem_3 = None
+        getitem_4 = topk[1];  topk = None
+        gather = sigmoid.gather(1, getitem_4);  sigmoid = None
+        sum_1 = gather.sum(dim = -1, keepdim = True)
+        truediv = gather / sum_1;  gather = sum_1 = None
+        getattr_1 = ffn_norm.dtype
+        to = truediv.to(getattr_1);  truediv = getattr_1 = None
+        feed_forward_w13 = self.feed_forward.w13
+        getitem_5 = getitem_4[0]
+        getitem_6 = feed_forward_w13[getitem_5];  feed_forward_w13 = getitem_5 = None
+        einsum = torch.functional.einsum('th,eih->tei', ffn_norm, getitem_6);  ffn_norm = getitem_6 = None
+        chunk_1 = einsum.chunk(2, dim = -1);  einsum = None
+        getitem_7 = chunk_1[0]
+        getitem_8 = chunk_1[1];  chunk_1 = None
+        silu = torch.nn.functional.silu(getitem_7, inplace = False);  getitem_7 = None
+        mul_2 = silu * getitem_8;  silu = getitem_8 = None
+        feed_forward_w2 = self.feed_forward.w2
+        getitem_9 = getitem_4[0];  getitem_4 = None
+        getitem_10 = feed_forward_w2[getitem_9];  feed_forward_w2 = getitem_9 = None
+        einsum_1 = torch.functional.einsum('tei,ehi->teh', mul_2, getitem_10);  mul_2 = getitem_10 = None
+        unsqueeze = to.unsqueeze(-1);  to = None
+        mul_3 = einsum_1 * unsqueeze;  einsum_1 = unsqueeze = None
+        sum_2 = mul_3.sum(dim = 1);  mul_3 = None
+        mul_4 = sum_2 * 1.0;  sum_2 = None
+        add_2 = add + mul_4;  add = mul_4 = None
+        return (add_2, hidden_states)
+        

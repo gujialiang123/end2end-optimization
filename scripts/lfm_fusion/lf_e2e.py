@@ -54,6 +54,9 @@ ARMS = {
     "conv": "conv",
     "norm+scale": "norm,scale",
     "norm+scale+conv": "norm,scale,conv",
+    "qkrope": "qkrope",
+    "gate+idx": "gate,idx",
+    "all": "norm,scale,conv,gate,idx,qkrope",
 }
 
 

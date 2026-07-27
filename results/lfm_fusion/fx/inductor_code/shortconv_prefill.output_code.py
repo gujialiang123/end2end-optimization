@@ -1,0 +1,206 @@
+
+# AOT ID: ['3_inference']
+from ctypes import c_void_p, c_long, c_int
+import torch
+import math
+import random
+import os
+import tempfile
+from math import inf, nan
+from cmath import nanj
+from torch._inductor.hooks import run_intermediate_hooks
+from torch._inductor.utils import maybe_profile
+from torch._inductor.codegen.memory_planning import _align as align
+from torch import device, empty_strided
+from torch._inductor.async_compile import AsyncCompile
+from torch._inductor.select_algorithm import extern_kernels
+import triton
+import triton.language as tl
+from torch._inductor.runtime.triton_heuristics import start_graph, end_graph
+from torch._C import _cuda_getCurrentRawStream as get_raw_stream
+
+aten = torch.ops.aten
+inductor_ops = torch.ops.inductor
+_quantized = torch.ops._quantized
+assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+assert_alignment = torch._C._dynamo.guards.assert_alignment
+empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+empty_strided_cpu_pinned = torch._C._dynamo.guards._empty_strided_cpu_pinned
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
+empty_strided_mtia = torch._C._dynamo.guards._empty_strided_mtia
+reinterpret_tensor = torch._C._dynamo.guards._reinterpret_tensor
+alloc_from_pool = torch.ops.inductor._alloc_from_pool
+async_compile = AsyncCompile()
+empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2p
+
+
+# kernel path: /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/fx/inductor_cache/ja/cjacimallzb6f47rrjgznfibhn7je27hj5hiwn7gmmuowlhbqiwl.py
+# Topologically Sorted Source Nodes: [chunk, Bx, transpose, Bx_t, causal_conv1d_fwd], Original ATen: [aten.split, aten.mul, aten.transpose, aten.clone, sgl_kernel.causal_conv1d_fwd]
+# Source node to ATen node mapping:
+#   Bx => mul
+#   Bx_t => clone
+#   causal_conv1d_fwd => causal_conv1d_fwd_default
+#   chunk => split
+#   transpose => permute_1
+# Graph fragment:
+#   %mm : Tensor "bf16[2048, 6144][6144, 1]cuda:0" = PlaceHolder[target=mm]
+#   %split : [num_users=3] = call_function[target=torch.ops.aten.split.Tensor](args = (%mm, 2048, -1), kwargs = {})
+#   %mul : Tensor "bf16[2048, 2048][2048, 1]cuda:0"[num_users=1] = call_function[target=torch.ops.aten.mul.Tensor](args = (%getitem, %getitem_2), kwargs = {})
+#   %permute_1 : Tensor "bf16[2048, 2048][1, 2048]cuda:0"[num_users=1] = call_function[target=torch.ops.aten.permute.default](args = (%mul, [1, 0]), kwargs = {})
+#   %clone : Tensor "bf16[2048, 2048][2048, 1]cuda:0"[num_users=2] = call_function[target=torch.ops.aten.clone.default](args = (%permute_1,), kwargs = {memory_format: torch.contiguous_format})
+#   %causal_conv1d_fwd_default : [num_users=0] = call_function[target=torch.ops.sgl_kernel.causal_conv1d_fwd.default](args = (%clone, %arg2_1, None, %arg3_1, %arg4_1, %arg5_1, None, False, -1), kwargs = {})
+#   return %buf1
+triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0 = async_compile.triton('triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0', '''
+import triton
+import triton.language as tl
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'y': 2048, 'x': 2048}, tile_hint=TileHint.SQUARE,
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*bf16', 'out_ptr0': '*bf16', 'ynumel': 'i32', 'xnumel': 'i32', 'YBLOCK': 'constexpr', 'XBLOCK': 'constexpr'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [{(0,): [['tt.divisibility', 16]], (1,): [['tt.divisibility', 16]], (2,): [['tt.divisibility', 16]], (3,): [['tt.divisibility', 16]]}]},
+    inductor_meta={'grid_type': 'Grid2D', 'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0', 'mutated_arg_names': [], 'optimize_mem': True, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'E32C50C3B9CF9CDC47D62CC6811346E52908133A0176777B4DADF595E1971975', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False, 'tiling_scores': {'y': 16777216, 'x': 16777216}},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0(in_ptr0, out_ptr0, ynumel, xnumel, YBLOCK : tl.constexpr, XBLOCK : tl.constexpr):
+    ynumel = 2048
+    xnumel = 2048
+    yoffset = tl.program_id(1) * YBLOCK
+    yindex = yoffset + tl.arange(0, YBLOCK)[:, None]
+    ymask = tl.full([YBLOCK, XBLOCK], True, tl.int1)
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[None, :]
+    xmask = xindex < xnumel
+    x1 = xindex
+    y0 = yindex
+    tmp0 = tl.load(in_ptr0 + (x1 + 6144*y0), xmask).to(tl.float32)
+    tmp1 = tl.load(in_ptr0 + (4096 + x1 + 6144*y0), xmask).to(tl.float32)
+    tmp2 = tmp0 * tmp1
+    tl.store(out_ptr0 + (y0 + 2048*x1), tmp2, xmask)
+''', device_str='cuda')
+
+
+# kernel path: /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/fx/inductor_cache/jq/cjqbwcm7fqcbz6xrsl2xerwwfohagwcvwrp3bpr6z7kp4d6wkwtr.py
+# Topologically Sorted Source Nodes: [chunk, mul_1], Original ATen: [aten.split, aten.transpose, aten.mul]
+# Source node to ATen node mapping:
+#   chunk => split
+#   mul_1 => mul_1, permute_3
+# Graph fragment:
+#   %mm : Tensor "bf16[2048, 6144][6144, 1]cuda:0" = PlaceHolder[target=mm]
+#   %buf3 : Tensor  = PlaceHolder[target=buf3]
+#   %split : [num_users=3] = call_function[target=torch.ops.aten.split.Tensor](args = (%mm, 2048, -1), kwargs = {})
+#   %permute_3 : Tensor "bf16[2048, 2048][1, 2048]cuda:0"[num_users=1] = call_function[target=torch.ops.aten.permute.default](args = (%clone, [1, 0]), kwargs = {})
+#   %mul_1 : Tensor "bf16[2048, 2048][2048, 1]cuda:0"[num_users=1] = call_function[target=torch.ops.aten.mul.Tensor](args = (%getitem_1, %permute_3), kwargs = {})
+#   return %mul_1
+triton_poi_fused_mul_split_transpose_1 = async_compile.triton('triton_poi_fused_mul_split_transpose_1', '''
+import triton
+import triton.language as tl
+
+from torch._inductor.runtime import triton_helpers, triton_heuristics
+from torch._inductor.runtime.triton_helpers import libdevice, math as tl_math
+from torch._inductor.runtime.hints import AutotuneHint, ReductionHint, TileHint, DeviceProperties
+triton_helpers.set_driver_to_gpu()
+
+@triton_heuristics.pointwise(
+    size_hints={'x': 4194304}, 
+    filename=__file__,
+    triton_meta={'signature': {'in_ptr0': '*bf16', 'in_ptr1': '*bf16', 'out_ptr0': '*bf16', 'xnumel': 'i32', 'XBLOCK': 'constexpr'}, 'device': DeviceProperties(type='cuda', index=0, multi_processor_count=132, cc=90, major=9, regs_per_multiprocessor=65536, max_threads_per_multi_processor=2048, warp_size=32), 'constants': {}, 'configs': [{(0,): [['tt.divisibility', 16]], (1,): [['tt.divisibility', 16]], (2,): [['tt.divisibility', 16]], (3,): [['tt.divisibility', 16]]}]},
+    inductor_meta={'grid_type': 'Grid1D', 'autotune_hints': set(), 'kernel_name': 'triton_poi_fused_mul_split_transpose_1', 'mutated_arg_names': [], 'optimize_mem': True, 'no_x_dim': False, 'num_load': 2, 'num_reduction': 0, 'backend_hash': 'E32C50C3B9CF9CDC47D62CC6811346E52908133A0176777B4DADF595E1971975', 'are_deterministic_algorithms_enabled': False, 'assert_indirect_indexing': True, 'autotune_local_cache': True, 'autotune_pointwise': True, 'autotune_remote_cache': None, 'force_disable_caches': False, 'dynamic_scale_rblock': True, 'max_autotune': False, 'max_autotune_pointwise': False, 'min_split_scan_rblock': 256, 'spill_threshold': 16, 'store_cubin': False, 'tiling_scores': {'x': 25165824}},
+    min_elem_per_thread=0
+)
+@triton.jit
+def triton_poi_fused_mul_split_transpose_1(in_ptr0, in_ptr1, out_ptr0, xnumel, XBLOCK : tl.constexpr):
+    xnumel = 4194304
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = tl.full([XBLOCK], True, tl.int1)
+    x0 = (xindex % 2048)
+    x1 = xindex // 2048
+    x2 = xindex
+    tmp0 = tl.load(in_ptr0 + (2048 + x0 + 6144*x1), None).to(tl.float32)
+    tmp1 = tl.load(in_ptr1 + (x1 + 2048*x0), None, eviction_policy='evict_last').to(tl.float32)
+    tmp2 = tmp0 * tmp1
+    tl.store(out_ptr0 + (x2), tmp2, None)
+''', device_str='cuda')
+
+
+async_compile.wait(globals())
+del async_compile
+
+class Runner:
+    def __init__(self, partitions):
+        self.partitions = partitions
+
+    def recursively_apply_fns(self, fns):
+        new_callables = []
+        for fn, c in zip(fns, self.partitions):
+            new_callables.append(fn(c))
+        self.partitions = new_callables
+
+    def call(self, args):
+        arg0_1, arg1_1, arg2_1, arg3_1, arg4_1, arg5_1, arg6_1 = args
+        args.clear()
+        assert_size_stride(arg0_1, (6144, 2048), (2048, 1))
+        assert_size_stride(arg1_1, (2048, 2048), (2048, 1))
+        assert_size_stride(arg2_1, (2048, 3), (3, 1))
+        assert_size_stride(arg3_1, (64, 2048, 3), (6144, 3, 1))
+        assert_size_stride(arg4_1, (2, ), (1, ))
+        assert_size_stride(arg5_1, (1, ), (1, ))
+        assert_size_stride(arg6_1, (2048, 2048), (2048, 1))
+        with torch.cuda._DeviceGuard(0):
+            torch.cuda.set_device(0)
+            buf0 = empty_strided_cuda((2048, 6144), (6144, 1), torch.bfloat16)
+            # Topologically Sorted Source Nodes: [proj], Original ATen: [aten.t, aten.mm]
+            extern_kernels.mm(arg1_1, reinterpret_tensor(arg0_1, (2048, 6144), (1, 2048), 0), out=buf0)
+            del arg0_1
+            del arg1_1
+            buf1 = empty_strided_cuda((2048, 2048), (2048, 1), torch.bfloat16)
+            # Topologically Sorted Source Nodes: [chunk, Bx, transpose, Bx_t, causal_conv1d_fwd], Original ATen: [aten.split, aten.mul, aten.transpose, aten.clone, sgl_kernel.causal_conv1d_fwd]
+            stream0 = get_raw_stream(0)
+            triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0.run(buf0, buf1, 2048, 2048, stream=stream0)
+            # Topologically Sorted Source Nodes: [chunk, Bx, transpose, Bx_t, causal_conv1d_fwd], Original ATen: [aten.split, aten.mul, aten.transpose, aten.clone, sgl_kernel.causal_conv1d_fwd]
+            torch.ops.sgl_kernel.causal_conv1d_fwd.default(buf1, arg2_1, None, arg3_1, arg4_1, arg5_1, None, False, -1)
+            del arg2_1
+            del arg3_1
+            del arg4_1
+            del arg5_1
+            buf6 = empty_strided_cuda((2048, 2048), (2048, 1), torch.bfloat16)
+            # Topologically Sorted Source Nodes: [chunk, mul_1], Original ATen: [aten.split, aten.transpose, aten.mul]
+            stream0 = get_raw_stream(0)
+            triton_poi_fused_mul_split_transpose_1.run(buf0, buf1, buf6, 4194304, stream=stream0)
+            del buf0
+            buf7 = buf1; del buf1  # reuse
+            # Topologically Sorted Source Nodes: [chunk, mul_1, linear_1], Original ATen: [aten.split, aten.transpose, aten.mul, aten.t, aten.mm]
+            extern_kernels.mm(buf6, reinterpret_tensor(arg6_1, (2048, 2048), (1, 2048), 0), out=buf7)
+            del arg6_1
+            del buf6
+        return (buf7, )
+
+runner = Runner(partitions=[])
+call = runner.call
+recursively_apply_fns = runner.recursively_apply_fns
+
+
+def benchmark_compiled_module(times=10, repeat=10):
+    from torch._dynamo.testing import rand_strided
+    from torch._inductor.utils import print_performance
+    arg0_1 = rand_strided((6144, 2048), (2048, 1), device='cuda:0', dtype=torch.bfloat16)
+    arg1_1 = rand_strided((2048, 2048), (2048, 1), device='cuda:0', dtype=torch.bfloat16)
+    arg2_1 = rand_strided((2048, 3), (3, 1), device='cuda:0', dtype=torch.bfloat16)
+    arg3_1 = rand_strided((64, 2048, 3), (6144, 3, 1), device='cuda:0', dtype=torch.bfloat16)
+    arg4_1 = rand_strided((2, ), (1, ), device='cuda:0', dtype=torch.int32)
+    arg5_1 = rand_strided((1, ), (1, ), device='cuda:0', dtype=torch.int32)
+    arg6_1 = rand_strided((2048, 2048), (2048, 1), device='cuda:0', dtype=torch.bfloat16)
+    fn = lambda: call([arg0_1, arg1_1, arg2_1, arg3_1, arg4_1, arg5_1, arg6_1])
+    return print_performance(fn, times=times, repeat=repeat)
+
+
+if __name__ == "__main__":
+    from torch._inductor.wrapper_benchmark import compiled_module_main
+    compiled_module_main('None', benchmark_compiled_module)

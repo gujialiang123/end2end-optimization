@@ -1,0 +1,15 @@
+torch._inductor.scheduler.__fusion | ===== attempting fusion (1/10): 6 nodes =====
+torch._inductor.scheduler.__fusion | fuse_nodes_once, candidates:
+torch._inductor.scheduler.__fusion |   ExternKernelSchedulerNode(name='op0')
+torch._inductor.scheduler.__fusion |   SchedulerNode(name='op1'), Pointwise(['[8, 2048]', 'origins=OrderedSet([mul, split])', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 143, in forward', '    Bx = B_gate * x', '', '}', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 142, in forward', '    B_gate, C_gate, x = proj.chunk(3, dim=-1)', '', '}'])
+torch._inductor.scheduler.__fusion |   SchedulerNode(name='op2'), Pointwise(['[8]', 'origins=OrderedSet([causal_conv1d_update_default, as_strided_default, convert_element_type_2])', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 146, in forward', '    conv_out = conv1d_update_leaf(', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 100, in conv1d_update_leaf', '    return causal_conv1d_update(', '  File "/home/t-jialianggu/work/sglang/python/sglang/srt/layers/attention/mamba/causal_conv1d.py", line 117, in causal_conv1d_update', '    causal_conv1d_update_kernel(', '  File "/home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/mamba.py", line 41, in causal_conv1d_update', '    torch.ops.sgl_kernel.causal_conv1d_update(', '', '}', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 151, in forward', '    req_pool_indices.to(torch.int32),', '', '}'])
+torch._inductor.scheduler.__fusion |   ExternKernelSchedulerNode(name='op3')
+torch._inductor.scheduler.__fusion |   SchedulerNode(name='op4'), Pointwise(['[8, 2048]', 'origins=OrderedSet([mul_1, split, squeeze_1, unsqueeze_1])', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 164, in forward', '    return self.out_proj(C_gate * conv_out)', '', '}', 'stack_traces = {', '  File "/home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py", line 142, in forward', '    B_gate, C_gate, x = proj.chunk(3, dim=-1)', '', '}'])
+torch._inductor.scheduler.__fusion |   ExternKernelSchedulerNode(name='op5')
+torch._inductor.scheduler.__fusion | cannot fuse op1 with op4: no shared data
+torch._inductor.scheduler.__fusion | found 0 possible fusions
+torch._inductor.scheduler.__fusion | completed fusion round (1/10): fused 6 nodes into 6 nodes
+torch._inductor.scheduler.__fusion | ===== fusion complete (1 iterations) =====
+torch._inductor.codegen.simd.__schedule | Schedule:
+torch._inductor.codegen.simd.__schedule | Schedule:
+torch._inductor.codegen.simd.__schedule | Schedule:

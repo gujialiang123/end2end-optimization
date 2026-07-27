@@ -1,0 +1,65 @@
+# dynamo graph #0 for shortconv_decode
+# nodes=19
+
+==== graph.print_tabular() ====
+opcode         name                                        target                                      args                                                                             kwargs
+-------------  ------------------------------------------  ------------------------------------------  -------------------------------------------------------------------------------  -----------
+placeholder    l_self_modules_in_proj_parameters_weight_   L_self_modules_in_proj_parameters_weight_   ()                                                                               {}
+placeholder    l_hidden_states_                            L_hidden_states_                            ()                                                                               {}
+placeholder    l_self_parameters_conv_weight_              L_self_parameters_conv_weight_              ()                                                                               {}
+placeholder    l_req_pool_indices_                         L_req_pool_indices_                         ()                                                                               {}
+placeholder    l_conv_state_                               L_conv_state_                               ()                                                                               {}
+placeholder    l_self_modules_out_proj_parameters_weight_  L_self_modules_out_proj_parameters_weight_  ()                                                                               {}
+call_function  proj                                        <built-in function linear>                  (l_hidden_states_, l_self_modules_in_proj_parameters_weight_, None)              {}
+call_method    chunk                                       chunk                                       (proj, 3)                                                                        {'dim': -1}
+call_function  B_gate                                      <built-in function getitem>                 (chunk, 0)                                                                       {}
+call_function  C_gate                                      <built-in function getitem>                 (chunk, 1)                                                                       {}
+call_function  x                                           <built-in function getitem>                 (chunk, 2)                                                                       {}
+call_function  Bx                                          <built-in function mul>                     (B_gate, x)                                                                      {}
+call_method    to                                          to                                          (l_req_pool_indices_, torch.int32)                                               {}
+call_method    x_1                                         unsqueeze                                   (Bx, -1)                                                                         {}
+call_function  causal_conv1d_update                        sgl_kernel.causal_conv1d_update             (x_1, l_conv_state_, l_self_parameters_conv_weight_, None, False, None, to, -1)  {}
+call_method    x_2                                         squeeze                                     (x_1, -1)                                                                        {}
+call_function  mul_1                                       <built-in function mul>                     (C_gate, x_2)                                                                    {}
+call_function  linear_1                                    <built-in function linear>                  (mul_1, l_self_modules_out_proj_parameters_weight_, None)                        {}
+output         output                                      output                                      ((linear_1,),)                                                                   {}
+
+==== print_readable() ====
+class GraphModule(torch.nn.Module):
+    def forward(self, L_self_modules_in_proj_parameters_weight_: "bf16[6144, 2048]", L_hidden_states_: "bf16[8, 2048]", L_self_parameters_conv_weight_: "bf16[2048, 3]", L_req_pool_indices_: "i64[8]", L_conv_state_: "bf16[64, 2048, 3]", L_self_modules_out_proj_parameters_weight_: "bf16[2048, 2048]"):
+        l_self_modules_in_proj_parameters_weight_ = L_self_modules_in_proj_parameters_weight_
+        l_hidden_states_ = L_hidden_states_
+        l_self_parameters_conv_weight_ = L_self_parameters_conv_weight_
+        l_req_pool_indices_ = L_req_pool_indices_
+        l_conv_state_ = L_conv_state_
+        l_self_modules_out_proj_parameters_weight_ = L_self_modules_out_proj_parameters_weight_
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:141 in forward, code: proj = self.in_proj(hidden_states)
+        proj: "bf16[8, 6144]" = torch._C._nn.linear(l_hidden_states_, l_self_modules_in_proj_parameters_weight_, None);  l_hidden_states_ = l_self_modules_in_proj_parameters_weight_ = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:142 in forward, code: B_gate, C_gate, x = proj.chunk(3, dim=-1)
+        chunk = proj.chunk(3, dim = -1);  proj = None
+        B_gate: "bf16[8, 2048]" = chunk[0]
+        C_gate: "bf16[8, 2048]" = chunk[1]
+        x: "bf16[8, 2048]" = chunk[2];  chunk = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:143 in forward, code: Bx = B_gate * x
+        Bx: "bf16[8, 2048]" = B_gate * x;  B_gate = x = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:151 in forward, code: req_pool_indices.to(torch.int32),
+        to: "i32[8]" = l_req_pool_indices_.to(torch.int32);  l_req_pool_indices_ = None
+        
+         # File: /home/t-jialianggu/work/sglang/python/sglang/srt/layers/attention/mamba/causal_conv1d.py:116 in causal_conv1d_update, code: x = x.unsqueeze(-1)
+        x_1: "bf16[8, 2048, 1]" = Bx.unsqueeze(-1);  Bx = None
+        
+         # File: /home/t-jialianggu/.conda/envs/sglang-dev/lib/python3.11/site-packages/sgl_kernel/mamba.py:41 in causal_conv1d_update, code: torch.ops.sgl_kernel.causal_conv1d_update(
+        causal_conv1d_update = torch.ops.sgl_kernel.causal_conv1d_update(x_1, l_conv_state_, l_self_parameters_conv_weight_, None, False, None, to, -1);  l_conv_state_ = l_self_parameters_conv_weight_ = to = causal_conv1d_update = None
+        
+         # File: /home/t-jialianggu/work/sglang/python/sglang/srt/layers/attention/mamba/causal_conv1d.py:128 in causal_conv1d_update, code: x = x.squeeze(-1)
+        x_2: "bf16[8, 2048]" = x_1.squeeze(-1);  x_1 = None
+        
+         # File: /home/t-jialianggu/work/EndtoEnd-auto-optimization/scripts/lfm_fusion/fx_common.py:164 in forward, code: return self.out_proj(C_gate * conv_out)
+        mul_1: "bf16[8, 2048]" = C_gate * x_2;  C_gate = x_2 = None
+        linear_1: "bf16[8, 2048]" = torch._C._nn.linear(mul_1, l_self_modules_out_proj_parameters_weight_, None);  mul_1 = l_self_modules_out_proj_parameters_weight_ = None
+        return (linear_1,)
+        
