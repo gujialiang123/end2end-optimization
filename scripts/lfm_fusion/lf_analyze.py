@@ -56,14 +56,25 @@ def ci95(v):
     return 1.96 * st.stdev(v) / math.sqrt(len(v))
 
 
-def load(root: Path):
+def load(root: Path, runset: str | None = None):
+    """Load runs, keyed by (runset, regime).
+
+    The runset is the parent directory (e.g. `lfm25`, `lfm25_conv`). Runs from
+    different sessions must never be pooled — a baseline measured hours apart on
+    a shared machine is not the same baseline — so it is part of the key rather
+    than being flattened away.
+    """
     rows = []
     for f in sorted(root.glob("*/*/e2e_runs.json")):
         regime = f.parent.name
+        rs = f.parent.parent.name
+        if runset and rs != runset:
+            continue
         for r in json.loads(f.read_text()):
             if r.get("status") != "ok":
                 continue
             r["regime"] = regime
+            r["runset"] = rs
             rows.append(r)
     return rows
 
@@ -72,15 +83,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=str(L.RESULTS / "e2e"))
     ap.add_argument("--baseline", default="baseline")
+    ap.add_argument("--runset", default=None,
+                    help="restrict to one run directory, e.g. lfm25_conv")
+    ap.add_argument("--out", default="fusion_ab.csv")
     a = ap.parse_args()
 
-    rows = load(Path(a.root))
+    rows = load(Path(a.root), a.runset)
     if not rows:
         raise SystemExit(f"no successful runs under {a.root}")
 
     by = defaultdict(list)
     for r in rows:
-        by[(r["regime"], r["arm"])].append(r)
+        by[(f'{r["runset"]}/{r["regime"]}', r["arm"])].append(r)
 
     outdir = L.RESULTS / "processed"
     outdir.mkdir(parents=True, exist_ok=True)
@@ -121,7 +135,7 @@ def main():
                                 p_value=round(p, 4) if p == p else "",
                                 verdict=verdict))
 
-    csv_path = outdir / "fusion_ab.csv"
+    csv_path = outdir / a.out
     with open(csv_path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(out[0]))
         w.writeheader()

@@ -15,20 +15,29 @@ already CUDA-fused, so there is no gap to fill**, and that finding has been the
 basis for deprioritising kernel-fusion work ever since. That conclusion is
 correct — *for Qwen*. LFM2.5-8B-A1B, a newer hybrid architecture where 18 of 24
 layers are gated short convolutions rather than attention, had never been
-audited at the operator level. It turns out to carry **two real fusion gaps that
-Qwen does not have**, worth **+3.8 % to +4.0 % end-to-end on the two decode
-regimes** and +0.9 % on long prefill, with GSM8K accuracy unchanged. This is the
-first same-model kernel-level change in this project to produce a *positive,
-statistically significant, whole-regime* end-to-end result.
+audited at the operator level. It turns out to carry **three real fusion gaps
+that Qwen does not have**. Closing them is worth **+3.7 % to +4.6 % end-to-end
+on every regime tested**, with GSM8K accuracy unchanged. This is the first
+same-model kernel-level change in this project to produce a *positive,
+statistically significant* end-to-end result across the board.
 
-| regime | `scale` only | `norm` only | **both** |
+Two independent components, and they turn out to be **complementary by
+mechanism** — one is decode-weighted, the other prefill-only:
+
+| regime | `norm+scale` | `conv` (new Triton) | **all three** |
 |---|---:|---:|---:|
-| A low-batch decode | +1.40 % (p<1e-4) | +2.35 % (p<1e-4) | **+3.82 %** (p<1e-4) |
-| B concurrent decode | +1.02 % (p=0.005) | +2.89 % (p<1e-4) | **+3.96 %** (p<1e-4) |
-| C long prefill | +0.73 % (n.s.) | +1.42 % (p=2e-4) | **+0.91 %** (p=0.031) |
+| A low-batch decode | +4.20 % | +0.13 % (n.s.) | **+3.80 %** |
+| B concurrent decode | +3.68 % | −0.03 % (n.s.) | **+3.65 %** |
+| C long prefill | +1.60 % | **+2.33 %** | **+4.59 %** |
 
-5 repetitions per arm after per-workload warm-up; Welch t against the baseline
-arm; ratios on request throughput.
+6 repetitions per arm after per-workload warm-up; Welch t against the baseline
+arm; ratios on request throughput; every significant entry is p<0.005.
+
+The `conv` component is a **hand-written Triton kernel** and is **bit-exact**
+(max |diff| = 0.0 at every shape tested), so it carries no numerical risk. It is
+shape-guarded: below T≈2048 it is *slower* than stock and is switched off, which
+is why it reads as exactly neutral on both decode regimes rather than as a
+regression.
 
 ---
 
@@ -147,13 +156,72 @@ comment above it explains why the factor is applied manually rather than inside
 to keep the multiply *when the factor is not 1*. Skipping it when the factor is
 exactly 1.0 is bit-exact.
 
-### G3 `conv` — audited, not fixed
+### G3 `conv` — the ShortConv glue is uncoalesced, and that is the real defect
 
-`Lfm2MoeShortConv.forward` materialises `Bx.transpose(0, 1).contiguous()` on the
-prefill path and transposes the result back. This is the bulk of the
-`layout_copy` line (53 kernels, 2.9 % on long prefill). Fixing it means changing
-the memory layout expected by `causal_conv1d_fn`, which is a real kernel change
-rather than a call-site change, so it is recorded and left.
+`Lfm2MoeShortConv.forward` wraps `causal_conv1d` in three pure-data-movement
+operations:
+
+```python
+proj, _ = self.in_proj(hidden_states)        # [T, 3H]
+B_gate, C_gate, x = proj.chunk(3, dim=-1)    # strided views
+Bx = B_gate * x                              # elementwise  -> [T, H]
+Bx_t = Bx.transpose(0, 1).contiguous()       # materialise  -> [H, T]
+conv_out = causal_conv1d_fn(Bx_t, ...).transpose(0, 1)   # view, [T, H]
+output, _ = self.out_proj(C_gate * conv_out) # elementwise, reads transposed
+```
+
+`causal_conv1d_fn` is an opaque external CUDA op that requires
+`x.stride(-1) == 1` on a `[dim, seqlen]` tensor. So the layout change **cannot
+be avoided** — only *absorbed* into the neighbouring elementwise work.
+
+The interesting part is *why* this costs so much. On long prefill these glue
+kernels move ~8.8 GB in 10.3 ms:
+
+```
+18 conv layers x 500 MB of traffic = 8.79 GB  in 10.3 ms  ->  0.83 TB/s
+H200 HBM peak ~4.8 TB/s                       ->  17 % of peak
+```
+
+**The defect is not the amount of traffic, it is that the traffic is
+uncoalesced.** `Bx.transpose(0,1).contiguous()` and the transposed read inside
+`C_gate * conv_out` both walk memory with a stride, so most of every fetched
+cache line is discarded.
+
+So there are two wins available and they compound: fold three passes into two,
+*and* make each remaining pass coalesced. `lf_triton_shortconv.py` does this
+with one tiled Triton kernel on each side of the conv, keeping the transpose in
+registers via `tl.trans` instead of issuing strided global accesses.
+
+Isolated (`lf_bench_shortconv.py`, correctness checked before timing):
+
+| T | input side | output side | bandwidth | saved per forward |
+|---:|---:|---:|---|---:|
+| 1024 | 0.94× | 0.71× | — | −0.22 ms |
+| 2048 | 1.29× | 0.93× | 0.9 → 0.7 TB/s | +0.27 ms |
+| 4096 | 2.24× | 1.76× | 0.9 → 1.3 TB/s | +1.47 ms |
+| 16000 | **5.90×** | **4.33×** | **0.98 → 3.46 TB/s** | **+7.96 ms** |
+
+Bandwidth goes from 17 % to ~72 % of peak. **Every shape is bit-exact**
+(max |diff| = 0.0) — the multiply is done in fp32 and cast back, matching what
+PyTorch's elementwise kernel already does.
+
+**Shape guard.** The fused kernels sit on a ~30 µs floor from Triton's Python
+launch path, so below T≈2048 they lose to the stock elementwise ops. The patch
+keeps the stock path below `CONV_FUSION_MIN_TOKENS` (default 2048), which is why
+`conv` measures as *exactly neutral* on the decode regimes (+0.13 %, −0.03 %,
+both n.s.) instead of as a regression. Tile shapes come from a measured sweep
+(`lf_tune_shortconv.py`, 32 configurations per shape, correctness-checked before
+timing), not from guesswork.
+
+Decode never transposes at all — `causal_conv1d_update` consumes `[T, H]`
+directly — so this component is **prefill-only by construction**.
+
+**Rejected for decode.** Fusing the gating multiply into `causal_conv1d_update`
+would require rebuilding the `sgl_kernel` C++ extension (it accepts only
+`silu`/`swish`, not an external gate tensor), for ~1.2 % of decode kernel time
+that CUDA graphs already amortise. Not worth a build-level change.
+
+Figure: `plots/shortconv_crossover.png`.
 
 ---
 
@@ -194,12 +262,14 @@ Few-shot GSM8K, greedy, full 1319-question set, 3 evaluations per server launch
 (`sglang.test.few_shot_gsm8k`; raw in
 `results/lfm_fusion/correctness/accuracy_*.json`).
 
-| arm | run 1 | run 2 | run 3 | mean | within-arm spread |
-|---|---:|---:|---:|---:|---:|
-| baseline | 0.348 | 0.349 | 0.344 | 0.3470 | 0.005 |
-| **`scale`** (bit-exact) | 0.338 | 0.339 | 0.340 | **0.3390** | 0.002 |
-| `norm` | 0.362 | 0.368 | 0.361 | 0.3637 | 0.007 |
-| `norm+scale` | 0.359 | 0.359 | 0.359 | 0.3590 | 0.000 |
+| arm | runs | mean | within-arm spread |
+|---|---|---:|---:|
+| baseline | 0.348 / 0.349 / 0.344 | 0.3470 | 0.005 |
+| **`scale`** (bit-exact) | 0.338 / 0.339 / 0.340 | **0.3390** | 0.002 |
+| `norm` | 0.362 / 0.368 / 0.361 | 0.3637 | 0.007 |
+| `norm+scale` | 0.359 / 0.359 / 0.359 | 0.3590 | 0.000 |
+| **`conv`** (bit-exact) | 0.342 / 0.350 | **0.3460** | 0.008 |
+| `norm+scale+conv` | 0.356 / 0.362 | 0.3590 | 0.006 |
 
 The `scale` arm is **provably bit-exact**, so its accuracy *must* equal
 baseline's. It does not: it reads **0.8 points lower**. That is not a defect, it
@@ -212,8 +282,10 @@ outputs. So we get the noise floor by construction instead of assuming one:
 * within-arm spread 0.0–0.7 points;
 * binomial sampling error at n=1319, p≈0.35 is ±2.6 points at 95 %.
 
-All four arms span 0.339–0.364, i.e. **2.5 points — inside the noise band on
-every one of those three measures.** The patched arms happen to sit above
+All six arms span 0.339–0.364, i.e. **2.5 points — inside the noise band on
+every one of those three measures.** Note `conv` (0.346) lands essentially on
+baseline (0.347) and `norm+scale+conv` (0.359) is identical to `norm+scale`
+(0.359), which is exactly what a bit-exact kernel should do. The patched arms happen to sit above
 baseline rather than below, which is at least consistent with `fused_add_rmsnorm`
 keeping the addition in higher precision, but the separation is far too small to
 claim that.
@@ -232,29 +304,38 @@ are comparable with the serving-ceiling and regime-kernel campaigns. Arms differ
 CUDA-graph settings are identical, and the server log is checked for the patch
 marker so a silent no-op cannot be scored as a baseline-equal result.
 
-| regime | baseline req/s | `scale` | `norm` | **`norm+scale`** |
+6 repetitions per arm, Welch t against baseline
+(`processed/fusion_ab_conv.csv`):
+
+| regime | baseline req/s | `norm+scale` | `conv` | **all three** |
 |---|---:|---:|---:|---:|
-| A low-batch decode | 1.688 ± 0.002 | 1.712 (+1.40 %) | 1.728 (+2.35 %) | **1.753 (+3.82 %)** |
-| B concurrent decode | 21.767 ± 0.085 | 21.988 (+1.02 %) | 22.395 (+2.89 %) | **22.628 (+3.96 %)** |
-| C long prefill | 12.282 ± 0.075 | 12.371 (+0.73 %, n.s.) | 12.457 (+1.42 %) | **12.393 (+0.91 %)** |
+| A low-batch decode | 1.683 ± 0.001 | **+4.20 %** (p<1e-4) | +0.13 % (p=0.18) | **+3.80 %** (p<1e-4) |
+| B concurrent decode | 21.639 ± 0.128 | **+3.68 %** (p<1e-4) | −0.03 % (p=0.95) | **+3.65 %** (p<1e-4) |
+| C long prefill | 12.104 ± 0.068 | +1.60 % (p=0.001) | **+2.33 %** (p<1e-4) | **+4.59 %** (p<1e-4) |
 
-Every arm except `scale` on long prefill is significant at p<0.05, and the two
-components are close to additive on the decode regimes (1.40+2.35 vs 3.82
-measured; 1.02+2.89 vs 3.96).
+### The two components are complementary by mechanism
 
-### Why the gain is regime-dependent
+This is the most interesting structural result of the study, and it was not
+designed — it fell out of what each change removes.
 
-The removed work is a **fixed number of kernels and a fixed number of
-full-activation passes per forward**, independent of how much compute that
-forward performs. Decode does very little work per forward, so fixed overhead is
-a large fraction of it; long prefill does ~80× more kernel work per forward
-(157 ms vs 2 ms), so the same absolute saving is proportionally small. This is
-the mirror image of the configuration result, which only paid off at large M.
+**`norm+scale` removes a fixed number of kernels and full-activation passes per
+forward**, independent of how much compute that forward performs. Decode does
+~2 ms of kernel work per forward, so fixed overhead is a large fraction of it;
+long prefill does ~157 ms, so the same absolute saving is diluted. Hence
+**+4.2 % on decode, +1.6 % on prefill**.
 
-**This is a genuine regime-aware kernel result and it points the opposite way
-from the config study**: config tuning helped prefill and did nothing for
-decode; fusion helps decode and does little for prefill. They are complementary,
-and neither is visible if you only measure one regime.
+**`conv` removes traffic that scales with the token count**, and only becomes
+worth its launch overhead above T≈2048. Decode never reaches that (and never
+transposes at all), so the guard switches it off; long prefill runs at
+T=4000–16000 where the fused kernel is 2.2–5.9×. Hence **+2.3 % on prefill,
+exactly 0 on decode**.
+
+Together they cover the whole range: **positive and significant on all three
+regimes**, +3.65 % to +4.59 %.
+
+This also sharpens the contrast with the configuration study, which helped
+prefill and did nothing for decode. Three levers, three different shapes of
+benefit — **none of which is visible if you only measure one regime.**
 
 ---
 
