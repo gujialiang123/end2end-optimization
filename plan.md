@@ -1,6 +1,43 @@
 # Plan / 项目状态（2026-07-27 更新）
 
-## 2026-07-27：LFM2.5 kernel fusion gap —— 本项目第一个同模型正向 kernel e2e 结果 ✅
+## 2026-07-27 晚：LFM2.5 kernel fusion 第二轮 —— 全 regime +4.7~5.5%，且发现"同类优化不叠加"规律 ✅
+**做法**：并行两个调查 agent（nsys 时间线 / torch.compile FX+Inductor），都跑在**已打补丁的路径**上，所以找到的是"还剩什么"。
+
+**最终结果**（6 重复 + Welch t，全部 p<0.005）：
+| regime | qkrope | gate+idx | norm+scale+conv | **全部六项** |
+|---|---:|---:|---:|---:|
+| A 低批 decode | +0.93% | −0.00%(n.s.) | +3.89% | **+4.74%** |
+| B 并发 decode | **+5.42%** | +0.65%(n.s.) | +3.65% | **+5.54%** |
+| C 长 prefill | +1.99% | +0.40%(n.s.) | +3.47% | **+5.12%** |
+
+**新增四项**（第一轮是 norm/scale）：
+- **`conv`（唯一手写 Triton kernel）**：ShortConv 的 glue（gate mul + transpose）在长 prefill 上跑 8.8GB/10.3ms = **0.83 TB/s，仅峰值的 17%**——问题不是流量而是**访问不合并**。两个 tiled kernel 分别吃掉 conv 两侧的 chunk+gate+transpose，隔离 **5.90×/4.33×**，带宽提到 ~3460 GB/s（~72%），每 forward 省 7.96ms。**bit-exact**。形状门控 T≥2048（小 T 反而慢）。E2E：长 prefill **+2.33%**，decode 精确中性（p=0.18/0.95）。
+- **`qkrope`（单项最大赢家）**：`sgl_kernel.fused_qk_norm_rope` **早就存在，Qwen3-MoE 在用，LFM2.5 没用** —— 它拆 QKV 后跑两个独立 RMSNorm + 独立 RoPE。纯调用点改动，**并发 decode +5.42%**。
+- **`idx`**：`req_pool_indices.to(int32)` 在 18 个 conv 层里各算一遍，kernel 只搬 12 字节，纯 launch 开销（decode ~1.3%）。
+- **`gate`**：decode 的 gate mul 读 proj 的 **strided rows**，导致 TensorIterator 退化成标量 kernel。
+（`gate+idx` 端到端**不显著**——诚实负面：kernel 级 1~2% 没能兑现到 e2e。）
+
+**★最有价值的方法学发现：同类优化强烈次可加**
+| regime | 各项之和 | 一起测 | 兑现率 |
+|---|---:|---:|---:|
+| A 低批 decode | 4.82% | 4.74% | 0.98 |
+| B 并发 decode | 9.72% | **5.54%** | **0.57** |
+| C 长 prefill | 5.86% | 5.12% | 0.87 |
+
+B 上 qkrope 单独 +5.42%，再加上单独值 +3.65% 的 norm+scale+conv 只多买到 **0.12 个点**——两者都在消除**同一份"固定每-forward 开销"的余量**，消完之后别的东西成为瓶颈。**这与 regime-kernel 研究里 serving 1.78×+kernel 1.22×→1.70× 的 waterfall 非叠加是同一现象**，两个独立研究都撞上了，可以固化成规则：
+> **消除同一"种类"成本的优化不会相加。报告各项分别测量之和会高估整个 stack，且系统越饱和高估越严重。任何会真实部署的组合都必须按组合测量。**
+
+**Agent 的独立验证**：Inductor 在**未修改的模块**上自己推导出了结构等价的 ShortConv 融合 kernel（`triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0`），说明手写设计就是编译器会选的那个。同时 Inductor 对 ShortConv 其余部分 `found 0 possible fusions`——因为 `causal_conv1d_fwd/_update` 是 `ExternKernelSchedulerNode`（硬屏障），所以**融合只能发生在 conv 两侧**，这正是两个 kernel 的形状。
+
+**机制修正**（FX agent 提供）：不是一个效应而是**两个**。transpose 和转置读确实不合并（14%/21% 峰值），但 `B_gate*x` 是**合并的**却仍只有 54%——因为 **strided rows 让 TensorIterator 无法向量化**，退化成标量 kernel。
+
+**带数字的否决**：gating 融进 `causal_conv1d_update`（`activation` 在到 C++ 前塌成 bool，无法携带 tensor，需要 schema 变更 + sgl-kernel 重编译）；in_proj GEMM epilogue（−29~+24µs，最好也就打平）；topk+alignment；atomic GEMM reduction；`triton_poi_fused_copy__mul_sum_0`（= `moe_sum_reduce_torch_compile`，已是流量最优，不是空缺）。
+
+**核心判断升级**："kernel 层不转化"仍成立，但**四个空缺里有三个是"sglang 已经有融合原语、这个模型的调用点没用"**（`fused_add_rmsnorm`、`fused_qk_norm_rope`、乘以 1.0）。**全程没有发明任何新东西。** 由此得到第二个可机械检查的 signature：**枚举代码库里已有的融合原语，检查哪些模型没调用它们**——这一条就找到了四个赢家里的三个。
+
+**产物**：`docs/lfm_fusion_results.md`（主报告，4 图）· `results/lfm_fusion/{nsys,fx}/FINDINGS.md`（两个 agent 的完整证据）· `scripts/lfm_fusion/`（audit/patch/triton/tune/e2e/correctness/analyze/plots + agent 的 nsys_*/fx_* 脚本）。GSM8K 全量 1319 题：全部 8 个 arm 跨度 0.339–0.368，在 bit-exact arm 标定的 0.8 点噪声底内。
+
+## 2026-07-27：LFM2.5 kernel fusion 第一轮 —— 本项目第一个同模型正向 kernel e2e 结果 ✅
 **问题**：v33 审计结论"sglang 热路径已全部 CUDA 融合，没有可补的空缺"是在 **Qwen 一个模型**上得出的。LFM2.5-8B-A1B（24 层里 18 层是 gated short conv 的新架构）从没在算子级审计过。
 
 **审计**（`scripts/lfm_fusion/lf_audit.py`，复用 v33 方法：`bench_one_batch --profile` + 关 cudagraph + 按 kernel 名分桶）：

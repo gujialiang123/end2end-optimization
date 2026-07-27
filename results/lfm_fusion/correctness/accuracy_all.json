@@ -1,0 +1,28 @@
+{
+  "arm": "all",
+  "patch": "norm,scale,conv,gate,idx,qkrope",
+  "model": "lfm25",
+  "num_questions": 1319,
+  "num_shots": 5,
+  "reps": 3,
+  "accuracies": [
+    0.371,
+    0.364,
+    0.37
+  ],
+  "mean": 0.36833333333333335,
+  "spread": 0.007000000000000006,
+  "logs": [
+    "gsm8k_all_rep0.log",
+    "gsm8k_all_rep1.log",
+    "gsm8k_all_rep2.log"
+  ],
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

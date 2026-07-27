@@ -1,0 +1,5 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+lfm25_allA/A_low_batch_decode,all,request_throughput,6,1.7626,0.0021,1.6828,1.0474,4.74,58.939,0.0,improvement
+lfm25_allA/A_low_batch_decode,all,output_throughput,6,451.229,0.5383,430.7959,1.0474,4.74,58.939,0.0,improvement
+lfm25_allA/A_low_batch_decode,baseline,request_throughput,6,1.6828,0.0016,1.6828,1.0,0.0,0.0,1.0,baseline
+lfm25_allA/A_low_batch_decode,baseline,output_throughput,6,430.7959,0.4147,430.7959,1.0,0.0,0.0,1.0,baseline

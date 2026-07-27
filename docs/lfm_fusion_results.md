@@ -15,14 +15,25 @@ already CUDA-fused, so there is no gap to fill**, and that finding has been the
 basis for deprioritising kernel-fusion work ever since. That conclusion is
 correct — *for Qwen*. LFM2.5-8B-A1B, a newer hybrid architecture where 18 of 24
 layers are gated short convolutions rather than attention, had never been
-audited at the operator level. It turns out to carry **three real fusion gaps
-that Qwen does not have**. Closing them is worth **+3.7 % to +4.6 % end-to-end
+audited at the operator level. It turns out to carry **four real fusion gaps
+that Qwen does not have**. Closing them is worth **+4.7 % to +5.5 % end-to-end
 on every regime tested**, with GSM8K accuracy unchanged. This is the first
 same-model kernel-level change in this project to produce a *positive,
 statistically significant* end-to-end result across the board.
 
-Two independent components, and they turn out to be **complementary by
-mechanism** — one is decode-weighted, the other prefill-only:
+**Final result** (6 repetitions per arm, Welch t vs baseline, all p<0.005):
+
+| regime | baseline req/s | **all six components** |
+|---|---:|---:|
+| A low-batch decode | 1.683 | **+4.74 %** |
+| B concurrent decode | 21.648 | **+5.54 %** |
+| C long prefill | 12.115 | **+5.12 %** |
+
+Three of the four gaps are **call-site changes that reuse fused primitives
+SGLang already ships** — no new kernel. The fourth is a hand-written Triton
+kernel, and it is **bit-exact**.
+
+The components break down by mechanism, and they are complementary:
 
 | regime | `norm+scale` | `conv` (new Triton) | **all three** |
 |---|---:|---:|---:|
@@ -38,6 +49,14 @@ The `conv` component is a **hand-written Triton kernel** and is **bit-exact**
 shape-guarded: below T≈2048 it is *slower* than stock and is switched off, which
 is why it reads as exactly neutral on both decode regimes rather than as a
 regression.
+
+A second round (§6b) added three more call-site fusions found by an nsys and an
+FX-graph investigation, the largest being **`qkrope`: reusing
+`sgl_kernel.fused_qk_norm_rope`, which SGLang already ships and Qwen3-MoE
+already calls, but LFM2.5 does not** — worth **+5.42 % on its own** in
+concurrent decode. The full stack reaches **+5.1 % to +5.5 %**, but the
+components are **markedly sub-additive** in decode (57 % of the sum of parts
+realised) — see §6c, which is the more transferable finding.
 
 ---
 
@@ -270,6 +289,8 @@ Few-shot GSM8K, greedy, full 1319-question set, 3 evaluations per server launch
 | `norm+scale` | 0.359 / 0.359 / 0.359 | 0.3590 | 0.000 |
 | **`conv`** (bit-exact) | 0.342 / 0.350 | **0.3460** | 0.008 |
 | `norm+scale+conv` | 0.356 / 0.362 | 0.3590 | 0.006 |
+| `qkrope` | 0.352 / 0.346 | 0.3490 | 0.006 |
+| **all six** | 0.371 / 0.364 / 0.370 | 0.3683 | 0.007 |
 
 The `scale` arm is **provably bit-exact**, so its accuracy *must* equal
 baseline's. It does not: it reads **0.8 points lower**. That is not a defect, it
@@ -282,7 +303,7 @@ outputs. So we get the noise floor by construction instead of assuming one:
 * within-arm spread 0.0–0.7 points;
 * binomial sampling error at n=1319, p≈0.35 is ±2.6 points at 95 %.
 
-All six arms span 0.339–0.364, i.e. **2.5 points — inside the noise band on
+All eight arms span 0.339–0.368, i.e. **2.5 points — inside the noise band on
 every one of those three measures.** Note `conv` (0.346) lands essentially on
 baseline (0.347) and `norm+scale+conv` (0.359) is identical to `norm+scale`
 (0.359), which is exactly what a bit-exact kernel should do. The patched arms happen to sit above
@@ -339,6 +360,90 @@ benefit — **none of which is visible if you only measure one regime.**
 
 ---
 
+## 6b. Second round — what nsys and the FX graph found
+
+Two investigations were run *against the already-patched path*, so their
+findings are what remains rather than what was already fixed. Full evidence in
+`results/lfm_fusion/nsys/FINDINGS.md` and `results/lfm_fusion/fx/FINDINGS.md`.
+
+**The FX/Inductor study independently re-derived the ShortConv kernel.** Given
+the unmodified module, Inductor emits
+`triton_poi_fused_causal_conv1d_fwd_clone_mul_split_transpose_0` — two strided
+loads from `proj`, one multiply, one transposed store, no intermediate. That is
+structurally the hand-written kernel, which is a useful independent check that
+the shipped design is the one a compiler would choose. It also reports
+`found 0 possible fusions` for everything else in ShortConv, because
+`causal_conv1d_fwd/_update` are `ExternKernelSchedulerNode`s — hard barriers.
+**Fusion has to happen on each side of the conv**, which is exactly the shape of
+the two kernels.
+
+Three further gaps, all **call-site changes**:
+
+| component | what it is | measured chain |
+|---|---|---|
+| **`qkrope`** | `sgl_kernel.fused_qk_norm_rope` combines both head-wise RMSNorms and RoPE into one in-place kernel over packed QKV. **Qwen3-MoE already calls it; LFM2.5 splits QKV and runs two RMSNorms plus a separate RoPE.** | 1.65 % decode / 3.61 % prefill kernel time |
+| `idx` | `req_pool_indices.to(torch.int32)` is recomputed in each of the 18 conv layers. The cast moves **12 bytes** — it is pure launch overhead. | ~1.3 % low-batch decode |
+| `gate` | the decode gate multiply reads *strided rows* of `proj`, which falls back to a scalar `elementwise_kernel` | ~1.9 % concurrent decode |
+
+`qkrope` is the same pattern as G1, and it is the third instance: **the fused
+primitive already exists in SGLang, and this model's call site does not use
+it.**
+
+Results (6 reps, Welch t, `processed/fusion_ab_all.csv`):
+
+| regime | `qkrope` | `gate+idx` | `norm+scale+conv` | **all six** |
+|---|---:|---:|---:|---:|
+| A low-batch decode | +0.93 % | −0.00 % (n.s.) | +3.89 % | **+4.74 %** |
+| B concurrent decode | **+5.42 %** | +0.65 % (n.s.) | +3.65 % | **+5.54 %** |
+| C long prefill | +1.99 % | +0.40 % (n.s.) | +3.47 % | **+5.12 %** |
+
+`qkrope` alone is the single largest win in the whole study (+5.42 % on
+concurrent decode) and it is a pure call-site change reusing a tested CUDA
+kernel. `gate+idx` is not significant anywhere — an honest negative: the
+mechanism is real and measurable at the kernel level, but ~1–2 % of *kernel*
+time does not survive to end-to-end.
+
+The regime-A `all` arm was measured in a separate run
+(`processed/fusion_ab_allA.csv`) against its own baseline, because the first
+attempt died with `rc=-9` while two servers shared the host. The harness
+recorded that as `launch_failed` rather than dropping it silently, which is why
+it was noticed at all.
+
+## 6c. The components are strongly sub-additive — and that is the transferable result
+
+| regime | sum of the parts | measured together | fraction realised |
+|---|---:|---:|---:|
+| A low-batch decode | 4.82 % | **4.74 %** | 0.98 |
+| B concurrent decode | 9.72 % | **5.54 %** | **0.57** |
+| C long prefill | 5.86 % | **5.12 %** | 0.87 |
+
+Regimes A and C are close to additive, because the components remove different
+things there: `norm+scale` removes fixed per-forward overhead, `conv` removes
+traffic that scales with T, `qkrope` removes work in the 6 attention layers.
+
+Concurrent decode is **not**: `qkrope` alone gets +5.42 %, and adding
+`norm+scale+conv` — worth +3.65 % on its own — buys only 0.12 points more. Both
+are removing *fixed per-forward overhead from the same slack*. Once enough of it
+is gone something else becomes binding, and further overhead removal stops
+converting. That regime B is the outlier is consistent with it being the most
+saturated of the three.
+
+This is the same shape as the waterfall non-additivity recorded in the
+regime-kernel study (serving 1.78× + kernel 1.22× → 1.70×, not 2.17×). Two
+independent studies in this project have now hit it, which makes it worth
+stating as a rule:
+
+> **Optimisations that remove the same *kind* of cost do not add up.** Reporting
+> the sum of separately-measured wins overstates the stack, and the error is
+> largest exactly where the system is most loaded. Every combination that will
+> actually be deployed has to be measured as a combination.
+
+Practically this also means the cheapest component is the most valuable:
+`qkrope` is a call-site change and captures most of the available decode win on
+its own.
+
+---
+
 ## 7. What this changes about the project's standing conclusions
 
 The previous position was "kernel-level work does not convert to end-to-end
@@ -348,24 +453,35 @@ condition:
 > The coverage gap is a function of **architecture maturity**, not of SGLang.
 > A model family that upstream has optimised (Qwen3-30B: 1 un-fused norm, 0
 > stray adds) has nothing left at the fusion layer. A recently added
-> architecture (LFM2.5: 61 un-fused norms, 48 stray adds, 22 multiplies by one)
-> carries several percent of pure overhead — not in its novel operator, which is
-> already fast, but in the call-site plumbing around it.
+> architecture (LFM2.5: 61 un-fused norms, 48 stray adds, 36 multiplies, an
+> un-fused QK-norm+RoPE chain) carries several percent of pure overhead — not
+> in its novel operator, which is already fast, but in the call-site plumbing
+> around it.
+
+The sharpest version of this: **three of the four gaps are cases where SGLang
+already ships the fused primitive and this model's call site does not use it.**
+`fused_add_rmsnorm` (used by llama/qwen2/every other model),
+`fused_qk_norm_rope` (used by Qwen3-MoE), and a multiply by a constant that is
+1.0. The remaining one needed a Triton kernel, and Inductor derives that kernel
+by itself. **Nothing here required inventing anything.**
 
 This is precisely the niche the plan assigns to the agent — *"automatically find
 and fill SGLang's coverage gaps"* — and it is the first time that framing has
-produced a positive, significant, whole-regime end-to-end number on the same
-model. It is also cheap to detect: the entire audit is one profiled
+produced a positive, significant end-to-end number across all regimes on the
+same model. It is also cheap to detect: the audit is one profiled
 `bench_one_batch` run per model, and the signature is a *kernel count that
 scales with layer count*, which is mechanically checkable rather than a
-judgement call.
+judgement call. A useful second signature is now available too: **grep for
+fused primitives that exist in the codebase and enumerate which models call
+them.**
 
-**Honest scope.** The absolute number is small (≈4 %). It is one model on one
-GPU. The `norm` component is not bit-identical and its quality claim rests on a
-task metric inside a noisy harness, not on token identity. And the win comes
-from applying an existing fused primitive at a call site that failed to use it —
-**no new kernel was written**, which is the same shape as every other positive
-result this project has found.
+**Honest scope.** The absolute number is ~5 %. It is one model on one GPU. The
+`norm` and `qkrope` components are not bit-identical, and their quality claim
+rests on a task metric inside a harness whose own noise floor is 0.8 points.
+Three of the four wins come from applying existing fused primitives at call
+sites that failed to use them — the one genuinely new kernel is worth +2.3 % on
+prefill and 0 on decode. And §6c shows the stack does **not** deliver the sum of
+its parts where the system is most loaded.
 
 ---
 
@@ -394,14 +510,27 @@ python scripts/lfm_fusion/lf_correctness.py accuracy --arm baseline --gpu 5 \
 
 ## 9. Next
 
-1. **G3, the ShortConv layout copy** — 2.9 % of long-prefill kernel time, needs a
-   layout change in the `causal_conv1d_fn` call rather than a call-site edit.
-2. **Fuse the ShortConv gating multiplies** into the conv kernel (36 kernels,
-   1.8–3.7 %); `causal_conv1d_update` already takes an `activation` argument, so
-   a gating argument is a natural extension.
-3. **Turn the audit into an agent check.** The gap signature is a kernel count
-   that scales with layer count, and the control model shows what "clean" looks
-   like. This is a mechanical rule an agent can apply to any newly added
-   architecture without a human reading the model file.
-4. **Upstream G2.** The multiply by `routed_scaling_factor == 1.0` is a
-   two-line, bit-exact fix that costs 22 kernel launches per forward.
+1. **Turn the audit into an agent check.** Two mechanical signatures are now
+   established: (a) a kernel count that scales with layer count, with Qwen as
+   the control for what "clean" looks like, and (b) fused primitives that exist
+   in the codebase but that a given model's call site never calls. Both are
+   checkable without a human reading the model file, and (b) in particular found
+   three of the four wins here.
+2. **Run the audit on other recently-added architectures** to test whether
+   "architecture maturity predicts fusion headroom" is a rule or a single
+   observation. This is the cheapest remaining experiment (~15 min per model)
+   and it is what would turn this from an anecdote into a finding.
+3. **Upstream the two bit-exact fixes.** The multiply by
+   `routed_scaling_factor == 1.0` and the `req_pool_indices` cast hoist are
+   small, bit-exact, and cost nothing to review. `fused_add_rmsnorm` and
+   `fused_qk_norm_rope` at the LFM call sites are slightly larger but reuse
+   primitives upstream already maintains.
+4. **Remove the ShortConv shape guard by making the launch cheaper.** The FX
+   study measured that the *GPU* crossover is below T=512 — the T≈2048 guard
+   exists only because Triton's Python launch path pins wall time at ~19–30 µs.
+   A CUDA-graph-captured or precompiled launcher would let the fused kernel run
+   everywhere.
+5. **Gates into `causal_conv1d_update`** (1.8–1.9 % of decode) — needs a new
+   tensor parameter and an `sgl-kernel` rebuild, since `activation` collapses to
+   a bool before reaching C++. Deferred as the only remaining item that is not a
+   call-site change.

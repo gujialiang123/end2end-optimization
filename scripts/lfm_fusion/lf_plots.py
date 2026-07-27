@@ -126,6 +126,74 @@ def fig_e2e():
     save(fig, "fusion_e2e_by_regime")
 
 
+def fig_final():
+    """Final stack by regime, plus the sub-additivity check."""
+    import pandas as pd
+    f = L.RESULTS / "processed" / "fusion_ab_all.csv"
+    fa = L.RESULTS / "processed" / "fusion_ab_allA.csv"
+    if not f.exists():
+        return
+    df = pd.read_csv(f)
+    if fa.exists():
+        df = pd.concat([df, pd.read_csv(fa)], ignore_index=True)
+    df = df[(df.metric == "request_throughput") & (df.arm != "baseline")]
+    arms = ["qkrope", "gate+idx", "norm+scale+conv", "all"]
+    colours = {"qkrope": "#e07b39", "gate+idx": "#bbbbbb",
+               "norm+scale+conv": "#41b6c4", "all": "#225ea8"}
+    regimes = list(REGIME_LABEL)
+
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 4.4),
+                                  gridspec_kw={"width_ratios": [1.7, 1]})
+    x = range(len(regimes))
+    w = 0.2
+    for i, arm in enumerate(arms):
+        vals, errs = [], []
+        for rg in regimes:
+            s_ = df[(df.regime.str.endswith(rg)) & (df.arm == arm)]
+            vals.append(float(s_.gain_pct.iloc[0]) if len(s_) else 0.0)
+            errs.append(100 * float(s_.ci95.iloc[0]) / float(s_.baseline_mean.iloc[0])
+                        if len(s_) else 0.0)
+        bars = ax.bar([xi + (i - 1.5) * w for xi in x], vals, w, yerr=errs,
+                      capsize=3, label=arm, color=colours[arm])
+        for b, v in zip(bars, vals):
+            ax.text(b.get_x() + b.get_width() / 2, v + 0.1, f"{v:+.2f}",
+                    ha="center", fontsize=7.5)
+    ax.axhline(0, color="k", lw=0.8)
+    ax.set_xticks(list(x))
+    ax.set_xticklabels([REGIME_LABEL[r] for r in regimes])
+    ax.set_ylabel("end-to-end request throughput vs baseline (%)")
+    ax.set_title("LFM2.5 fusion stack: +4.7 to +5.5 % on every regime\n"
+                 "(6 reps, Welch t; all bold arms p<0.005)", fontsize=10)
+    ax.set_ylim(top=7.4)
+    ax.legend(fontsize=8, loc="upper left", ncol=2, framealpha=0.95)
+    ax.grid(axis="y", alpha=0.3)
+
+    # sub-additivity
+    parts = {"A_low_batch_decode": 4.82, "B_concurrent_decode": 9.72,
+             "C_long_prefill": 5.86}
+    meas = {"A_low_batch_decode": 4.74, "B_concurrent_decode": 5.54,
+            "C_long_prefill": 5.12}
+    xs = range(len(regimes))
+    ax2.bar([i - 0.19 for i in xs], [parts[r] for r in regimes], 0.38,
+            label="sum of parts measured\nseparately", color="#cccccc",
+            edgecolor="#888")
+    ax2.bar([i + 0.19 for i in xs], [meas[r] for r in regimes], 0.38,
+            label="measured together", color="#225ea8")
+    for i, r in enumerate(regimes):
+        ax2.text(i, max(parts[r], meas[r]) + 0.2,
+                 f"{meas[r]/parts[r]:.2f}x", ha="center", fontsize=9,
+                 fontweight="bold")
+    ax2.set_xticks(list(xs))
+    ax2.set_xticklabels([r.split("_")[0] for r in regimes])
+    ax2.set_ylabel("gain (%)")
+    ax2.set_ylim(top=13.5)
+    ax2.set_title("Wins that remove the same KIND of\ncost do not add up",
+                  fontsize=10)
+    ax2.legend(fontsize=8, loc="upper right")
+    ax2.grid(axis="y", alpha=0.3)
+    save(fig, "fusion_final_stack")
+
+
 def fig_crossover():
     """Isolated kernel speedup vs token count — why the shape guard exists."""
     f = L.RESULTS / "microbench" / "shortconv_bench.json"
@@ -161,7 +229,7 @@ def fig_crossover():
     ax2.set_ylabel("achieved bandwidth (GB/s)")
     ax2.set_title("The defect is coalescing, not traffic:\n"
                   "17 % of peak -> ~70 %", fontsize=10)
-    ax2.legend(fontsize=8); ax2.grid(alpha=0.3)
+    ax2.legend(fontsize=8, loc="upper right"); ax2.grid(alpha=0.3)
     save(fig, "shortconv_crossover")
 
 
@@ -169,3 +237,4 @@ if __name__ == "__main__":
     fig_audit()
     fig_e2e()
     fig_crossover()
+    fig_final()

@@ -224,23 +224,39 @@ if M <= E:
 但**长 prefill 完全反转** —— 断崖换到了另一个 backend。把一个模型的规则用到另一个
 模型,最差 **−34%**。→ 静态查找表有害,必须按部署实测。详见 results 文档 §11c。
 
-### 8.0b ✅ 新增:LFM2.5 fusion gap(`docs/lfm_fusion_results.md`)
+### 8.0b ✅ 新增:LFM2.5 fusion(`docs/lfm_fusion_results.md`,**已做两轮**)
 v33 的"sglang 热路径已全部融合"是**在 Qwen 一个模型上**得出的。LFM2.5 每 forward
 有 **61 个未融合 RMSNorm + 48 个独立 residual add + 36 个 gating mul**(Qwen 对照:
-1 / 0 / 0)。改用 `fused_add_rmsnorm` + 跳过"乘以 1.0" → **低批 decode +3.82%、
-并发 decode +3.96%、长 prefill +0.91%**,GSM8K 无回归。
-**收益方向与 config 研究相反**(fusion 帮 decode,config 帮 prefill)。
+1 / 0 / 0),外加一条未融合的 QK-norm+RoPE 链。
+
+**最终 E2E(六个组件全开,6 重复,全部 p<0.005)**:
+低批 decode **+4.74%** · 并发 decode **+5.54%** · 长 prefill **+5.12%**。
+
+四个空缺里**三个是"sglang 已有融合原语、这个模型的调用点没用"**
+(`fused_add_rmsnorm`、`fused_qk_norm_rope`、乘以 1.0);唯一手写的 Triton kernel
+(ShortConv 的 gate+transpose)**bit-exact**,而且 **Inductor 自己也会推导出结构
+等价的 kernel**。单项最大赢家是 `qkrope`(并发 decode **+5.42%**),纯调用点改动。
+
+**★ 最重要的方法学产出:同类优化强烈次可加。** 各项之和 vs 一起测:
+A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单独值
++3.65% 的组件只多买到 0.12 点 —— 两者在消除同一份"固定每-forward 开销"余量。
+**与 regime-kernel 的 waterfall 非叠加(serving 1.78×+kernel 1.22×→1.70×)同源。**
 
 ### 8.2 把 backend 纳入 agent 候选动作
 `rk_agent.py` 现在只会调 config。计划 §十 明确要求 agent 能 "switch backend"。
 考虑到 §5.5 显示 backend 是避坑杠杆,agent 应该学会**排除**坏 backend 而不是追求最优。
 **§8.0 的跨模型结果让这条的优先级上升**:既然规则不可迁移,就只能靠 agent 按部署实测。
 
-### 8.2b 把 fusion 审计做成 agent 的机械检查(**新增,推荐**)
-gap 的 signature 是"**随层数线性增长的 kernel 计数**"(48 = 2 × 24 层),而 Qwen 对照组
-给出了"干净"长什么样(1 / 0 / 0)。这是 agent 可以对**任何新加入的架构**机械应用的规则,
-不需要人读模型源码。成本:每个模型一次 profiled `bench_one_batch`。
-脚本已就绪:`scripts/lfm_fusion/lf_audit.py`。
+### 8.2b 把 fusion 审计做成 agent 的机械检查(**最推荐**)
+现在有**两条**可机械检查的 signature:
+1. **随层数线性增长的 kernel 计数**(48 = 2 × 24 层),Qwen 对照组定义了"干净"
+   (1 / 0 / 0)。脚本已就绪:`scripts/lfm_fusion/lf_audit.py`。
+2. **枚举代码库里已有的融合原语,检查哪些模型的调用点没用它们** —— 这一条就找到了
+   四个赢家里的三个,而且完全不需要 profiling,是纯静态检查。
+
+### 8.2c 把审计跑到其他新架构上(**最便宜的下一步,~15 分钟/模型**)
+"架构成熟度决定 fusion 空缺"目前是**单模型观察**。在第二、第三个新架构上复现
+才能变成规律 —— 而这正是把它做成 agent 检查的前提。
 
 ### 8.3 验证 waterfall 的非叠加机制
 用 tracer 在 tuned serving(`chunk=2048`)下测 M 分布,和 cookbook 对比,验证"serving tuning 改变了 M 分布"这个假设。约 20 分钟。

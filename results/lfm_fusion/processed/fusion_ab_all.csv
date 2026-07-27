@@ -1,0 +1,29 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+lfm25_all/A_low_batch_decode,baseline,request_throughput,6,1.6808,0.0011,1.6808,1.0,0.0,0.0,1.0,baseline
+lfm25_all/A_low_batch_decode,baseline,output_throughput,6,430.2871,0.2782,430.2871,1.0,0.0,0.0,1.0,baseline
+lfm25_all/A_low_batch_decode,gate+idx,request_throughput,6,1.6808,0.0017,1.6808,1.0,-0.0,-0.035,0.9718,no significant difference
+lfm25_all/A_low_batch_decode,gate+idx,output_throughput,6,430.2777,0.4375,430.2871,1.0,-0.0,-0.035,0.9718,no significant difference
+lfm25_all/A_low_batch_decode,norm+scale+conv,request_throughput,6,1.7461,0.0012,1.6808,1.0389,3.89,80.387,0.0,improvement
+lfm25_all/A_low_batch_decode,norm+scale+conv,output_throughput,6,447.0045,0.2979,430.2871,1.0389,3.89,80.387,0.0,improvement
+lfm25_all/A_low_batch_decode,qkrope,request_throughput,6,1.6965,0.0013,1.6808,1.0093,0.93,18.31,0.0,improvement
+lfm25_all/A_low_batch_decode,qkrope,output_throughput,6,434.3065,0.3282,430.2871,1.0093,0.93,18.31,0.0,improvement
+lfm25_all/B_concurrent_decode,all,request_throughput,6,22.8485,0.0909,21.6485,1.0554,5.54,15.12,0.0,improvement
+lfm25_all/B_concurrent_decode,all,output_throughput,6,5849.213,23.2667,5542.0136,1.0554,5.54,15.12,0.0,improvement
+lfm25_all/B_concurrent_decode,baseline,request_throughput,6,21.6485,0.1262,21.6485,1.0,0.0,0.0,1.0,baseline
+lfm25_all/B_concurrent_decode,baseline,output_throughput,6,5542.0136,32.3175,5542.0136,1.0,0.0,0.0,1.0,baseline
+lfm25_all/B_concurrent_decode,gate+idx,request_throughput,6,21.7895,0.1037,21.6485,1.0065,0.65,1.692,0.0907,no significant difference
+lfm25_all/B_concurrent_decode,gate+idx,output_throughput,6,5578.1122,26.5528,5542.0136,1.0065,0.65,1.692,0.0907,no significant difference
+lfm25_all/B_concurrent_decode,norm+scale+conv,request_throughput,6,22.4382,0.0698,21.6485,1.0365,3.65,10.729,0.0,improvement
+lfm25_all/B_concurrent_decode,norm+scale+conv,output_throughput,6,5744.1807,17.8759,5542.0136,1.0365,3.65,10.729,0.0,improvement
+lfm25_all/B_concurrent_decode,qkrope,request_throughput,6,22.8213,0.0822,21.6485,1.0542,5.42,15.258,0.0,improvement
+lfm25_all/B_concurrent_decode,qkrope,output_throughput,6,5842.2572,21.0505,5542.0136,1.0542,5.42,15.258,0.0,improvement
+lfm25_all/C_long_prefill,all,request_throughput,6,12.7356,0.1667,12.1152,1.0512,5.12,5.579,0.0,improvement
+lfm25_all/C_long_prefill,all,output_throughput,6,407.5404,5.3357,387.6873,1.0512,5.12,5.579,0.0,improvement
+lfm25_all/C_long_prefill,baseline,request_throughput,6,12.1152,0.1404,12.1152,1.0,0.0,0.0,1.0,baseline
+lfm25_all/C_long_prefill,baseline,output_throughput,6,387.6873,4.492,387.6873,1.0,0.0,0.0,1.0,baseline
+lfm25_all/C_long_prefill,gate+idx,request_throughput,6,12.1642,0.0523,12.1152,1.004,0.4,0.64,0.522,no significant difference
+lfm25_all/C_long_prefill,gate+idx,output_throughput,6,389.2532,1.6733,387.6873,1.004,0.4,0.64,0.522,no significant difference
+lfm25_all/C_long_prefill,norm+scale+conv,request_throughput,6,12.5356,0.0816,12.1152,1.0347,3.47,5.074,0.0,improvement
+lfm25_all/C_long_prefill,norm+scale+conv,output_throughput,6,401.1405,2.6127,387.6873,1.0347,3.47,5.074,0.0,improvement
+lfm25_all/C_long_prefill,qkrope,request_throughput,6,12.3566,0.0448,12.1152,1.0199,1.99,3.21,0.0013,improvement
+lfm25_all/C_long_prefill,qkrope,output_throughput,6,395.411,1.4343,387.6873,1.0199,1.99,3.21,0.0013,improvement
