@@ -33,9 +33,9 @@ RAW = L.RESULTS / "raw"
 PROC = L.RESULTS / "processed"
 
 
-def load_sweep(model: str) -> pd.DataFrame:
+def load_sweep(model: str, stage: str = "sweep") -> pd.DataFrame:
     rows = []
-    for f in sorted((RAW / "sweep" / model).glob("full_t*_uniform.json")):
+    for f in sorted((RAW / stage / model).glob("full_t*_uniform.json")):
         d = json.loads(f.read_text())
         base = d["default_baseline"]["median_ms"]
         for r in d["results"]:
@@ -104,13 +104,17 @@ def pick_for_subset(df: pd.DataFrame, tokens: list):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", default="lfm25,qwen")
+    ap.add_argument("--stage", default="sweep",
+                    help="sweep (no-bias) or bias (the variant the server runs)")
+    ap.add_argument("--suffix", default="",
+                    help="suffix for profile names, e.g. _bias")
     a = ap.parse_args()
     PROC.mkdir(parents=True, exist_ok=True)
     L.CONFIGS.mkdir(parents=True, exist_ok=True)
 
     all_strategy, all_sweep = [], []
     for model in a.models.split(","):
-        df = load_sweep(model)
+        df = load_sweep(model, a.stage)
         if df.empty:
             print(f"[skip] no sweep results for {model}")
             continue
@@ -162,7 +166,7 @@ def main():
         profiles["global_best"] = cfg_from_key(df, gkey)
         for _, orow in oracle.iterrows():
             profiles[f"oracle_t{int(orow.tokens)}"] = cfg_from_key(df, orow.config_key)
-        (L.CONFIGS / f"{model}_profiles.json").write_text(
+        (L.CONFIGS / f"{model}{a.suffix}_profiles.json").write_text(
             json.dumps(profiles, indent=2))
 
         # ---- SGLANG_MOE_CONFIG_DIR trees for E2E ---------------------------
@@ -170,7 +174,7 @@ def main():
         fname = f"E={E},N={N},device_name=NVIDIA_H200.json"
         for pname, sel in (("global_best", {"global_best": None}),
                            ("regime_aware", None)):
-            outdir = L.CONFIGS / "profiles" / f"{model}_{pname}" / "configs" / "triton_3_5_1"
+            outdir = L.CONFIGS / "profiles" / f"{model}{a.suffix}_{pname}" / "configs" / "triton_3_5_1"
             outdir.mkdir(parents=True, exist_ok=True)
             table = {}
             for _, orow in oracle.iterrows():
@@ -183,7 +187,7 @@ def main():
                     table[str(M)] = cfg_from_key(df, rkeys.get(cl, gkey))
             (outdir / fname).write_text(json.dumps(table, indent=2))
         # oracle profile dir (upper bound; per-M best)
-        outdir = L.CONFIGS / "profiles" / f"{model}_oracle" / "configs" / "triton_3_5_1"
+        outdir = L.CONFIGS / "profiles" / f"{model}{a.suffix}_oracle" / "configs" / "triton_3_5_1"
         outdir.mkdir(parents=True, exist_ok=True)
         (outdir / fname).write_text(json.dumps(
             {str(int(o.M)): cfg_from_key(df, o.config_key)
@@ -196,10 +200,10 @@ def main():
 
     if all_sweep:
         pd.concat(all_sweep, ignore_index=True).to_csv(
-            PROC / "sweep_all.csv", index=False)
+            PROC / f"sweep_all{a.suffix}.csv", index=False)
     if all_strategy:
         s = pd.DataFrame(all_strategy).sort_values(["model", "tokens"])
-        s.to_csv(PROC / "strategy_comparison.csv", index=False)
+        s.to_csv(PROC / f"strategy_comparison{a.suffix}.csv", index=False)
         print("\n=== strategy comparison (speedup over measured default) ===")
         print(s[["model", "tokens", "M", "default_ms", "oracle_speedup",
                  "global_speedup", "regime_speedup",

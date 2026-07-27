@@ -1,0 +1,11 @@
+M,tokens,oracle_speedup,specialized,reason,BLOCK_SIZE_M,BLOCK_SIZE_N,BLOCK_SIZE_K,GROUP_SIZE_M,num_warps,num_stages
+4,1,1.0065420124388136,False,oracle 1.007x < 1.15 -> keep the runtime default (tuning here would deploy noise),16,32,64,1,,
+8,2,0.9816244845327904,False,oracle 0.982x < 1.15 -> keep the runtime default (tuning here would deploy noise),16,32,64,1,,
+16,4,1.0442141186648193,False,oracle 1.044x < 1.15 -> keep the runtime default (tuning here would deploy noise),16,32,64,1,,
+32,8,1.0934911328109478,False,oracle 1.093x < 1.15 -> keep the runtime default (tuning here would deploy noise),16,32,64,1,,
+64,16,1.004689978527166,False,oracle 1.005x < 1.15 -> keep the runtime default (tuning here would deploy noise),64,64,32,8,,
+128,32,1.005983465971216,False,oracle 1.006x < 1.15 -> keep the runtime default (tuning here would deploy noise),64,64,32,8,,
+256,64,1.4838391851179698,True,oracle 1.484x >= 1.15 -> specialize,16,128,128,1,8.0,2.0
+2048,512,1.390689569392196,True,oracle 1.391x >= 1.15 -> specialize,64,128,64,16,4.0,4.0
+8192,2048,1.6324179018565237,True,oracle 1.632x >= 1.15 -> specialize,128,256,64,16,8.0,4.0
+32768,8192,1.6387915009849816,True,oracle 1.639x >= 1.15 -> specialize,128,256,64,1,8.0,3.0

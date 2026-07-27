@@ -40,11 +40,11 @@ REGIME_SERVING = {
 }
 
 
-def arm_env(model: str, arm: str):
+def arm_env(model: str, arm: str, suffix: str = ""):
     """Environment for one arm; `default` leaves SGLANG_MOE_CONFIG_DIR unset."""
     env = L.run_env()
     if arm != "default":
-        d = L.CONFIGS / "profiles" / f"{model}_{arm}"
+        d = L.CONFIGS / "profiles" / f"{model}{suffix}_{arm}"
         if not d.exists():
             raise SystemExit(f"profile dir missing: {d}")
         env["SGLANG_MOE_CONFIG_DIR"] = str(d)
@@ -56,6 +56,8 @@ def main():
     ap.add_argument("--model", required=True, choices=list(L.MODELS))
     ap.add_argument("--regime", required=True, choices=list(REGIME_SERVING))
     ap.add_argument("--arms", default="default,global_best,regime_aware")
+    ap.add_argument("--suffix", default="",
+                    help="profile-set suffix, e.g. _bias for the with-bias tuning")
     ap.add_argument("--reps", type=int, default=5)
     ap.add_argument("--gpu", type=int, required=True)
     ap.add_argument("--port", type=int, default=42000)
@@ -68,7 +70,7 @@ def main():
                mem=spec["mem"], config_id=-1,
                hash=f"cap{spec['cap']}_chunk{spec['chunk']}_pol{spec['policy']}_mem{spec['mem']}",
                is_cookbook=False)
-    outdir = OUT / a.model / a.regime
+    outdir = OUT / f"{a.model}{a.suffix}" / a.regime
     outdir.mkdir(parents=True, exist_ok=True)
 
     plan = dict(model=a.model, regime=a.regime, workload=wl,
@@ -84,7 +86,7 @@ def main():
     rows = []
     for arm in plan["arms"]:
         log = outdir / f"server_{arm}.log"
-        env = arm_env(a.model, arm)
+        env = arm_env(a.model, arm, a.suffix)
         # launch through the canonical harness but with our env overlay
         old = dict(os.environ)
         os.environ.update({k: v for k, v in env.items()
