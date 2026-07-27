@@ -49,7 +49,9 @@ def run_env(extra: dict | None = None) -> dict:
         CUDA_HOME=str(ENVDIR),
         PATH=f"{ENVDIR/'bin'}:{env.get('PATH','')}",
         HF_HOME=str(REPO / ".hf_cache"),
-        TRITON_CACHE_DIR="/tmp/lfm_fusion_triton_cache",
+        TRITON_CACHE_DIR=env.get(
+            "TRITON_CACHE_DIR", str(RESULTS / "moesum" / "triton_cache")
+        ),
     )
     if extra:
         env.update({k: str(v) for k, v in extra.items()})

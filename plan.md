@@ -3,19 +3,22 @@
 ## 2026-07-27 晚：LFM2.5 kernel fusion 第二轮 —— 全 regime +4.7~5.5%，且发现"同类优化不叠加"规律 ✅
 **做法**：并行两个调查 agent（nsys 时间线 / torch.compile FX+Inductor），都跑在**已打补丁的路径**上，所以找到的是"还剩什么"。
 
-**最终结果**（6 重复 + 精确 Student-t 的 Welch 检验；六项全开的三个 regime 分别 p=2.2e-13 / 9.5e-08 / 2.6e-04）：
-| regime | qkrope | gate+idx | norm+scale+conv | **全部六项** |
-|---|---:|---:|---:|---:|
-| A 低批 decode | +0.93% | −0.00%(n.s.) | +3.89% | **+4.74%** |
-| B 并发 decode | **+5.42%** | +0.65%(n.s.) | +3.65% | **+5.54%** |
-| C 长 prefill | +1.99% | +0.40%(n.s.) | +3.47% | **+5.12%** |
+**最终结果**（6 重复 + 精确 Student-t 的 Welch 检验）：
+| regime | qkrope | gate+idx | norm+scale+conv | moesum | 六项 | **七项全开** |
+|---|---:|---:|---:|---:|---:|---:|
+| A 低批 decode | +0.93% | −0.00%(n.s.) | +3.89% | +4.55% | +4.60% | **+6.57%** |
+| B 并发 decode | **+5.42%** | +0.65%(n.s.) | +3.65% | +3.08% | +6.01% | **+6.21%** |
+| C 长 prefill | +1.99% | +0.40%(n.s.) | +3.47% | — | +5.81% | **+5.30%** |
 
-**新增四项**（第一轮是 norm/scale）：
+七项全开的 p = 4.6e-14 / 2.4e-08 / 1.2e-05。
+
+**新增五项**（第一轮是 norm/scale）：
 - **`conv`（唯一手写 Triton kernel）**：ShortConv 的 glue（gate mul + transpose）在长 prefill 上跑 8.8GB/10.3ms = **0.83 TB/s，仅峰值的 17%**——问题不是流量而是**访问不合并**。两个 tiled kernel 分别吃掉 conv 两侧的 chunk+gate+transpose，隔离 **5.90×/4.33×**，带宽提到 ~3460 GB/s（~72%），每 forward 省 7.96ms。**bit-exact**。形状门控 T≥2048（小 T 反而慢）。E2E：长 prefill **+2.33%**，decode 精确中性（p=0.18/0.95）。
 - **`qkrope`（单项最大赢家）**：`sgl_kernel.fused_qk_norm_rope` **早就存在，Qwen3-MoE 在用，LFM2.5 没用** —— 它拆 QKV 后跑两个独立 RMSNorm + 独立 RoPE。纯调用点改动，**并发 decode +5.42%**。
 - **`idx`**：`req_pool_indices.to(int32)` 在 18 个 conv 层里各算一遍，kernel 只搬 12 字节，纯 launch 开销（decode ~1.3%）。
 - **`gate`**：decode 的 gate mul 读 proj 的 **strided rows**，导致 TensorIterator 退化成标量 kernel。
-（`gate+idx` 端到端**不显著**——诚实负面：kernel 级 1~2% 没能兑现到 e2e。）
+- **`moesum`（第二个手写 Triton kernel）**：MoE 的 top-k 归约把 `[T,H]` 写回 HBM，紧接着下一层的 `fused_add_rmsnorm` 又读回来。两者都是行方向的 → 一个 kernel 做完归约+残差加+RMSNorm。隔离 T=1/8/32 上 **2.46/2.68/2.64×**（**与 ShortConv 相反,小 T 才是赢面** —— 省的是 launch + 往返，T=1 时那几乎就是全部成本），residual bit-exact。单独 A **+4.55%**、B +3.08%；**叠在其余六项之上仍给 A 再加 +1.88%（p=1.7e-09）**，B/C 统计中性（p=0.68/0.43）。
+（`gate+idx` 端到端**三个 regime 全不显著**——诚实负面：kernel 级 1~2% 没能兑现到 e2e。）
 
 **★最有价值的方法学发现：同类优化强烈次可加**
 | regime | 各项之和 | 一起测 | 兑现率 |

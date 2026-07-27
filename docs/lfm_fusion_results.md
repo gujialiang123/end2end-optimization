@@ -15,7 +15,7 @@ already CUDA-fused, so there is no gap to fill**, and that finding has been the
 basis for deprioritising kernel-fusion work ever since. That conclusion is
 correct — *for Qwen*. LFM2.5-8B-A1B, a newer hybrid architecture where 18 of 24
 layers are gated short convolutions rather than attention, had never been
-audited at the operator level. It turns out to carry **four real fusion gaps
+audited at the operator level. It turns out to carry **five real fusion gaps
 that Qwen does not have**. Closing them is worth **+4.7 % to +5.5 % end-to-end
 on every regime tested**, with GSM8K accuracy unchanged. This is the first
 same-model kernel-level change in this project to produce a *positive,
@@ -24,15 +24,15 @@ statistically significant* end-to-end result across the board.
 **Final result** (6 repetitions per arm, Welch t vs baseline with the exact
 Student-t tail):
 
-| regime | baseline req/s | **all six components** | p |
-|---|---:|---:|---:|
-| A low-batch decode | 1.683 | **+4.74 %** | 2.2e-13 |
-| B concurrent decode | 21.648 | **+5.54 %** | 9.5e-08 |
-| C long prefill | 12.115 | **+5.12 %** | 2.6e-04 |
+| regime | baseline req/s | six components | **all seven** | p |
+|---|---:|---:|---:|---:|
+| A low-batch decode | 1.688 | +4.60 % | **+6.57 %** | 4.6e-14 |
+| B concurrent decode | 21.673 | +6.01 % | **+6.21 %** | 2.4e-08 |
+| C long prefill | 12.311 | +5.81 % | **+5.30 %** | 1.2e-05 |
 
-Three of the four gaps are **call-site changes that reuse fused primitives
-SGLang already ships** — no new kernel. The fourth is a hand-written Triton
-kernel, and it is **bit-exact**.
+Five of the seven gaps are **call-site changes that reuse fused primitives
+SGLang already ships** — no new kernel. The other two are hand-written Triton
+kernels, and both are bit-exact (one to within 5e-4 at the largest shape).
 
 The components break down by mechanism, and they are complementary:
 
@@ -414,22 +414,28 @@ it was noticed at all.
 
 ## 6c. The components are strongly sub-additive — and that is the transferable result
 
+Counting all the separately-measured components against the measured stack:
+
 | regime | sum of the parts | measured together | fraction realised |
 |---|---:|---:|---:|
-| A low-batch decode | 4.82 % | **4.74 %** | 0.98 |
-| B concurrent decode | 9.72 % | **5.54 %** | **0.57** |
-| C long prefill | 5.86 % | **5.12 %** | 0.87 |
+| A low-batch decode | 9.37 % | **6.57 %** | 0.70 |
+| B concurrent decode | 12.80 % | **6.21 %** | **0.49** |
+| C long prefill | 5.86 % | **5.30 %** | 0.90 |
 
-Regimes A and C are close to additive, because the components remove different
-things there: `norm+scale` removes fixed per-forward overhead, `conv` removes
-traffic that scales with T, `qkrope` removes work in the 6 attention layers.
+Long prefill is nearly additive, because its components remove different things:
+`norm+scale` removes fixed per-forward overhead, `conv` removes traffic that
+scales with T, `qkrope` removes work in the 6 attention layers.
 
-Concurrent decode is **not**: `qkrope` alone gets +5.42 %, and adding
-`norm+scale+conv` — worth +3.65 % on its own — buys only 0.12 points more. Both
-are removing *fixed per-forward overhead from the same slack*. Once enough of it
-is gone something else becomes binding, and further overhead removal stops
-converting. That regime B is the outlier is consistent with it being the most
-saturated of the three.
+Concurrent decode realises **less than half**. `qkrope` alone gets +5.42 %, and
+adding `norm+scale+conv` — worth +3.65 % on its own — buys 0.12 points; adding
+`moesum` on top of that — worth +3.08 % on its own — buys another 0.19. All
+three are removing *fixed per-forward overhead from the same slack*. Once enough
+of it is gone something else becomes binding and further overhead removal stops
+converting.
+
+**The ordering is the tell: 0.90 / 0.70 / 0.49 tracks how saturated the regime
+is.** Long prefill has the most work per forward to hide overhead behind and
+loses the least; concurrent decode is the most loaded and loses the most.
 
 This is the same shape as the waterfall non-additivity recorded in the
 regime-kernel study (serving 1.78× + kernel 1.22× → 1.70×, not 2.17×). Two
@@ -447,6 +453,42 @@ its own.
 
 ---
 
+## 6d. G5 `moesum` — fusing the MoE reduction with the following norm
+
+The nsys study ranked one more chain worth attacking: the MoE top-k reduction
+writes `[T, H]` to HBM and the very next thing that happens is the following
+layer's `fused_add_rmsnorm` reading it straight back. Both are row-wise, so one
+kernel can do the reduction, the residual add and the RMSNorm in a single pass
+(`scripts/lfm_fusion/lf_triton_moesum.py`).
+
+Isolated: **2.46×/2.68×/2.64×** at T=1/8/32, falling to 0.72–0.74× at
+T=128–1024 and recovering to 1.14×/1.30× at T=4096/16000 — hence a two-sided
+guard (`T <= 32 or T >= 4096`). Residual output is bit-exact; the normalised
+output is exact through T=4096 and differs by 4.9e-4 at T=16000.
+
+Note this is the **opposite** shape from the ShortConv kernel, which was useless
+below T≈2048. Here the win is largest at *small* T, because what is removed is a
+kernel launch plus a round-trip, and at T=1 that is essentially the whole cost.
+
+Standalone end-to-end: **A +4.55 %** (p=1.5e-13), **B +3.08 %** (p=0.003).
+GSM8K 0.345 against a 0.347 baseline.
+
+Stacked on the other six (`lfm25_all7`, `all` vs `all7`):
+
+| regime | six | seven | delta from `moesum` | p |
+|---|---:|---:|---:|---:|
+| A low-batch decode | +4.60 % | **+6.57 %** | **+1.88 %** | 1.7e-09 |
+| B concurrent decode | +6.01 % | +6.21 % | +0.19 % | 0.68 |
+| C long prefill | +5.81 % | +5.30 % | −0.48 % | 0.43 |
+
+So `moesum` is a genuine further win on low-batch decode and **statistically
+neutral everywhere else** — it neither helps nor hurts B and C. All seven
+together is therefore a safe universal default.
+
+That it survives stacking on regime A while `norm+scale+conv` and `qkrope`
+cancel each other on regime B is consistent with §6c: A is the least saturated
+regime, so there is still slack for another fixed-overhead removal to convert.
+
 ## 7. What this changes about the project's standing conclusions
 
 The previous position was "kernel-level work does not convert to end-to-end
@@ -457,15 +499,16 @@ condition:
 > A model family that upstream has optimised (Qwen3-30B: 1 un-fused norm, 0
 > stray adds) has nothing left at the fusion layer. A recently added
 > architecture (LFM2.5: 61 un-fused norms, 48 stray adds, 36 multiplies, an
-> un-fused QK-norm+RoPE chain) carries several percent of pure overhead — not
-> in its novel operator, which is already fast, but in the call-site plumbing
-> around it.
+> un-fused QK-norm+RoPE chain, and a MoE reduction that round-trips to HBM)
+> carries **6.6 %** of pure overhead — not in its novel operator, which is
+> already fast, but in the call-site plumbing around it.
 
-The sharpest version of this: **three of the four gaps are cases where SGLang
+The sharpest version of this: **the two largest wins are cases where SGLang
 already ships the fused primitive and this model's call site does not use it.**
-`fused_add_rmsnorm` (used by llama/qwen2/every other model),
-`fused_qk_norm_rope` (used by Qwen3-MoE), and a multiply by a constant that is
-1.0. The remaining one needed a Triton kernel, and Inductor derives that kernel
+`fused_add_rmsnorm` (used by llama/qwen2/every other model) and
+`fused_qk_norm_rope` (used by Qwen3-MoE), plus a multiply by a constant that is
+1.0 and a redundant `.to(int32)`. The two that needed real kernels are
+mechanical fusions of adjacent row-wise work, and Inductor derives one of them
 by itself. **Nothing here required inventing anything.**
 
 This is precisely the niche the plan assigns to the agent — *"automatically find
@@ -478,13 +521,14 @@ judgement call. A useful second signature is now available too: **grep for
 fused primitives that exist in the codebase and enumerate which models call
 them.**
 
-**Honest scope.** The absolute number is ~5 %. It is one model on one GPU. The
-`norm` and `qkrope` components are not bit-identical, and their quality claim
-rests on a task metric inside a harness whose own noise floor is 0.8 points.
-Three of the four wins come from applying existing fused primitives at call
-sites that failed to use them — the one genuinely new kernel is worth +2.3 % on
-prefill and 0 on decode. And §6c shows the stack does **not** deliver the sum of
-its parts where the system is most loaded.
+**Honest scope.** The absolute number is ~5–6.6 %. It is one model on one GPU.
+The `norm` and `qkrope` components are not bit-identical, and their quality
+claim rests on a task metric inside a harness whose own noise floor is
+0.8 points. Most of the win comes from applying existing fused primitives at
+call sites that failed to use them, not from novel kernels. One component
+(`gate+idx`) is a measured **negative** — real at the kernel level, invisible
+end-to-end. And §6c shows the stack does **not** deliver the sum of its parts
+where the system is most loaded.
 
 ---
 

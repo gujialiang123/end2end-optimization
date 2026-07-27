@@ -36,7 +36,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import lf_lib as L
 import serving_ceiling_lib as S
-from lf_e2e import ARMS, arm_overlay, check_patch_applied
+from lf_e2e import (
+    ARMS,
+    arm_overlay,
+    check_patch_applied,
+    kill_server,
+    launch_server,
+)
 
 OUT = L.RESULTS / "correctness"
 
@@ -68,15 +74,15 @@ def collect(arm: str, gpu: int, port: int, topk: int, model: str):
     old = dict(os.environ)
     os.environ.update(arm_overlay(arm))
     try:
-        p, argv = S.launch_server(model, cfg, gpu, port, log)
+        p, argv = launch_server(model, cfg, gpu, port, log)
         ok, info = S.wait_health(p, port, t=900)
         if not ok:
-            S.kill_server(p)
+            kill_server(p)
             raise SystemExit(f"launch failed: {info}")
         applied_ok, msg = check_patch_applied(log, arm)
         print(f"patch check: {msg}")
         if not applied_ok:
-            S.kill_server(p)
+            kill_server(p)
             raise SystemExit(f"patch check failed: {msg}")
 
         recs = []
@@ -94,7 +100,7 @@ def collect(arm: str, gpu: int, port: int, topk: int, model: str):
             # entries are [logprob, token_id, token_text]
             recs.append(dict(prompt=prompt, text=j["text"],
                              top=[[e[0], e[1]] for e in top]))
-        S.kill_server(p)
+        kill_server(p)
     finally:
         os.environ.clear()
         os.environ.update(old)
@@ -190,15 +196,15 @@ def accuracy(arm: str, gpu: int, port: int, model: str, n_questions: int,
     old = dict(os.environ)
     os.environ.update(arm_overlay(arm))
     try:
-        p, argv = S.launch_server(model, cfg, gpu, port, log)
+        p, argv = launch_server(model, cfg, gpu, port, log)
         ok, info = S.wait_health(p, port, t=900)
         if not ok:
-            S.kill_server(p)
+            kill_server(p)
             raise SystemExit(f"launch failed: {info}")
         applied_ok, msg = check_patch_applied(log, arm)
         print(f"patch check: {msg}")
         if not applied_ok:
-            S.kill_server(p)
+            kill_server(p)
             raise SystemExit(f"patch check failed: {msg}")
 
         import subprocess
@@ -224,7 +230,7 @@ def accuracy(arm: str, gpu: int, port: int, model: str, n_questions: int,
             accs.append(acc)
             logs.append(out_log.name)
             print(f"  rep{rep}: accuracy={acc}")
-        S.kill_server(p)
+        kill_server(p)
     finally:
         os.environ.clear()
         os.environ.update(old)

@@ -229,13 +229,15 @@ v33 的"sglang 热路径已全部融合"是**在 Qwen 一个模型上**得出的
 有 **61 个未融合 RMSNorm + 48 个独立 residual add + 36 个 gating mul**(Qwen 对照:
 1 / 0 / 0),外加一条未融合的 QK-norm+RoPE 链。
 
-**最终 E2E(六个组件全开,6 重复,精确 Welch t,p=2.2e-13 / 9.5e-08 / 2.6e-04)**:
-低批 decode **+4.74%** · 并发 decode **+5.54%** · 长 prefill **+5.12%**。
+**最终 E2E(七个组件全开,6 重复,精确 Welch t,p=4.6e-14 / 2.4e-08 / 1.2e-05)**:
+低批 decode **+6.57%** · 并发 decode **+6.21%** · 长 prefill **+5.30%**。
 
-四个空缺里**三个是"sglang 已有融合原语、这个模型的调用点没用"**
-(`fused_add_rmsnorm`、`fused_qk_norm_rope`、乘以 1.0);唯一手写的 Triton kernel
-(ShortConv 的 gate+transpose)**bit-exact**,而且 **Inductor 自己也会推导出结构
-等价的 kernel**。单项最大赢家是 `qkrope`(并发 decode **+5.42%**),纯调用点改动。
+两个最大的赢家都是**"sglang 已有融合原语、这个模型的调用点没用"**
+(`fused_add_rmsnorm`、`fused_qk_norm_rope`)。两个手写 Triton kernel:
+ShortConv 的 gate+transpose(bit-exact,**Inductor 自己也会推导出结构等价的
+kernel**,只在 T≥2048 有用)和 MoE 归约+下一层 norm 的融合(**相反形状:小 T 才
+是赢面**,T=1/8/32 上 2.46/2.68/2.64×)。单项最大是 `qkrope`(并发 decode
+**+5.42%**),纯调用点改动。
 
 **★ 最重要的方法学产出:同类优化强烈次可加。** 各项之和 vs 一起测:
 A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单独值

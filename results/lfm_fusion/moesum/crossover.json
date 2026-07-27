@@ -1,0 +1,154 @@
+{
+  "rows": [
+    {
+      "T": 64,
+      "status": "ok",
+      "stock_us": 21.92,
+      "fused_us": 30.832,
+      "speedup": 0.7109,
+      "stock_gbs": 100.4,
+      "fused_gbs": 55.6,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 131072,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 131072,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 256,
+      "status": "ok",
+      "stock_us": 21.328,
+      "fused_us": 30.848,
+      "speedup": 0.6914,
+      "stock_gbs": 412.3,
+      "fused_gbs": 221.7,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 524288,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 524288,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 512,
+      "status": "ok",
+      "stock_us": 20.752,
+      "fused_us": 31.888,
+      "speedup": 0.6508,
+      "stock_gbs": 847.2,
+      "fused_gbs": 428.9,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 1048576,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 1048576,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 1536,
+      "status": "ok",
+      "stock_us": 23.504,
+      "fused_us": 32.848,
+      "speedup": 0.7155,
+      "stock_gbs": 2243.8,
+      "fused_gbs": 1248.8,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 3145728,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 3145728,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 2048,
+      "status": "ok",
+      "stock_us": 26.64,
+      "fused_us": 34.912,
+      "speedup": 0.7631,
+      "stock_gbs": 2639.5,
+      "fused_gbs": 1566.5,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 4194304,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 4194304,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 3072,
+      "status": "ok",
+      "stock_us": 33.2,
+      "fused_us": 32.416,
+      "speedup": 1.0242,
+      "stock_gbs": 3176.9,
+      "fused_gbs": 2530.7,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 6291456,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 6291456,
+        "bit_exact": true
+      }
+    }
+  ],
+  "hidden_size": 2048,
+  "top_k": 4,
+  "eps": 1e-05,
+  "physical_gpu": 5,
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

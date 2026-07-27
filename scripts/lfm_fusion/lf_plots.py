@@ -95,7 +95,7 @@ def fig_e2e():
                if any(str(x).endswith(r) for x in df.regime)]
     fig, ax = plt.subplots(figsize=(8, 4.2))
     x = range(len(regimes))
-    w = 0.26
+    w = 0.166
     colours = {"norm+scale": "#41b6c4", "conv": "#fdae61",
                "norm+scale+conv": "#225ea8", "scale": "#7fcdbb", "norm": "#a1dab4"}
     for i, arm in enumerate(ARM_ORDER):
@@ -129,23 +129,26 @@ def fig_e2e():
 def fig_final():
     """Final stack by regime, plus the sub-additivity check."""
     import pandas as pd
-    f = L.RESULTS / "processed" / "fusion_ab_all.csv"
-    fa = L.RESULTS / "processed" / "fusion_ab_allA.csv"
-    if not f.exists():
+    frames = []
+    for name in ("fusion_ab_all.csv", "fusion_ab_moesum.csv",
+                 "fusion_ab_all7.csv"):
+        f = L.RESULTS / "processed" / name
+        if f.exists():
+            frames.append(pd.read_csv(f))
+    if not frames:
         return
-    df = pd.read_csv(f)
-    if fa.exists():
-        df = pd.concat([df, pd.read_csv(fa)], ignore_index=True)
+    df = pd.concat(frames, ignore_index=True)
     df = df[(df.metric == "request_throughput") & (df.arm != "baseline")]
-    arms = ["qkrope", "gate+idx", "norm+scale+conv", "all"]
+    arms = ["qkrope", "gate+idx", "norm+scale+conv", "moesum", "all7"]
     colours = {"qkrope": "#e07b39", "gate+idx": "#bbbbbb",
-               "norm+scale+conv": "#41b6c4", "all": "#225ea8"}
+               "norm+scale+conv": "#41b6c4", "moesum": "#8c6bb1",
+               "all7": "#225ea8"}
     regimes = list(REGIME_LABEL)
 
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12, 4.4),
                                   gridspec_kw={"width_ratios": [1.7, 1]})
     x = range(len(regimes))
-    w = 0.2
+    w = 0.16
     for i, arm in enumerate(arms):
         vals, errs = [], []
         for rg in regimes:
@@ -153,7 +156,7 @@ def fig_final():
             vals.append(float(s_.gain_pct.iloc[0]) if len(s_) else 0.0)
             errs.append(100 * float(s_.ci95.iloc[0]) / float(s_.baseline_mean.iloc[0])
                         if len(s_) else 0.0)
-        bars = ax.bar([xi + (i - 1.5) * w for xi in x], vals, w, yerr=errs,
+        bars = ax.bar([xi + (i - 2) * w for xi in x], vals, w, yerr=errs,
                       capsize=3, label=arm, color=colours[arm])
         for b, v in zip(bars, vals):
             ax.text(b.get_x() + b.get_width() / 2, v + 0.1, f"{v:+.2f}",
@@ -162,17 +165,17 @@ def fig_final():
     ax.set_xticks(list(x))
     ax.set_xticklabels([REGIME_LABEL[r] for r in regimes])
     ax.set_ylabel("end-to-end request throughput vs baseline (%)")
-    ax.set_title("LFM2.5 fusion stack: +4.7 to +5.5 % on every regime\n"
+    ax.set_title("LFM2.5 fusion stack: +5.3 to +6.6 % on every regime\n"
                  "(6 reps, exact Welch t vs baseline)", fontsize=10)
-    ax.set_ylim(top=7.4)
+    ax.set_ylim(top=9.2)
     ax.legend(fontsize=8, loc="upper left", ncol=2, framealpha=0.95)
     ax.grid(axis="y", alpha=0.3)
 
     # sub-additivity
-    parts = {"A_low_batch_decode": 4.82, "B_concurrent_decode": 9.72,
+    parts = {"A_low_batch_decode": 9.37, "B_concurrent_decode": 12.80,
              "C_long_prefill": 5.86}
-    meas = {"A_low_batch_decode": 4.74, "B_concurrent_decode": 5.54,
-            "C_long_prefill": 5.12}
+    meas = {"A_low_batch_decode": 6.57, "B_concurrent_decode": 6.21,
+            "C_long_prefill": 5.30}
     xs = range(len(regimes))
     ax2.bar([i - 0.19 for i in xs], [parts[r] for r in regimes], 0.38,
             label="sum of parts measured\nseparately", color="#cccccc",
@@ -186,7 +189,7 @@ def fig_final():
     ax2.set_xticks(list(xs))
     ax2.set_xticklabels([r.split("_")[0] for r in regimes])
     ax2.set_ylabel("gain (%)")
-    ax2.set_ylim(top=13.5)
+    ax2.set_ylim(top=17.5)
     ax2.set_title("Wins that remove the same KIND of\ncost do not add up",
                   fontsize=10)
     ax2.legend(fontsize=8, loc="upper right")

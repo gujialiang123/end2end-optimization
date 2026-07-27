@@ -1,0 +1,9 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+lfm25_moesum/A_low_batch_decode,baseline,request_throughput,6,1.6822,0.0015,1.6822,1.0,0.0,0.0,1,baseline
+lfm25_moesum/A_low_batch_decode,baseline,output_throughput,6,430.6313,0.38,430.6313,1.0,0.0,0.0,1,baseline
+lfm25_moesum/A_low_batch_decode,moesum,request_throughput,6,1.7588,0.0019,1.6822,1.0455,4.55,61.555,1.54e-13,improvement
+lfm25_moesum/A_low_batch_decode,moesum,output_throughput,6,450.2418,0.4955,430.6313,1.0455,4.55,61.555,1.54e-13,improvement
+lfm25_moesum/B_concurrent_decode,baseline,request_throughput,6,21.6642,0.2421,21.6642,1.0,0.0,0.0,1,baseline
+lfm25_moesum/B_concurrent_decode,baseline,output_throughput,6,5546.0444,61.9755,5546.0444,1.0,0.0,0.0,1,baseline
+lfm25_moesum/B_concurrent_decode,moesum,request_throughput,6,22.3315,0.2374,21.6642,1.0308,3.08,3.857,0.00318,improvement
+lfm25_moesum/B_concurrent_decode,moesum,output_throughput,6,5716.8571,60.7792,5546.0444,1.0308,3.08,3.857,0.00318,improvement

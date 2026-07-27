@@ -1,0 +1,177 @@
+{
+  "rows": [
+    {
+      "T": 1,
+      "status": "ok",
+      "stock_us": 90.496,
+      "fused_us": 36.768,
+      "speedup": 2.4613,
+      "stock_gbs": 0.4,
+      "fused_gbs": 0.8,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 2048,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 2048,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 8,
+      "status": "ok",
+      "stock_us": 95.584,
+      "fused_us": 35.68,
+      "speedup": 2.6789,
+      "stock_gbs": 2.9,
+      "fused_gbs": 6.1,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 16384,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 16384,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 32,
+      "status": "ok",
+      "stock_us": 94.848,
+      "fused_us": 35.952,
+      "speedup": 2.6382,
+      "stock_gbs": 11.6,
+      "fused_gbs": 23.9,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 65536,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 65536,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 128,
+      "status": "ok",
+      "stock_us": 24.864,
+      "fused_us": 33.776,
+      "speedup": 0.7361,
+      "stock_gbs": 176.9,
+      "fused_gbs": 101.3,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 262144,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 262144,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 1024,
+      "status": "ok",
+      "stock_us": 24.8,
+      "fused_us": 34.272,
+      "speedup": 0.7236,
+      "stock_gbs": 1417.7,
+      "fused_gbs": 798.0,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 2097152,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 2097152,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 4096,
+      "status": "ok",
+      "stock_us": 42.176,
+      "fused_us": 36.944,
+      "speedup": 1.1416,
+      "stock_gbs": 3334.3,
+      "fused_gbs": 2960.7,
+      "output_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 8388608,
+        "bit_exact": true
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 8388608,
+        "bit_exact": true
+      }
+    },
+    {
+      "T": 16000,
+      "status": "ok",
+      "stock_us": 145.68,
+      "fused_us": 111.808,
+      "speedup": 1.3029,
+      "stock_gbs": 3770.7,
+      "fused_gbs": 3821.3,
+      "output_diff": {
+        "max_abs": 0.00048828125,
+        "mean_abs": 1.4901161901614834e-11,
+        "different": 1,
+        "elements": 32768000,
+        "bit_exact": false
+      },
+      "residual_diff": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "different": 0,
+        "elements": 32768000,
+        "bit_exact": true
+      }
+    }
+  ],
+  "hidden_size": 2048,
+  "top_k": 4,
+  "eps": 1e-05,
+  "physical_gpu": 5,
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

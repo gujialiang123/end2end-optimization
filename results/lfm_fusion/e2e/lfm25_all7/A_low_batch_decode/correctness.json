@@ -1,0 +1,27 @@
+{
+  "prompts": [
+    "Explain in one paragraph why memory bandwidth limits decoding speed.",
+    "List the first ten prime numbers, separated by commas.",
+    "Write a haiku about a GPU kernel.",
+    "The capital of France is",
+    "def quicksort(arr):"
+  ],
+  "outputs": {},
+  "patch_checks": [
+    {
+      "arm": "baseline",
+      "patch_check": "clean baseline",
+      "ok": true
+    },
+    {
+      "arm": "all",
+      "patch_check": "[lfm_fusion_patch] applied: ['norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']",
+      "ok": true
+    },
+    {
+      "arm": "all7",
+      "patch_check": "[lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']",
+      "ok": true
+    }
+  ]
+}

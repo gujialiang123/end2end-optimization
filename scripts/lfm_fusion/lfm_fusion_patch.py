@@ -32,6 +32,12 @@ G3 `conv`  — `Lfm2MoeShortConv.forward` materialises `Bx.transpose(0, 1)
              stock path is kept there. Decode never transposes at all, so this
              component is prefill-only by construction.
 
+G5 `moesum` — make FusedMoE return its four weighted expert outputs and fuse
+             their reduction with the residual add and following RMSNorm.
+             Decode (T<=32) and long prefill (T>=4096) use the fused kernel;
+             the stock combined MoE path is retained between those ranges,
+             where Triton's Python launch floor makes the fusion slower.
+
 Activation (default is fully off — the stock code path is untouched):
 
     LFM_FUSION_PATCH=norm,scale,conv   python -m sglang.launch_server ...
@@ -133,6 +139,188 @@ def _patched_moe_forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
     if self.routed_scaling_factor == 1.0:
         return final_hidden_states
     return final_hidden_states * self.routed_scaling_factor
+
+
+# ---------------------------------------------------------------------------
+# G5 — fuse MoE top-k reduction with the following residual-add RMSNorm
+# ---------------------------------------------------------------------------
+MOESUM_FUSION_MIN_TOKENS = int(
+    os.environ.get("LFM_FUSION_MOESUM_MIN_TOKENS", "4096")
+)
+
+
+def _use_moesum_fusion(tokens: int) -> bool:
+    # Decode uses the <=32 compiled reducer; replacing that two-kernel chain is
+    # profitable. The CUDA reducer wins at intermediate prefill sizes, with the
+    # measured crossover only becoming unambiguous at T=4096.
+    return tokens <= 32 or tokens >= MOESUM_FUSION_MIN_TOKENS
+
+
+def _set_moe_no_combine(experts, enabled: bool) -> None:
+    cfg = experts.moe_runner_config
+    original = getattr(experts, "_lfm_moesum_original_config", None)
+    if original is None:
+        original = (cfg.inplace, cfg.no_combine)
+        experts._lfm_moesum_original_config = original
+    if enabled:
+        cfg.inplace = False
+        cfg.no_combine = True
+    else:
+        cfg.inplace, cfg.no_combine = original
+
+
+def _patched_moe_forward_moesum(
+    self, hidden_states: torch.Tensor
+) -> torch.Tensor:
+    router_logits, _ = self.gate(hidden_states)
+    topk_output = self.topk(hidden_states, router_logits)
+    use_fusion = (
+        self.routed_scaling_factor == 1.0
+        and _use_moesum_fusion(hidden_states.shape[0])
+    )
+    _set_moe_no_combine(self.experts, use_fusion)
+    final_hidden_states = self.experts(hidden_states, topk_output)
+    if use_fusion:
+        if final_hidden_states.ndim != 3 or final_hidden_states.shape[1] != 4:
+            raise RuntimeError(
+                "moesum expected FusedMoE no_combine output [T,4,H], got "
+                f"{tuple(final_hidden_states.shape)}"
+            )
+        return final_hidden_states
+    if "scale" in _APPLIED_SET and self.routed_scaling_factor == 1.0:
+        return final_hidden_states
+    return final_hidden_states * self.routed_scaling_factor
+
+
+def _moesum_norm(partials, residual, norm):
+    import lf_triton_moesum as K
+
+    return K.fused_moesum_add_rmsnorm(
+        partials, residual, norm.weight.data, norm.variance_epsilon
+    )
+
+
+def _patched_layer_forward_moesum(
+    self,
+    layer_id: int,
+    positions: torch.Tensor,
+    hidden_states: torch.Tensor,
+    residual: Optional[torch.Tensor],
+    forward_batch,
+    **kwargs,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Stock layer semantics, deferring only MoE outputs into the next norm."""
+    if forward_batch.forward_mode.is_idle():
+        return hidden_states, residual
+
+    if hidden_states.ndim == 3:
+        normed, residual = _moesum_norm(
+            hidden_states, residual, self.operator_norm
+        )
+    else:
+        residual = hidden_states
+        normed = self.operator_norm(hidden_states)
+
+    if self.is_attention_layer:
+        hidden_states = self.self_attn(positions, normed, forward_batch)
+    else:
+        hidden_states = self.conv(normed, forward_batch)
+
+    hidden_states = hidden_states + residual
+    ffn_output = self.feed_forward(self.ffn_norm(hidden_states))
+    if ffn_output.ndim == 3:
+        return ffn_output, hidden_states
+    return hidden_states + ffn_output, residual
+
+
+def _patched_model_forward_moesum(
+    self,
+    input_ids: torch.Tensor,
+    positions: torch.Tensor,
+    forward_batch,
+    inputs_embeds: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    hidden_states = (
+        inputs_embeds if inputs_embeds is not None else self.embed_tokens(input_ids)
+    )
+    residual = None
+    for i in range(len(self.layers)):
+        hidden_states, residual = self.layers[i](
+            layer_id=i,
+            positions=positions,
+            hidden_states=hidden_states,
+            residual=residual,
+            forward_batch=forward_batch,
+        )
+    if hidden_states.ndim == 3:
+        hidden_states, _ = _moesum_norm(
+            hidden_states, residual, self.embedding_norm
+        )
+        return hidden_states
+    return self.embedding_norm(hidden_states)
+
+
+def _patched_layer_forward_deferred_moesum(
+    self,
+    layer_id: int,
+    positions: torch.Tensor,
+    hidden_states: torch.Tensor,
+    residual: Optional[torch.Tensor],
+    forward_batch,
+    **kwargs,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Compose `moesum` with the full deferred-residual `norm` component."""
+    if forward_batch.forward_mode.is_idle():
+        return hidden_states, residual
+
+    if residual is None:
+        residual = hidden_states
+        normed = self.operator_norm(hidden_states)
+    elif hidden_states.ndim == 3:
+        normed, residual = _moesum_norm(
+            hidden_states, residual, self.operator_norm
+        )
+    else:
+        normed, residual = self.operator_norm(hidden_states, residual)
+
+    if self.is_attention_layer:
+        hidden_states = self.self_attn(positions, normed, forward_batch)
+    else:
+        hidden_states = self.conv(normed, forward_batch)
+
+    hidden_states, residual = self.ffn_norm(hidden_states, residual)
+    hidden_states = self.feed_forward(hidden_states)
+    return hidden_states, residual
+
+
+def _patched_model_forward_deferred_moesum(
+    self,
+    input_ids: torch.Tensor,
+    positions: torch.Tensor,
+    forward_batch,
+    inputs_embeds: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    hidden_states = (
+        inputs_embeds if inputs_embeds is not None else self.embed_tokens(input_ids)
+    )
+    residual = None
+    for i in range(len(self.layers)):
+        hidden_states, residual = self.layers[i](
+            layer_id=i,
+            positions=positions,
+            hidden_states=hidden_states,
+            residual=residual,
+            forward_batch=forward_batch,
+        )
+    if hidden_states.ndim == 3:
+        hidden_states, _ = _moesum_norm(
+            hidden_states, residual, self.embedding_norm
+        )
+        return hidden_states
+    if residual is None:
+        return self.embedding_norm(hidden_states)
+    hidden_states, _ = self.embedding_norm(hidden_states, residual)
+    return hidden_states
 
 
 # ---------------------------------------------------------------------------
@@ -321,18 +509,33 @@ def apply() -> list[str]:
         return []
     from sglang.srt.models import lfm2_moe as M
 
-    known = {"norm", "scale", "conv", "gate", "idx", "qkrope"}
+    known = {"norm", "scale", "conv", "gate", "idx", "qkrope", "moesum"}
     unknown = want - known
     if unknown:
         raise ValueError(f"unknown LFM_FUSION_PATCH components: {sorted(unknown)}")
     _APPLIED_SET.update(want)
 
-    if "norm" in want:
+    if "moesum" in want:
+        M.Lfm2MoeSparseMoeBlock.forward = _patched_moe_forward_moesum
+        if "norm" in want:
+            M.Lfm2MoeDecoderLayer.forward = _patched_layer_forward_deferred_moesum
+            M.Lfm2MoeModel.forward = _patched_model_forward_deferred_moesum
+        else:
+            M.Lfm2MoeDecoderLayer.forward = _patched_layer_forward_moesum
+            M.Lfm2MoeModel.forward = _patched_model_forward_moesum
+        _APPLIED.append(
+            f"moesum(decode<=32,prefill>={MOESUM_FUSION_MIN_TOKENS})"
+        )
+    elif "norm" in want:
         M.Lfm2MoeDecoderLayer.forward = _patched_layer_forward
         M.Lfm2MoeModel.forward = _patched_model_forward
         _APPLIED.append("norm")
-    if "scale" in want:
+    if "norm" in want and "moesum" in want:
+        _APPLIED.append("norm")
+    if "scale" in want and "moesum" not in want:
         M.Lfm2MoeSparseMoeBlock.forward = _patched_moe_forward
+        _APPLIED.append("scale")
+    elif "scale" in want:
         _APPLIED.append("scale")
     # `gate` and `idx` both live inside the patched ShortConv, so that method
     # has to be installed whenever any of the three is requested.

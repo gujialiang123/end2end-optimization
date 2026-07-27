@@ -22,7 +22,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import statistics as st
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -56,8 +58,63 @@ ARMS = {
     "norm+scale+conv": "norm,scale,conv",
     "qkrope": "qkrope",
     "gate+idx": "gate,idx",
+    "moesum": "moesum",
+    "all7": "norm,scale,conv,gate,idx,qkrope,moesum",
     "all": "norm,scale,conv,gate,idx,qkrope",
 }
+
+
+def launch_server(model, cfg, gpu, port, log_path):
+    """Launch the canonical server while preserving the caller's cache path."""
+    m = S.MODELS[model]
+    argv = [
+        S.PY, "-m", "sglang.launch_server",
+        "--model-path", m["path"],
+        "--served-model-name", m["served"],
+        "--host", "127.0.0.1",
+        "--port", str(port),
+        "--tensor-parallel-size", "1",
+        "--context-length", "8192",
+        "--schedule-conservativeness", "1.0",
+        "--trust-remote-code",
+        "--moe-runner-backend", "auto",
+        "--mem-fraction-static", str(cfg["mem"]),
+        "--max-running-requests", str(cfg["cap"]),
+        "--chunked-prefill-size", str(cfg["chunk"]),
+        "--schedule-policy", cfg["policy"],
+    ] + m["extra"]
+    env = os.environ.copy()
+    env.update(
+        CUDA_HOME=S.ENVDIR,
+        HF_HOME=str(S.REPO / ".hf_cache"),
+        PATH=f"{S.ENVDIR}/bin:" + env.get("PATH", ""),
+        CUDA_VISIBLE_DEVICES=str(gpu),
+        TRITON_CACHE_DIR=env.get(
+            "TRITON_CACHE_DIR", str(L.RESULTS / "moesum" / "triton_cache")
+        ),
+    )
+    log_file = open(log_path, "w")
+    process = subprocess.Popen(
+        argv,
+        env=env,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+        preexec_fn=os.setsid,
+    )
+    return process, argv
+
+
+def kill_server(process):
+    """Terminate the specific server PID and allow graceful child cleanup."""
+    if process.poll() is None:
+        os.kill(process.pid, signal.SIGTERM)
+        try:
+            process.wait(timeout=60)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"server pid {process.pid} did not exit after SIGTERM"
+            ) from exc
+    time.sleep(4)
 
 
 def arm_overlay(arm: str) -> dict:
@@ -155,10 +212,10 @@ def main():
         old = dict(os.environ)
         os.environ.update(arm_overlay(arm))
         try:
-            p, argv = S.launch_server(a.model, cfg, a.gpu, a.port, log)
+            p, argv = launch_server(a.model, cfg, a.gpu, a.port, log)
             ok, info = S.wait_health(p, a.port, t=900)
             if not ok:
-                S.kill_server(p)
+                kill_server(p)
                 rows.append(dict(arm=arm, status="launch_failed", info=str(info)))
                 print(f"  FAILED to start: {info}")
                 continue
@@ -167,7 +224,7 @@ def main():
             notes.append(dict(arm=arm, patch_check=applied_msg, ok=applied_ok))
             print(f"  patch check: {applied_msg}")
             if not applied_ok:
-                S.kill_server(p)
+                kill_server(p)
                 rows.append(dict(arm=arm, status="patch_not_applied",
                                  info=applied_msg))
                 continue
@@ -185,7 +242,7 @@ def main():
                     print(f"  correctness: {n_match}/{len(sig)} prompts identical"
                           f" -> {'PASS' if identical else 'MISMATCH'}")
                     if not identical:
-                        S.kill_server(p)
+                        kill_server(p)
                         rows.append(dict(arm=arm, status="correctness_failed",
                                          info=f"{n_match}/{len(sig)} identical"))
                         continue
@@ -208,7 +265,7 @@ def main():
                            cuda_graph_captured=resolved.get("cuda_graph_captured"))
                 rows.append(row)
                 tmp.unlink(missing_ok=True)
-            S.kill_server(p)
+            kill_server(p)
         finally:
             os.environ.clear()
             os.environ.update(old)
