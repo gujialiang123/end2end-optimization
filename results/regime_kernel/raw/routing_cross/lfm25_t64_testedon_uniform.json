@@ -1,0 +1,120 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "tokens": 64,
+    "top_k": 4,
+    "M": 64,
+    "E": 32,
+    "N": 1792,
+    "K": 2048,
+    "routing": "uniform",
+    "with_bias": true,
+    "n_candidates": 2,
+    "warmup": 25,
+    "iters": 100,
+    "repeats": 5,
+    "out": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/regime_kernel/raw/routing_cross/lfm25_t64_testedon_uniform.json"
+  },
+  "environment": {
+    "git_sha": "9484d6f2fd02208d46656809ab379f191a566e6b",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  },
+  "routing_stats": {
+    "total_assignments": 256.0,
+    "active_experts": 32,
+    "max_expert_load": 16.0,
+    "mean_expert_load": 8.0,
+    "cv_expert_load": 0.4098398983478546,
+    "gini_expert_load": 0.22998046875
+  },
+  "default_baseline": {
+    "median_ms": 0.2895359992980957,
+    "mean_ms": 0.2895359992980957,
+    "p95_ms": 0.28998398780822754,
+    "min_ms": 0.2890239953994751,
+    "max_ms": 0.28998398780822754,
+    "std_ms": 0.0003362253812547757,
+    "n": 5,
+    "rounds_ms": [
+      0.28998398780822754,
+      0.2895359992980957,
+      0.28934401273727417,
+      0.289792001247406,
+      0.2890239953994751
+    ]
+  },
+  "results": [
+    {
+      "model": "lfm25",
+      "tokens": 64,
+      "M": 64,
+      "routing": "uniform",
+      "config_key": "bm16_bn128_bk128_gm1_w8_s2",
+      "BLOCK_SIZE_M": 16,
+      "BLOCK_SIZE_N": 128,
+      "BLOCK_SIZE_K": 128,
+      "GROUP_SIZE_M": 1,
+      "num_warps": 8,
+      "num_stages": 2,
+      "median_ms": 0.19577600061893463,
+      "mean_ms": 0.19728640019893645,
+      "p95_ms": 0.2040639966726303,
+      "min_ms": 0.19516800343990326,
+      "max_ms": 0.2040639966726303,
+      "std_ms": 0.0033974517755407,
+      "n": 5,
+      "rounds_ms": [
+        0.19577600061893463,
+        0.1955520063638687,
+        0.19516800343990326,
+        0.1958719938993454,
+        0.2040639966726303
+      ],
+      "speedup_vs_default": 1.4789146697386002,
+      "correctness_ok": true,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0
+    },
+    {
+      "model": "lfm25",
+      "tokens": 64,
+      "M": 64,
+      "routing": "uniform",
+      "config_key": "bm16_bn64_bk64_gm16_w4_s2",
+      "BLOCK_SIZE_M": 16,
+      "BLOCK_SIZE_N": 64,
+      "BLOCK_SIZE_K": 64,
+      "GROUP_SIZE_M": 16,
+      "num_warps": 4,
+      "num_stages": 2,
+      "median_ms": 0.20774400234222412,
+      "mean_ms": 0.20772480070590973,
+      "p95_ms": 0.2078080028295517,
+      "min_ms": 0.20758399367332458,
+      "max_ms": 0.2078080028295517,
+      "std_ms": 8.490871224056104e-05,
+      "n": 5,
+      "rounds_ms": [
+        0.20768000185489655,
+        0.2078080028295517,
+        0.20774400234222412,
+        0.20758399367332458,
+        0.2078080028295517
+      ],
+      "speedup_vs_default": 1.3937153228670962,
+      "correctness_ok": true,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0
+    }
+  ],
+  "failures": [],
+  "wall_time_s": 2.4
+}

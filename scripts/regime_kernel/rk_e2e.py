@@ -56,6 +56,10 @@ def main():
     ap.add_argument("--model", required=True, choices=list(L.MODELS))
     ap.add_argument("--regime", required=True, choices=list(REGIME_SERVING))
     ap.add_argument("--arms", default="default,global_best,regime_aware")
+    ap.add_argument("--cap", type=int, help="override max_running_requests")
+    ap.add_argument("--chunk", type=int, help="override chunked_prefill_size")
+    ap.add_argument("--policy", help="override schedule_policy")
+    ap.add_argument("--mem", type=float, help="override mem_fraction_static")
     ap.add_argument("--tag", default="",
                     help="extra output-dir tag so runs never overwrite each other")
     ap.add_argument("--suffix", default="",
@@ -66,7 +70,14 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
-    spec = REGIME_SERVING[a.regime]
+    spec = dict(REGIME_SERVING[a.regime])
+    # allow pinning the serving knobs to the validated per-regime winner, so the
+    # waterfall can measure "tuned serving + specialized kernel" rather than
+    # "cookbook serving + specialized kernel"
+    for k in ("cap", "chunk", "policy", "mem"):
+        v = getattr(a, k)
+        if v is not None:
+            spec[k] = v
     wl = spec["workload"]
     cfg = dict(cap=spec["cap"], chunk=spec["chunk"], policy=spec["policy"],
                mem=spec["mem"], config_id=-1,

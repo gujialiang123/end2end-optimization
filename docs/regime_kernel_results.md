@@ -42,6 +42,50 @@ transferable findings:
 
 ---
 
+## 0b. Scope and an important correction
+
+**What this study varied.** With one exception (§14) everything measured here
+varies the *configuration* of one kernel — the fused-MoE Triton kernel's tile
+shape (`BLOCK_SIZE_M/N/K`, `GROUP_SIZE_M`, `num_warps`, `num_stages`). **No
+kernel source was written or modified.** That was a deliberate scoping decision
+for a 1–2 week budget, recorded in `docs/regime_kernel_status.md`.
+
+**What the baseline is.** For LFM2.5 the baseline is SGLang's *heuristic
+default*, because no tuned config file exists for this shape on this GPU. That
+heuristic is two branches:
+
+```python
+config = {BLOCK_SIZE_M: 64, BLOCK_SIZE_N: 64, BLOCK_SIZE_K: 32, GROUP_SIZE_M: 8}
+if M <= E:                       # tokens <= number of experts
+    config = {BLOCK_SIZE_M: 16, BLOCK_SIZE_N: 32, BLOCK_SIZE_K: 64, ...}
+```
+
+Two branches for the entire M range, with `num_warps`/`num_stages` left to
+Triton's defaults. So the honest framing is **not** "we made the kernel 1.6×
+faster", it is **"this model/GPU pair was never tuned, and tuning it is worth
+up to 1.6× at the kernel level"**. Upstream says as much in the log
+("Performance might be sub-optimal!") and links its own tuning tooling.
+
+Qwen is the useful contrast: it *does* have a real tuned config (for Triton
+3.2.0, one minor version off), and its headroom is correspondingly small
+(0.96–1.23×). **Shapes somebody already tuned have little headroom; shapes
+nobody tuned have a lot.** That contrast is itself a result.
+
+**Correction to the "regime-aware" framing.** Kernel tuning turned out to be
+**shape-dependent, not regime-dependent**. The causal chain is
+
+```
+regime  ->  M distribution  ->  optimal kernel config
+```
+
+and the runtime *already* dispatches per M. A dedicated control experiment
+(§6b) tested whether a regime property beyond shape — the expert-routing
+distribution — changes the optimum at fixed M. **It does not, reliably.** So the
+defensible claims are about shape specialization and about regimes only insofar
+as they determine shapes.
+
+---
+
 ## 1. What was run
 
 | stage | jobs | failures | artifact |
@@ -149,30 +193,42 @@ Figure: `plots/kernel_transfer_heatmap_{lfm25,qwen}.png`.
 
 Figure: `plots/strategy_comparison.png`.
 
-## 5. Routing control — M sets the tile, routing sets the schedule
+## 5. Routing control — M sets the tile; routing does NOT reliably matter
 
-At fixed M, comparing near-uniform against strongly skewed routing:
+At fixed M, comparing near-uniform against strongly skewed routing, the tuned
+tile shapes look slightly different — `BLOCK_SIZE_M` is identical in every case,
+while `BLOCK_SIZE_N/K` and `GROUP_SIZE_M` vary:
 
-| model | tokens | routing | expert-load CV | best speedup | winning config |
-|---|---:|---|---:|---:|---|
-| lfm25 | 512 | uniform | 0.10 | **1.462×** | bm64 bn128 bk64 **gm32** w4 s4 |
-| lfm25 | 512 | skewed | 1.36 | 1.331× | bm64 bn128 bk64 **gm16** w4 s3 |
-| lfm25 | 64 | uniform | 0.41 | 1.402× | bm16 bn128 bk128 **gm1** w8 s2 |
-| lfm25 | 64 | skewed | 1.30 | 1.239× | bm16 bn64 bk64 **gm16** w4 s2 |
-| qwen | 8 | uniform | 1.39 | 1.030× | bm16 bn64 bk128 **gm1** w8 s2 |
-| qwen | 8 | skewed | 1.98 | 1.037× | bm16 bn64 bk256 **gm16** w4 s5 |
+| M | routing | expert-load CV | BLOCK_M | BLOCK_N | BLOCK_K | GROUP_M |
+|---:|---|---:|---:|---:|---:|---:|
+| 8 | uniform / skewed | 0.87 / 1.58 | **16 / 16** | 64 / 32 | 256 / 128 | 16 / 16 |
+| 32 | uniform / skewed | 0.51 / 1.40 | **16 / 16** | 64 / 64 | 128 / 64 | 32 / 16 |
+| 64 | uniform / skewed | 0.41 / 1.30 | **16 / 16** | 128 / 64 | 128 / 64 | 1 / 16 |
+| 512 | uniform / skewed | 0.10 / 1.36 | **64 / 64** | 128 / 128 | 64 / 64 | 32 / 32 |
 
-Two findings, both non-trivial:
+An earlier draft of this report read that as "routing sets the schedule". A
+cross-application test proves that reading wrong.
 
-1. **The tile shape is set by M, not by routing.** `BLOCK_SIZE_M/N/K` are
-   essentially unchanged between uniform and skewed at the same M.
-2. **`GROUP_SIZE_M` does respond to skew.** Under skew the winner selects
-   `gm16` in 4 of 4 LFM cases, whereas uniform routing picks `gm1` or `gm32`.
-   `GROUP_SIZE_M` controls block scheduling order, which is precisely the knob
-   that matters when expert groups are ragged.
-3. Skew also **lowers the achievable gain** (LFM t=512: 1.462× → 1.331×).
+### 6b. The decisive cross-test
 
-Figure: `plots/routing_control.png`.
+Take the config tuned under uniform routing and the config tuned under skewed
+routing, and measure **both under both routings** at the same M
+(`scripts/regime_kernel/rk_routing_cross.py`, speedup vs default):
+
+| M | tested on | tuned_on_uniform | tuned_on_skewed | winner |
+|---:|---|---:|---:|---|
+| 8 | skewed | **0.952** | 0.841 | uniform config, by 13 % |
+| 32 | skewed | **0.989** | 0.767 | uniform config, by 29 % |
+| 64 | skewed | **1.053** | 1.049 | tie |
+| 512 | skewed | 1.298 | **1.350** | skewed config, by 3.9 % |
+
+**In three of four cases the routing-specific config is beaten on its own
+routing by the config tuned for the other routing.** Routing-specific tuning was
+fitting noise, not a real effect. Only at M=512 does it win, and only by 3.9 %.
+
+**Conclusion: kernel tuning is shape-dependent.** Routing skew changes how much
+headroom is available (M=512: 1.462× uniform vs 1.331× skewed) but not which
+configuration is best. This is a negative result and it is reported as one.
 
 ## 6. RQ4 — the agent closed loop takes different paths for different diagnoses
 
