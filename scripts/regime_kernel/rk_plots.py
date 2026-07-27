@@ -260,6 +260,40 @@ def fig_measured_M(outdir, mdist: pd.DataFrame, sweep: pd.DataFrame, src):
     save(fig, outdir, "measured_M_vs_headroom", src)
 
 
+def fig_backends(outdir, bc: pd.DataFrame, src):
+    """Does the best kernel IMPLEMENTATION differ by regime? (candidate class K1)"""
+    style()
+    regs = ["A_low_batch_decode", "B_concurrent_decode", "C_long_prefill"]
+    regs = [r for r in regs if r in set(bc.regime)]
+    backends = ["auto", "triton", "triton_kernel", "flashinfer_cutlass"]
+    cols = {"auto": GREY, "triton": BLUE, "triton_kernel": PURPLE,
+            "flashinfer_cutlass": ORANGE}
+    fig, ax = plt.subplots(figsize=(12.5, 5.6))
+    w = 0.2
+    x = np.arange(len(regs))
+    for i, b in enumerate(backends):
+        vals, errs = [], []
+        for r in regs:
+            s = bc[(bc.regime == r) & (bc.backend == b)]
+            vals.append(s.ratio.iloc[0] if len(s) else np.nan)
+            errs.append((s.ci95.iloc[0] / s.thr.iloc[0]) if len(s) else 0)
+        pos = x + (i - 1.5) * w
+        ax.bar(pos, vals, w, color=cols[b], label=b, yerr=errs, capsize=3,
+               ecolor=NAVY)
+        for xx, v in zip(pos, vals):
+            if not np.isnan(v):
+                ax.text(xx, v + 0.015, f"{v:.3f}", ha="center", fontsize=8.5,
+                        color=NAVY, fontweight="bold")
+    ax.axhline(1.0, color=NAVY, lw=1.3, ls="--")
+    ax.set_xticks(x, [r.split("_", 1)[1].replace("_", " ") for r in regs])
+    ax.set_ylabel("request throughput vs auto backend")
+    ax.set_title("Kernel IMPLEMENTATION by regime — the ranking flips\n"
+                 "(cutlass is best on concurrent decode, worst on long prefill)")
+    ax.legend(fontsize=10.5, ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.24))
+    fig.tight_layout()
+    save(fig, outdir, "backend_by_regime", src)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--proc", default="results/regime_kernel/processed")
@@ -285,6 +319,9 @@ def main():
     rt = maybe("routing_control.csv")
     if rt is not None:
         fig_routing(out, rt, src)
+    bc = maybe("backend_comparison.csv")
+    if bc is not None:
+        fig_backends(out, bc, src)
     md = maybe("measured_M_distribution.csv")
     if md is not None:
         sb = maybe("sweep_headroom_bias.csv")

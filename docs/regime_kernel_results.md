@@ -414,6 +414,50 @@ causes intermittent multi-second stalls until the cache is warm, so a deployment
 must pre-warm the Triton cache — and any benchmark that does not will report a
 misleadingly low mean.
 
+## 11b. K1 — does the best kernel IMPLEMENTATION differ by regime? **Yes.**
+
+Everything above varied the *configuration* of one kernel. This section varies
+the kernel itself: SGLang ships several MoE runner backends, which are different
+implementations, not the same kernel with different parameters. Serving knobs
+frozen, 5 repetitions, LFM2.5
+(`scripts/regime_kernel/rk_backends.py`, `processed/backend_comparison.csv`):
+
+| backend | A low-batch decode | B concurrent decode | C long prefill |
+|---|---:|---:|---:|
+| auto | 1.000× | 1.000× | 1.000× |
+| triton | 0.999× | 1.006× | 1.004× |
+| **triton_kernel** | **0.650×** | 0.966× | 0.996× |
+| **flashinfer_cutlass** | 0.965× | **1.017×** | **0.664×** |
+
+**The ranking flips across regimes.** `flashinfer_cutlass` is the *best* backend
+for concurrent decode and the *worst* for long prefill — a 35-point swing.
+`triton_kernel` is catastrophic for low-batch decode (−35 %) and unremarkable
+elsewhere. Confidence intervals are tight (±0.003–0.027) except `triton_kernel`
+on concurrent decode, which shows the Triton-recompilation variance of §11.
+
+This is a **stronger** regime-dependence result than the configuration study,
+for a structural reason: the runtime already dispatches configurations per M,
+but **the backend is fixed once at server start and never varies**. So a
+regime-aware backend selector is a genuinely missing capability rather than an
+unpopulated table.
+
+Cost of locking one backend for all traffic:
+
+| locked backend | best regime | worst regime |
+|---|---:|---:|
+| triton | 1.006× | 0.999× — safe but flat |
+| triton_kernel | 0.996× | **0.650×** |
+| flashinfer_cutlass | **1.017×** | **0.664×** |
+
+**But note the asymmetry: the upside is small (+1.7 % at best) and the downside
+is large (−34 to −35 %).** Backend selection is a *downside-avoidance* lever, not
+a performance lever — the same structural pattern as the configuration result.
+`triton` (what `auto` already picks) is the correct safe default, and the only
+positive move available is switching to cutlass specifically for concurrent
+decode.
+
+Figure: `plots/backend_by_regime.png`.
+
 ## 12. Does this support the hypothesis?
 
 | claim | verdict | evidence |
@@ -421,6 +465,7 @@ misleadingly low mean.
 | regimes produce different kernel workloads | **supported** | winner moves 16→128 BLOCK_M; intensity 0.083→170.7 FLOP/byte |
 | regime-tuned configs do not transfer | **strongly supported** | 0.123× worst-case cross-regime |
 | a few regime profiles beat one global profile | **supported** | global 0.618×/0.388× at large M; 3 profiles reach 73–100 % of oracle |
+| the best kernel IMPLEMENTATION differs by regime | **supported** | backend ranking flips: cutlass 1.017× on concurrent decode vs 0.664× on long prefill; triton_kernel 0.650× on low-batch decode |
 | specialization improves end-to-end serving | **supported, with a guardrail** | M-corrected guarded profile: **+22.3 %** long prefill (6/6 non-overlapping), **+1.4 %** concurrent decode, neutral low-batch decode — no regression anywhere |
 | an agent can close the loop | **supported** | different diagnoses → different action sequences, with accept/reject and rollback |
 
