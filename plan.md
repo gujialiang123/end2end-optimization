@@ -160,3 +160,27 @@ sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，pre
 **主结论未变、反被强化**:换目标让你**沿着**前沿移动(且无需重搜),但**移不动前沿**;大幅收益仍只在 long-prefill / shared-prefix 两个断崖 regime。
 
 **产物**:`results/2026-07-26_alternative_objectives/`(audit/plan/validated/comparison matrix/knobs/17 图/parquet/reproduce.sh)、`docs/2026-07-26/{alternative_objective_validation_audit,alternative_serving_objectives}.md`、脚本 `scripts/{analyze_alternative_serving_objectives,run_alternative_objective_validation,finalize_alternative_objectives,render_alternative_objective_figures}.py`。
+
+## 2026-07-26/27 Regime-aware Kernel Specialization（P0 完成）
+**问题**:regime 不同 → kernel workload 不同 → 最优 kernel config 是否也不同?能否自动化选择/验证/部署?
+
+**切入点(审计发现)**:两个模型在这台 H200 上都跑在**未调优的 MoE Triton config**(LFM2.5 `E=32,N=1792` 无配置文件;Qwen `E=128,N=768` 回退 triton 3.2.0)。而 SGLang 的 MoE config **本身就是 `M → config` 映射 + 最近邻查找** —— regime-aware specialization 是运行时已有、但没人填过的机制。不写新 CUDA kernel;`override_config`(micro)/`SGLANG_MOE_CONFIG_DIR`(E2E)开关,默认路径不变。
+
+**最终 E2E**(LFM2.5,serving 参数冻结,只换 kernel profile,6 次重复):
+| regime | global-best | regime-aware(朴素) | **guarded(M 修正)** |
+|---|---:|---:|---:|
+| 低批 decode | 0.923× | 0.745× | **0.998×** 中性 |
+| 并发 decode | 1.004× | 1.060× | **1.014×** |
+| 长 prefill | **0.796×** | 1.170× | **1.223×**(6/6 不重叠) |
+
+**四个 RQ 全部有答案**:①最优 config 随 regime 系统移动(BLOCK_M 16→128,算术强度 0.083→170.7 FLOP/byte);②迁移最差 **0.123×(慢 8 倍)**;③单一 global profile **有害**(大 M 0.39–0.62×),3 个 profile 恢复 73–100% oracle;④agent 对不同诊断走不同动作序列,48 候选超过 240 候选穷举。
+
+**三个方法学发现(最有价值)**:
+1. **必须跑服务器真实执行的 kernel 变体**。LFM2.5 有 `use_expert_bias`;调 no-bias 变体得到的 1.067× 是**服务器从不执行的代码路径**的假象,部署损失 25%。真实 with-bias 空间 1.007×。
+2. **`M` 是 token 数,不是 `tokens × top_k`**(`M = min(num_tokens, CHUNK_SIZE)`)。我的 profile key 大了 4 倍 → 配置错位到相邻桶,**掩盖了真实空间**。只有 trace 活服务器才暴露。修正后:M≤32 无空间,**M≥64 有 1.39–1.64×**,crossover 在 M≈64。
+3. **CUDA graph 重放 decode**,config 在 capture 时烘焙 → 稳态 decode **零次**配置查找;regime A 的 MoE 调用其实是 prompt prefill(实测 M=101–125)。
+   附:并发 decode 的双峰纯粹是 **Triton JIT 重编译**,warm cache 下 8/8 干净 → 部署新 config 必须预热 cache。
+
+**产物**:`scripts/regime_kernel/`(9 脚本)· `configs/regime_kernel/profiles/`(可直接 `SGLANG_MOE_CONFIG_DIR` 部署)· `results/regime_kernel/`(raw+processed+traces+9 图)· `docs/regime_kernel_{status,experiment_plan,results}.md`。所有性能数字均经 correctness 门禁,~9000 配置零正确性失败。
+
+**P1 待办**:`_down` 伴随配置(受 `BLOCK_SIZE_M` 必须相等约束)· cookbook→serving→kernel 完整 waterfall · CUDA graph 下的运行时 bucket dispatch · 提高 `cuda_graph_max_bs` 让 decode 也能进入有空间的 M 区间 · 第二个模型族。

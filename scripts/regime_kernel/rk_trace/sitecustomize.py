@@ -22,6 +22,12 @@ import threading
 import time
 
 _PATH = os.environ.get("RK_KERNEL_TRACE")
+if _PATH:
+    try:
+        with open(_PATH + ".beacon", "a") as _b:
+            _b.write(f"import pid={os.getpid()}\n")   # RK_BEACON
+    except Exception:
+        pass
 _RATE = max(1, int(os.environ.get("RK_KERNEL_TRACE_SAMPLE", "1")))
 _lock = threading.Lock()
 _count = [0]
@@ -34,6 +40,7 @@ def _install():
         return True
     try:
         from sglang.srt.layers.moe.fused_moe_triton import fused_moe_triton_config as C
+        from sglang.srt.layers.moe.fused_moe_triton import fused_moe as F
     except Exception:
         return False
     if getattr(C, "_rk_traced", False):
@@ -68,6 +75,11 @@ def _install():
         return out
 
     C.try_get_optimal_moe_config = wrapper
+    # fused_moe.py does `from .fused_moe_triton_config import
+    # try_get_optimal_moe_config`, binding the ORIGINAL function into its own
+    # module namespace at import time. Patching only the config module has no
+    # effect on the call site, so the consumer module must be patched too.
+    F.try_get_optimal_moe_config = wrapper
     C._rk_traced = True
     _installed[0] = True
     return True

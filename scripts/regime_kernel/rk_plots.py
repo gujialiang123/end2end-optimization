@@ -186,7 +186,8 @@ def fig_waterfall(outdir, e2e: pd.DataFrame, src):
     ARMS = [("default", GREY, "default kernel"),
             ("global_best", BLUE, "global-best profile"),
             ("regime_aware", ORANGE, "regime-aware (naive)"),
-            ("regime_aware_guarded", GREEN, "regime-aware (guarded)")]
+            ("regime_aware_guarded", "#7a9e8b", "guarded (mis-keyed M)"),
+            ("guarded_Mfixed", GREEN, "guarded (correct M)")]
     regimes = [r for r in ("A_low_batch_decode", "B_concurrent_decode",
                            "C_long_prefill") if r in set(e2e.regime)]
     fig, axes = plt.subplots(1, len(regimes), figsize=(5.4 * len(regimes), 5.4),
@@ -237,6 +238,28 @@ def fig_agent(outdir, ag: pd.DataFrame, src):
     save(fig, outdir, "agent_iteration_trace", src)
 
 
+def fig_measured_M(outdir, mdist: pd.DataFrame, sweep: pd.DataFrame, src):
+    """Where the serving regimes actually land on the M axis, against headroom."""
+    style()
+    fig, ax = plt.subplots(figsize=(13, 5.4))
+    ax.bar(mdist.M, mdist["count"], width=mdist.M * 0.35, color=BLUE,
+           label="measured MoE invocations")
+    ax.set_xscale("log"); ax.set_xlabel("M reached by the kernel (token count)")
+    ax.set_ylabel("invocations observed")
+    ax2 = ax.twinx()
+    if sweep is not None and len(sweep):
+        s = sweep.sort_values("M")
+        ax2.plot(s.M, s.oracle_speedup, "o-", color=ORANGE, lw=2.2,
+                 label="tuning headroom (oracle)")
+        ax2.axhline(1.15, color=RED, ls="--", lw=1.5, label="specialize threshold")
+    ax2.set_ylabel("oracle speedup over default")
+    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=11)
+    ax.set_title("Measured regime -> M mapping vs where tuning headroom exists")
+    fig.tight_layout()
+    save(fig, outdir, "measured_M_vs_headroom", src)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--proc", default="results/regime_kernel/processed")
@@ -262,6 +285,10 @@ def main():
     rt = maybe("routing_control.csv")
     if rt is not None:
         fig_routing(out, rt, src)
+    md = maybe("measured_M_distribution.csv")
+    if md is not None:
+        sb = maybe("sweep_headroom_bias.csv")
+        fig_measured_M(out, md, sb, src)
     e2e = maybe("e2e_summary.csv")
     if e2e is not None:
         fig_waterfall(out, e2e, src)

@@ -16,11 +16,15 @@ Regime-aware kernel specialization **works, and the hypothesis is supported** �
 but only once two mechanisms are respected. Final end-to-end result on LFM2.5,
 serving knobs frozen, only the MoE kernel profile varying:
 
-| regime | global-best | regime-aware (naive) | **regime-aware (guarded)** |
-|---|---:|---:|---:|
-| low-batch decode | 0.923× | 0.745× | **1.001×** |
-| concurrent decode | 1.004× | 1.060× | **1.003×** |
-| long prefill | 0.796× | 1.170× | **1.223×** |
+| regime | global-best | regime-aware (naive) | guarded (mis-keyed M) | **guarded (correct M)** |
+|---|---:|---:|---:|---:|
+| low-batch decode | 0.923× | 0.745× | 1.001× | **0.998×** |
+| concurrent decode | 1.004× | 1.060× | 1.003× | **1.014×** |
+| long prefill | 0.796× | 1.170× | 1.223× | **1.223×** |
+
+Final arm, 6 repetitions each: long prefill 15.06 ± 0.08 vs 12.32 ± 0.03 req/s
+(6/6 non-overlapping), concurrent decode 22.09 ± 0.11 vs 21.78 ± 0.09, low-batch
+decode neutral inside the noise band.
 
 A single global profile is *harmful* (0.80–0.92×). Naive per-regime
 specialization wins big on prefill but costs 25 % on decode. The **guarded**
@@ -28,10 +32,13 @@ policy — specialize only where the oracle proves headroom, keep the runtime
 default elsewhere — delivers **+22.3 % end-to-end on long prefill with zero
 regression anywhere** (8/8 clean repetitions, no overlap with the baseline).
 
-Getting there required two corrections that are the study's most transferable
-findings: we were tuning a kernel variant the server never executes (expert
-bias), and CUDA-graph capture pins decode to an M range that has no tuning
-headroom at all.
+Getting there required **three** corrections, and they are the study's most
+transferable findings:
+1. we were tuning a kernel variant the server never executes (expert bias);
+2. CUDA-graph capture replays decode, so the config is baked in at capture time;
+3. **`M` is the token count, not `tokens x top_k`** — we had the profile keys
+   wrong by a factor of `top_k`, which hid real headroom behind mis-aligned
+   buckets. Only a live trace exposed this.
 
 ---
 
@@ -264,7 +271,49 @@ It also cleanly explains the regime pattern: at large M the tuning gain
 +18.3 % E2E, whereas at M=4 the true headroom (1.007×) is smaller than the error
 introduced by tuning the wrong variant.
 
-## 9. Why decode had no headroom — CUDA graph pins the M range
+## 9. What M actually is — measured, not assumed
+
+`fused_experts_impl` computes
+
+```python
+M = min(num_tokens, CHUNK_SIZE)
+```
+
+so **M is the token count of the batch entering the MoE layer, not
+`tokens x top_k`**. We initially assumed the latter, which meant every profile
+was written under a key `top_k` times too large, and nearest-M lookup then
+applied each config to the wrong bucket.
+
+An opt-in tracer (`RK_KERNEL_TRACE`, `scripts/regime_kernel/rk_trace/`) settled
+it by recording 924 real lookups. Note the tracer needed one non-obvious fix:
+`fused_moe.py` does `from .fused_moe_triton_config import
+try_get_optimal_moe_config`, binding the original function into its own module
+namespace, so patching only the config module has no effect on the call site.
+
+Measured regime → M mapping (`processed/measured_M_distribution.csv`):
+
+| regime | measured M values | assumed (wrong) |
+|---|---|---|
+| A low-batch decode | 101, 106, 119, 120, 121, 125 | 4 |
+| B concurrent decode | 115, 672, 5327 | 128 |
+| C long prefill | 4595, 13138 | thousands ✓ |
+
+Two consequences:
+
+* Regime A's MoE lookups are the **prompt prefill**, not the decode steps —
+  decode is graph-replayed and issues no lookup at all.
+* Re-running the sweep on the true M axis reveals headroom that the mis-keyed
+  analysis had hidden:
+
+| true M | ≤ 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| oracle speedup | 0.98–1.09× | 1.484× | 1.440× | 1.449× | 1.391× | 1.491× | 1.632× | 1.602× | 1.639× |
+
+**The crossover is at M ≈ 64**, and every measured serving M except the
+graph-replayed decode steps sits above it. Figure:
+`plots/measured_M_vs_headroom.png`.
+
+## 10. Why decode still gains nothing — CUDA graph pins the M range
 
 An opt-in tracer (`RK_KERNEL_TRACE`, `scripts/regime_kernel/rk_trace/`) recorded
 **zero** config lookups during steady-state decode. That is not a bug: with CUDA
@@ -292,7 +341,7 @@ heuristic default everywhere else so nearest-M lookup can never pull a prefill
 tile into a decode bucket. For LFM2.5 that specializes **4 of 10 M buckets**
 (`results/regime_kernel/processed/lfm25_guarded_profile_decisions.csv`).
 
-## 10. Deployment finding — new configs cause Triton recompilation stalls
+## 11. Deployment finding — new configs cause Triton recompilation stalls
 
 The first 8-repetition run of concurrent decode with the guarded profile was
 bimodal: 6 runs at 22.2–22.3 req/s and 2 runs at 14.6 and 16.5. Re-running the
@@ -309,23 +358,31 @@ causes intermittent multi-second stalls until the cache is warm, so a deployment
 must pre-warm the Triton cache — and any benchmark that does not will report a
 misleadingly low mean.
 
-## 11. Does this support the hypothesis?
+## 12. Does this support the hypothesis?
 
 | claim | verdict | evidence |
 |---|---|---|
 | regimes produce different kernel workloads | **supported** | winner moves 16→128 BLOCK_M; intensity 0.083→170.7 FLOP/byte |
 | regime-tuned configs do not transfer | **strongly supported** | 0.123× worst-case cross-regime |
 | a few regime profiles beat one global profile | **supported** | global 0.618×/0.388× at large M; 3 profiles reach 73–100 % of oracle |
-| specialization improves end-to-end serving | **supported, with a guardrail** | guarded profile: **+22.3 %** long prefill, **1.001×** decode (no regression), 8/8 non-overlapping repetitions |
+| specialization improves end-to-end serving | **supported, with a guardrail** | M-corrected guarded profile: **+22.3 %** long prefill (6/6 non-overlapping), **+1.4 %** concurrent decode, neutral low-batch decode — no regression anywhere |
 | an agent can close the loop | **supported** | different diagnoses → different action sequences, with accept/reject and rollback |
 
-## 12. Failed experiments and blockers
+## 13. Failed experiments and blockers
 
 * **Regime A E2E regression** — root-caused and **fixed**. Two contributing
   mechanisms: the bias-variant mismatch (§8) and the CUDA-graph M range (§9).
   The guarded profile takes it from 0.745× to 1.0015×.
 * **Concurrent-decode bimodality** — root-caused to Triton JIT recompilation
   (§10) and reproduced/eliminated with a warm cache.
+* **Wrong M definition** — assumed `M = tokens x top_k`; the kernel uses
+  `M = min(num_tokens, CHUNK_SIZE)`. Measurements were valid but profile keys
+  were `top_k`-times too large, so configs landed in the wrong buckets. Found
+  only by tracing a live server; fixed, and the corrected sweep exposed a
+  crossover at M ≈ 64 that the mis-keyed view had hidden.
+* **Tracer no-op** — patching `fused_moe_triton_config.try_get_optimal_moe_config`
+  had no effect because the call site imports the symbol directly. Fixed by
+  patching the consumer module as well.
 * **Result overwrite** — the iteration-3 runs wrote into the same
   `e2e_runs.json` path as iteration 2 for regimes A and C, so those raw files
   hold the latest arms only. The iteration-2 numbers are preserved in this
@@ -338,7 +395,7 @@ misleadingly low mean.
   `set_global_server_args_for_scheduler` before any standalone kernel call.
 * No OOM and no correctness failures occurred at any point.
 
-## 13. Next steps
+## 14. Next steps
 
 1. **Emit the `_down` companion config.** The runtime asserts
    `config["BLOCK_SIZE_M"] == down_config["BLOCK_SIZE_M"]`, so the down

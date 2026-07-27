@@ -145,7 +145,9 @@ def main():
     shape = L.MODELS[a.model]
     E, K, N = shape["num_experts"], shape["hidden_size"], shape["moe_intermediate_size"]
     topk = shape["top_k"]
-    M = a.tokens * topk
+    # M is what fused_experts_impl computes: min(num_tokens, CHUNK_SIZE).
+    # It is the token count, NOT tokens * top_k.
+    M = a.tokens
 
     if a.configs:
         raw = json.loads(Path(a.configs).read_text())

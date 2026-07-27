@@ -3,11 +3,16 @@
 
 Everything in this study operates on the fused-MoE Triton kernel that SGLang
 already ships. We never write a new CUDA kernel: we change the *configuration*
-that the runtime selects for a given M, where
+that the runtime selects for a given M.
 
-    M = tokens_in_batch * top_k
+IMPORTANT — what M actually is. `fused_experts_impl` computes
 
-and the runtime already picks a config with
+    M = min(num_tokens, CHUNK_SIZE)
+
+i.e. M is the **token count** of the batch entering the MoE layer, NOT
+tokens x top_k. (top_k affects the expert assignment, not this dimension.)
+Measured traces confirm it: a 100-token prompt produces lookups at M ~ 101-125,
+not 400. The runtime then picks a config with
 `configs[min(configs.keys(), key=lambda x: abs(x - M))]`. Regimes differ by
 orders of magnitude in M, which is the mechanism this study tests.
 

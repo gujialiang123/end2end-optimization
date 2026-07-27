@@ -56,6 +56,8 @@ def main():
     ap.add_argument("--model", required=True, choices=list(L.MODELS))
     ap.add_argument("--regime", required=True, choices=list(REGIME_SERVING))
     ap.add_argument("--arms", default="default,global_best,regime_aware")
+    ap.add_argument("--tag", default="",
+                    help="extra output-dir tag so runs never overwrite each other")
     ap.add_argument("--suffix", default="",
                     help="profile-set suffix, e.g. _bias for the with-bias tuning")
     ap.add_argument("--reps", type=int, default=5)
@@ -70,7 +72,7 @@ def main():
                mem=spec["mem"], config_id=-1,
                hash=f"cap{spec['cap']}_chunk{spec['chunk']}_pol{spec['policy']}_mem{spec['mem']}",
                is_cookbook=False)
-    outdir = OUT / f"{a.model}{a.suffix}" / a.regime
+    outdir = OUT / f"{a.model}{a.suffix}{a.tag}" / a.regime
     outdir.mkdir(parents=True, exist_ok=True)
 
     plan = dict(model=a.model, regime=a.regime, workload=wl,
