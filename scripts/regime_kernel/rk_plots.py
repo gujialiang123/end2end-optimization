@@ -176,24 +176,44 @@ def fig_routing(outdir, rt: pd.DataFrame, src):
 
 # ----------------------------------------------------------- 6. E2E waterfall
 def fig_waterfall(outdir, e2e: pd.DataFrame, src):
+    """End-to-end effect of each kernel profile, grouped by regime.
+
+    Uses the median across repetitions as the primary statistic because
+    introducing new kernel configurations causes occasional Triton
+    recompilation stalls that skew the mean; both are reported.
+    """
     style()
-    fig, ax = plt.subplots(figsize=(11, 5.4))
-    labels, vals, colors = [], [], []
-    for (m, reg), d in e2e.groupby(["model", "regime"]):
-        base = d[d.arm == "default"].request_throughput.mean()
-        for arm, c in (("default", GREY), ("global_best", BLUE),
-                       ("regime_aware", GREEN)):
+    ARMS = [("default", GREY, "default kernel"),
+            ("global_best", BLUE, "global-best profile"),
+            ("regime_aware", ORANGE, "regime-aware (naive)"),
+            ("regime_aware_guarded", GREEN, "regime-aware (guarded)")]
+    regimes = [r for r in ("A_low_batch_decode", "B_concurrent_decode",
+                           "C_long_prefill") if r in set(e2e.regime)]
+    fig, axes = plt.subplots(1, len(regimes), figsize=(5.4 * len(regimes), 5.4),
+                             squeeze=False, sharey=True)
+    for ax, reg in zip(axes[0], regimes):
+        d = e2e[e2e.regime == reg]
+        xs, hs, cs, ls, err = [], [], [], [], []
+        i = 0
+        for arm, c, lab in ARMS:
             s = d[d.arm == arm]
             if s.empty:
                 continue
-            labels.append(f"{m}\n{reg}\n{arm}")
-            vals.append(s.request_throughput.mean() / base)
-            colors.append(c)
-    ax.bar(range(len(vals)), vals, color=colors)
-    ax.axhline(1.0, color=NAVY, lw=1.2, ls="--")
-    ax.set_xticks(range(len(labels)), labels, fontsize=8, rotation=0)
-    ax.set_ylabel("request throughput vs default kernel")
-    ax.set_title("End-to-end: serving knobs fixed, only the kernel profile varies")
+            r = s.iloc[-1]          # most recent run for this arm
+            xs.append(i); hs.append(r.get("ratio_median", r["ratio"]))
+            cs.append(c); ls.append(lab)
+            err.append(r["thr_ci95"] / r["thr_mean"] if r["thr_mean"] else 0)
+            i += 1
+        ax.bar(xs, hs, color=cs, yerr=err, capsize=4, ecolor=NAVY)
+        for x, h in zip(xs, hs):
+            ax.text(x, h + 0.012, f"{h:.3f}x", ha="center", fontsize=10.5,
+                    fontweight="bold", color=NAVY)
+        ax.axhline(1.0, color=NAVY, lw=1.3, ls="--")
+        ax.set_xticks(xs, ls, rotation=22, ha="right", fontsize=9.5)
+        ax.set_title(reg.split("_", 1)[1].replace("_", " "))
+        ax.set_ylabel("request throughput vs default\n(median over repetitions)")
+    fig.suptitle("End-to-end: serving knobs frozen, only the MoE kernel profile varies",
+                 fontsize=15, fontweight="bold", color=NAVY, y=1.02)
     fig.tight_layout()
     save(fig, outdir, "e2e_waterfall", src)
 
