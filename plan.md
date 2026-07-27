@@ -3,7 +3,7 @@
 ## 2026-07-27 晚：LFM2.5 kernel fusion 第二轮 —— 全 regime +4.7~5.5%，且发现"同类优化不叠加"规律 ✅
 **做法**：并行两个调查 agent（nsys 时间线 / torch.compile FX+Inductor），都跑在**已打补丁的路径**上，所以找到的是"还剩什么"。
 
-**最终结果**（6 重复 + Welch t，全部 p<0.005）：
+**最终结果**（6 重复 + 精确 Student-t 的 Welch 检验；六项全开的三个 regime 分别 p=2.2e-13 / 9.5e-08 / 2.6e-04）：
 | regime | qkrope | gate+idx | norm+scale+conv | **全部六项** |
 |---|---:|---:|---:|---:|
 | A 低批 decode | +0.93% | −0.00%(n.s.) | +3.89% | **+4.74%** |

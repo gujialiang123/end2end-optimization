@@ -118,7 +118,7 @@ def fig_e2e():
     ax.set_ylabel("end-to-end request throughput vs baseline (%)")
     ax.set_title("Two complementary fusions: norm/scale is decode-weighted,\n"
                  "the ShortConv kernel is prefill-only "
-                 "(6 reps, Welch t vs baseline; * = p < 0.05)", fontsize=10)
+                 "(6 reps, exact Welch t vs baseline; * = p < 0.05)", fontsize=10)
     ax.legend(fontsize=9, title="LFM_FUSION_PATCH", loc="upper left",
               framealpha=0.95)
     ax.set_ylim(top=max(6.0, ax.get_ylim()[1] * 1.35))
@@ -163,7 +163,7 @@ def fig_final():
     ax.set_xticklabels([REGIME_LABEL[r] for r in regimes])
     ax.set_ylabel("end-to-end request throughput vs baseline (%)")
     ax.set_title("LFM2.5 fusion stack: +4.7 to +5.5 % on every regime\n"
-                 "(6 reps, Welch t; all bold arms p<0.005)", fontsize=10)
+                 "(6 reps, exact Welch t vs baseline)", fontsize=10)
     ax.set_ylim(top=7.4)
     ax.legend(fontsize=8, loc="upper left", ncol=2, framealpha=0.95)
     ax.grid(axis="y", alpha=0.3)

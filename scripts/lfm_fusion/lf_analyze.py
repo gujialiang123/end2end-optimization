@@ -39,14 +39,15 @@ def welch(a, b):
         return float("inf"), 0.0, float("nan")
     t = (st.mean(a) - st.mean(b)) / math.sqrt(se2)
     df = se2 ** 2 / ((va / na) ** 2 / (na - 1) + (vb / nb) ** 2 / (nb - 1))
+    # Exact Student-t tail. A normal approximation is anti-conservative at the
+    # df~5-10 these run sizes produce, which matters precisely for the marginal
+    # arms where the verdict could flip.
     try:
+        from scipy import stats
+        p = 2 * stats.t.sf(abs(t), df)
+    except ImportError:
         from statistics import NormalDist
-        # Student-t tail via an incomplete-beta free approximation is overkill
-        # here; with df >= 6 the normal approximation is within ~0.01 of the
-        # exact p-value, and we only ever use it against a 0.05 threshold.
         p = 2 * (1 - NormalDist().cdf(abs(t)))
-    except Exception:
-        p = float("nan")
     return t, p, df
 
 
@@ -132,7 +133,7 @@ def main():
                                 ratio=round(ratio, 4),
                                 gain_pct=round(100 * gain, 2),
                                 welch_t=round(t, 3) if t == t else "",
-                                p_value=round(p, 4) if p == p else "",
+                                p_value=(f"{p:.3g}" if p == p else ""),
                                 verdict=verdict))
 
     csv_path = outdir / a.out

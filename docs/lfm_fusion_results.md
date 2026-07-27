@@ -21,13 +21,14 @@ on every regime tested**, with GSM8K accuracy unchanged. This is the first
 same-model kernel-level change in this project to produce a *positive,
 statistically significant* end-to-end result across the board.
 
-**Final result** (6 repetitions per arm, Welch t vs baseline, all p<0.005):
+**Final result** (6 repetitions per arm, Welch t vs baseline with the exact
+Student-t tail):
 
-| regime | baseline req/s | **all six components** |
-|---|---:|---:|
-| A low-batch decode | 1.683 | **+4.74 %** |
-| B concurrent decode | 21.648 | **+5.54 %** |
-| C long prefill | 12.115 | **+5.12 %** |
+| regime | baseline req/s | **all six components** | p |
+|---|---:|---:|---:|
+| A low-batch decode | 1.683 | **+4.74 %** | 2.2e-13 |
+| B concurrent decode | 21.648 | **+5.54 %** | 9.5e-08 |
+| C long prefill | 12.115 | **+5.12 %** | 2.6e-04 |
 
 Three of the four gaps are **call-site changes that reuse fused primitives
 SGLang already ships** — no new kernel. The fourth is a hand-written Triton
@@ -42,7 +43,9 @@ The components break down by mechanism, and they are complementary:
 | C long prefill | +1.60 % | **+2.33 %** | **+4.59 %** |
 
 6 repetitions per arm after per-workload warm-up; Welch t against the baseline
-arm; ratios on request throughput; every significant entry is p<0.005.
+arm with the exact Student-t tail (a normal approximation is anti-conservative
+at these run sizes, which matters for the marginal arms); ratios on request
+throughput.
 
 The `conv` component is a **hand-written Triton kernel** and is **bit-exact**
 (max |diff| = 0.0 at every shape tested), so it carries no numerical risk. It is
@@ -330,9 +333,9 @@ marker so a silent no-op cannot be scored as a baseline-equal result.
 
 | regime | baseline req/s | `norm+scale` | `conv` | **all three** |
 |---|---:|---:|---:|---:|
-| A low-batch decode | 1.683 ± 0.001 | **+4.20 %** (p<1e-4) | +0.13 % (p=0.18) | **+3.80 %** (p<1e-4) |
-| B concurrent decode | 21.639 ± 0.128 | **+3.68 %** (p<1e-4) | −0.03 % (p=0.95) | **+3.65 %** (p<1e-4) |
-| C long prefill | 12.104 ± 0.068 | +1.60 % (p=0.001) | **+2.33 %** (p<1e-4) | **+4.59 %** (p<1e-4) |
+| A low-batch decode | 1.683 ± 0.001 | **+4.20 %** (2e-07) | +0.13 % (0.22) | **+3.80 %** (1.3e-11) |
+| B concurrent decode | 21.639 ± 0.128 | **+3.68 %** (4.7e-06) | −0.03 % (0.95) | **+3.65 %** (7.4e-06) |
+| C long prefill | 12.104 ± 0.068 | +1.60 % (0.0090) | **+2.33 %** (0.0015) | **+4.59 %** (8.7e-07) |
 
 ### The two components are complementary by mechanism
 
@@ -393,9 +396,9 @@ Results (6 reps, Welch t, `processed/fusion_ab_all.csv`):
 
 | regime | `qkrope` | `gate+idx` | `norm+scale+conv` | **all six** |
 |---|---:|---:|---:|---:|
-| A low-batch decode | +0.93 % | −0.00 % (n.s.) | +3.89 % | **+4.74 %** |
-| B concurrent decode | **+5.42 %** | +0.65 % (n.s.) | +3.65 % | **+5.54 %** |
-| C long prefill | +1.99 % | +0.40 % (n.s.) | +3.47 % | **+5.12 %** |
+| A low-batch decode | +0.93 % (7.2e-09) | −0.00 % (0.97) | +3.89 % (2.5e-15) | **+4.74 %** (2.2e-13) |
+| B concurrent decode | **+5.42 %** (1.6e-07) | +0.65 % (0.12) | +3.65 % (6.1e-06) | **+5.54 %** (9.5e-08) |
+| C long prefill | +1.99 % (0.018) | +0.40 % (0.54) | +3.47 % (9.5e-04) | **+5.12 %** (2.6e-04) |
 
 `qkrope` alone is the single largest win in the whole study (+5.42 % on
 concurrent decode) and it is a pure call-site change reusing a tested CUDA
