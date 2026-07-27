@@ -76,6 +76,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", type=int, default=5)
     ap.add_argument("--tokens", default="1,8,32,128,1024,4096,16000")
+    ap.add_argument("--out", default="shortconv_bench.json",
+                    help="output name; override when running a partial token "
+                         "sweep so the full curve on disk is not clobbered")
     a = ap.parse_args()
 
     torch.cuda.set_device(a.gpu)
@@ -150,10 +153,10 @@ def main():
 
     outdir = L.RESULTS / "microbench"
     outdir.mkdir(parents=True, exist_ok=True)
-    (outdir / "shortconv_bench.json").write_text(
+    (outdir / a.out).write_text(
         json.dumps(dict(rows=rows, hidden_size=H, conv_layers=CONV_LAYERS,
                         environment=L.environment()), indent=2))
-    print(f"\nwrote {outdir/'shortconv_bench.json'}")
+    print(f"\nwrote {outdir/a.out}")
 
 
 if __name__ == "__main__":
