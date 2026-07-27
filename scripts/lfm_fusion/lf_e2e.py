@@ -51,7 +51,9 @@ ARMS = {
     "baseline": "",
     "scale": "scale",
     "norm": "norm",
+    "conv": "conv",
     "norm+scale": "norm,scale",
+    "norm+scale+conv": "norm,scale,conv",
 }
 
 

@@ -1,0 +1,118 @@
+{
+  "best": {
+    "512": {
+      "stock_in_us": 21.4,
+      "best_in_us": 31.5,
+      "in_cfg": [
+        32,
+        32,
+        8,
+        3
+      ],
+      "in_speedup": 0.678,
+      "stock_out_us": 16.1,
+      "best_out_us": 33.1,
+      "out_cfg": [
+        32,
+        32,
+        4,
+        3
+      ],
+      "out_speedup": 0.488,
+      "n_valid": 32
+    },
+    "1024": {
+      "stock_in_us": 29.7,
+      "best_in_us": 31.8,
+      "in_cfg": [
+        64,
+        128,
+        4,
+        3
+      ],
+      "in_speedup": 0.932,
+      "stock_out_us": 22.2,
+      "best_out_us": 33.3,
+      "out_cfg": [
+        64,
+        128,
+        4,
+        2
+      ],
+      "out_speedup": 0.666,
+      "n_valid": 32
+    },
+    "2048": {
+      "stock_in_us": 43.3,
+      "best_in_us": 32.2,
+      "in_cfg": [
+        128,
+        128,
+        8,
+        3
+      ],
+      "in_speedup": 1.347,
+      "stock_out_us": 31.7,
+      "best_out_us": 33.0,
+      "out_cfg": [
+        64,
+        32,
+        8,
+        3
+      ],
+      "out_speedup": 0.961,
+      "n_valid": 32
+    },
+    "4096": {
+      "stock_in_us": 85.9,
+      "best_in_us": 36.4,
+      "in_cfg": [
+        64,
+        64,
+        8,
+        3
+      ],
+      "in_speedup": 2.36,
+      "stock_out_us": 67.0,
+      "best_out_us": 37.8,
+      "out_cfg": [
+        128,
+        64,
+        4,
+        2
+      ],
+      "out_speedup": 1.773,
+      "n_valid": 32
+    },
+    "16000": {
+      "stock_in_us": 315.0,
+      "best_in_us": 52.6,
+      "in_cfg": [
+        64,
+        128,
+        8,
+        2
+      ],
+      "in_speedup": 5.988,
+      "stock_out_us": 227.6,
+      "best_out_us": 52.5,
+      "out_cfg": [
+        128,
+        128,
+        8,
+        3
+      ],
+      "out_speedup": 4.335,
+      "n_valid": 32
+    }
+  },
+  "configs_tried": 32,
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

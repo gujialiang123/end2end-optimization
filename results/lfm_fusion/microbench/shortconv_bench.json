@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "T": 2048,
+      "status": "ok",
+      "in_stock_ms": 0.04269,
+      "in_fused_ms": 0.03318,
+      "in_speedup": 1.2864,
+      "in_stock_gbs": 915.1,
+      "in_fused_gbs": 706.3,
+      "out_stock_ms": 0.03178,
+      "out_fused_ms": 0.03422,
+      "out_speedup": 0.9285,
+      "out_stock_gbs": 737.6,
+      "out_fused_gbs": 684.8,
+      "total_saved_ms_per_layer": 0.00706,
+      "total_saved_ms_per_forward": 0.1271
+    },
+    {
+      "T": 4096,
+      "status": "ok",
+      "in_stock_ms": 0.08323,
+      "in_fused_ms": 0.03709,
+      "in_speedup": 2.2442,
+      "in_stock_gbs": 938.6,
+      "in_fused_gbs": 1263.9,
+      "out_stock_ms": 0.06542,
+      "out_fused_ms": 0.03718,
+      "out_speedup": 1.7595,
+      "out_stock_gbs": 716.5,
+      "out_fused_gbs": 1260.6,
+      "total_saved_ms_per_layer": 0.07438,
+      "total_saved_ms_per_forward": 1.3388
+    },
+    {
+      "T": 16000,
+      "status": "ok",
+      "in_stock_ms": 0.31243,
+      "in_fused_ms": 0.05298,
+      "in_speedup": 5.8976,
+      "in_stock_gbs": 976.8,
+      "in_fused_gbs": 3456.4,
+      "out_stock_ms": 0.22874,
+      "out_fused_ms": 0.05283,
+      "out_speedup": 4.3295,
+      "out_stock_gbs": 800.5,
+      "out_fused_gbs": 3465.8,
+      "total_saved_ms_per_layer": 0.43536,
+      "total_saved_ms_per_forward": 7.8365
+    }
+  ],
+  "hidden_size": 2048,
+  "conv_layers": 18,
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

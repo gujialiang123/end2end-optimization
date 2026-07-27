@@ -102,3 +102,7 @@ results/lfm_fusion/**/*server_*.log
 results/lfm_fusion/**/bench.log
 results/regime_kernel/backends/**/*.jsonl
 results/regime_kernel/backends/**/server_*.log
+
+# nsys scratch dirs
+**/.nsys_tmp/
+**/.triton_cache/
