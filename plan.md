@@ -184,3 +184,10 @@ sglang 的 MoE kernel 整体已高度优化（decode b≥32 达 74-84% HBM，pre
 **产物**:`scripts/regime_kernel/`(9 脚本)· `configs/regime_kernel/profiles/`(可直接 `SGLANG_MOE_CONFIG_DIR` 部署)· `results/regime_kernel/`(raw+processed+traces+9 图)· `docs/regime_kernel_{status,experiment_plan,results}.md`。所有性能数字均经 correctness 门禁,~9000 配置零正确性失败。
 
 **P1 待办**:`_down` 伴随配置(受 `BLOCK_SIZE_M` 必须相等约束)· cookbook→serving→kernel 完整 waterfall · CUDA graph 下的运行时 bucket dispatch · 提高 `cuda_graph_max_bs` 让 decode 也能进入有空间的 M 区间 · 第二个模型族。
+
+### 2026-07-27 补充:regime-kernel 的两次修正 + K1
+- **修正1**:`M` 是 token 数不是 `tokens×top_k`;profile key 曾大 4 倍,掩盖了真实空间。修正后 crossover 在 **M≈64**(≤32 无空间,≥64 有 1.39–1.64×)。
+- **修正2**:routing 交叉验证证明 **routing-specific 调优是拟合噪声**(4 个 M 里 3 个,skewed 调的配置在 skewed 上反输给 uniform 调的)。→ **config 调优是 shape-dependent,不是 regime-dependent**;而运行时本来就按 M 分发。
+- **K1(新增,最强结果)**:换 **kernel 实现**(MoE runner backend)才是真正 regime-dependent —— 排序随 regime 翻转(cutlass 并发 decode 1.017× / 长 prefill 0.664×;triton_kernel 低批 decode 0.650×)。且 **backend 是启动时定死、全程不变**,所以"按 regime 选 backend"是真正缺失的能力。但不对称:选对最多 +1.7%,选错损失 34–35% → **避坑杠杆**。
+- **baseline 局限**:LFM2.5 的默认值是两分支启发式(无 num_warps/stages),诚实表述是"这个 shape 从没调过",不是"我们优化了 kernel"。Qwen 有真实调优配置,空间仅 0.96–1.23×,这个对比本身是结果。
+- **交接文档**:`HANDOFF_regime_kernel.md`(新会话从这里开始)。
