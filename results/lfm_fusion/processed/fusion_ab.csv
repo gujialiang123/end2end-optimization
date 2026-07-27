@@ -1,0 +1,25 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+A_low_batch_decode,baseline,request_throughput,5,1.6884,0.0015,1.6884,1.0,0.0,0.0,1.0,baseline
+A_low_batch_decode,baseline,output_throughput,5,432.2243,0.3877,432.2243,1.0,0.0,0.0,1.0,baseline
+A_low_batch_decode,norm,request_throughput,5,1.7281,0.0011,1.6884,1.0235,2.35,41.88,0.0,improvement
+A_low_batch_decode,norm,output_throughput,5,442.3959,0.2762,432.2243,1.0235,2.35,41.88,0.0,improvement
+A_low_batch_decode,norm+scale,request_throughput,5,1.7529,0.001,1.6884,1.0382,3.82,69.084,0.0,improvement
+A_low_batch_decode,norm+scale,output_throughput,5,448.7346,0.2628,432.2243,1.0382,3.82,69.084,0.0,improvement
+A_low_batch_decode,scale,request_throughput,5,1.7121,0.0023,1.6884,1.014,1.4,16.988,0.0,improvement
+A_low_batch_decode,scale,output_throughput,5,438.2915,0.5828,432.2243,1.014,1.4,16.988,0.0,improvement
+B_concurrent_decode,baseline,request_throughput,5,21.7665,0.0849,21.7665,1.0,0.0,0.0,1.0,baseline
+B_concurrent_decode,baseline,output_throughput,5,5572.2224,21.7361,5572.2224,1.0,0.0,0.0,1.0,baseline
+B_concurrent_decode,norm,request_throughput,5,22.3948,0.0314,21.7665,1.0289,2.89,13.606,0.0,improvement
+B_concurrent_decode,norm,output_throughput,5,5733.0753,8.0275,5572.2224,1.0289,2.89,13.606,0.0,improvement
+B_concurrent_decode,norm+scale,request_throughput,5,22.6282,0.1596,21.7665,1.0396,3.96,9.341,0.0,improvement
+B_concurrent_decode,norm+scale,output_throughput,5,5792.8214,40.8655,5572.2224,1.0396,3.96,9.341,0.0,improvement
+B_concurrent_decode,scale,request_throughput,5,21.9884,0.1287,21.7665,1.0102,1.02,2.82,0.0048,improvement
+B_concurrent_decode,scale,output_throughput,5,5629.0217,32.9591,5572.2224,1.0102,1.02,2.82,0.0048,improvement
+C_long_prefill,baseline,request_throughput,5,12.282,0.0746,12.282,1.0,0.0,0.0,1.0,baseline
+C_long_prefill,baseline,output_throughput,5,393.023,2.3875,393.023,1.0,0.0,0.0,1.0,baseline
+C_long_prefill,norm,request_throughput,5,12.4565,0.0523,12.282,1.0142,1.42,3.756,0.0002,improvement
+C_long_prefill,norm,output_throughput,5,398.6094,1.6727,393.023,1.0142,1.42,3.756,0.0002,improvement
+C_long_prefill,norm+scale,request_throughput,5,12.3934,0.0685,12.282,1.0091,0.91,2.157,0.031,improvement
+C_long_prefill,norm+scale,output_throughput,5,396.5897,2.1922,393.023,1.0091,0.91,2.157,0.031,improvement
+C_long_prefill,scale,request_throughput,5,12.3712,0.1301,12.282,1.0073,0.73,1.166,0.2438,no significant difference
+C_long_prefill,scale,output_throughput,5,395.8771,4.1637,393.023,1.0073,0.73,1.166,0.2438,no significant difference

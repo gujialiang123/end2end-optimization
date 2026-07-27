@@ -98,7 +98,7 @@ results/regime_kernel/e2e/**/*_warm*.jsonl
 
 # lfm_fusion: keep the audit/A-B JSON summaries, drop the bulky per-run artefacts
 results/lfm_fusion/**/*.jsonl
-results/lfm_fusion/**/server_*.log
+results/lfm_fusion/**/*server_*.log
 results/lfm_fusion/**/bench.log
 results/regime_kernel/backends/**/*.jsonl
 results/regime_kernel/backends/**/server_*.log

@@ -1,0 +1,111 @@
+{
+  "arms": [
+    "baseline",
+    "norm"
+  ],
+  "tolerance": 0.05,
+  "head_max_dev": 2.889927387237549,
+  "head_mean_dev": 0.4172099407518928,
+  "max_sym_kl": 0.9900804767408204,
+  "mean_sym_kl": 0.1453160530160424,
+  "top1_match": "11/12",
+  "verdict": "FAIL",
+  "rows": [
+    {
+      "prompt": "The capital of France is",
+      "top1_same": true,
+      "top1_margin": 1.5,
+      "head_max_dev": 0.849083,
+      "sym_kl": 0.02587046,
+      "shared_of_topk": "17/20"
+    },
+    {
+      "prompt": "def quicksort(arr):\n    if len(arr) <= 1:",
+      "top1_same": true,
+      "top1_margin": 0.375,
+      "head_max_dev": 0.965152,
+      "sym_kl": 0.07014966,
+      "shared_of_topk": "18/20"
+    },
+    {
+      "prompt": "In 1969, humans first landed on the",
+      "top1_same": true,
+      "top1_margin": 1.5,
+      "head_max_dev": 0.934279,
+      "sym_kl": 0.11220258,
+      "shared_of_topk": "17/20"
+    },
+    {
+      "prompt": "The chemical symbol for gold is",
+      "top1_same": true,
+      "top1_margin": 1.875,
+      "head_max_dev": 0.362679,
+      "sym_kl": 0.00527379,
+      "shared_of_topk": "20/20"
+    },
+    {
+      "prompt": "Question: What is 17 times 24?\nAnswer:",
+      "top1_same": true,
+      "top1_margin": 2.625,
+      "head_max_dev": 0.510706,
+      "sym_kl": 0.00269937,
+      "shared_of_topk": "19/20"
+    },
+    {
+      "prompt": "Translate to French: 'The weather is nice tod",
+      "top1_same": true,
+      "top1_margin": 0.4375,
+      "head_max_dev": 0.418984,
+      "sym_kl": 0.01957594,
+      "shared_of_topk": "17/20"
+    },
+    {
+      "prompt": "Once upon a time, in a village at the foot of",
+      "top1_same": true,
+      "top1_margin": 0.75,
+      "head_max_dev": 0.968987,
+      "sym_kl": 0.01139038,
+      "shared_of_topk": "18/20"
+    },
+    {
+      "prompt": "The three primary colours of light are red, g",
+      "top1_same": true,
+      "top1_margin": 0.125,
+      "head_max_dev": 2.795409,
+      "sym_kl": 0.99008048,
+      "shared_of_topk": "17/20"
+    },
+    {
+      "prompt": "import torch\nimport torch.nn as nn\n\nclass Att",
+      "top1_same": true,
+      "top1_margin": 0.625,
+      "head_max_dev": 0.804734,
+      "sym_kl": 0.02713346,
+      "shared_of_topk": "18/20"
+    },
+    {
+      "prompt": "A rectangle has width 7 and height 3. Its are",
+      "top1_same": true,
+      "top1_margin": 1.0,
+      "head_max_dev": 2.889927,
+      "sym_kl": 0.30650102,
+      "shared_of_topk": "12/20"
+    },
+    {
+      "prompt": "The largest planet in our solar system is",
+      "top1_same": false,
+      "top1_margin": 1.125,
+      "head_max_dev": 0.96949,
+      "sym_kl": 0.16120306,
+      "shared_of_topk": "17/20"
+    },
+    {
+      "prompt": "SELECT name, COUNT(*) FROM users GROUP BY",
+      "top1_same": true,
+      "top1_margin": 1.375,
+      "head_max_dev": 0.336644,
+      "sym_kl": 0.01171244,
+      "shared_of_topk": "19/20"
+    }
+  ]
+}

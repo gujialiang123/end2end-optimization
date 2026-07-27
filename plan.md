@@ -1,4 +1,53 @@
-# Plan / 项目状态（2026-07-20 更新）
+# Plan / 项目状态（2026-07-27 更新）
+
+## 2026-07-27：LFM2.5 kernel fusion gap —— 本项目第一个同模型正向 kernel e2e 结果 ✅
+**问题**：v33 审计结论"sglang 热路径已全部 CUDA 融合，没有可补的空缺"是在 **Qwen 一个模型**上得出的。LFM2.5-8B-A1B（24 层里 18 层是 gated short conv 的新架构）从没在算子级审计过。
+
+**审计**（`scripts/lfm_fusion/lf_audit.py`，复用 v33 方法：`bench_one_batch --profile` + 关 cudagraph + 按 kernel 名分桶）：
+| 模型 | 未融合 RMSNorm | 独立 residual add | gating mul | layout copy |
+|---|---:|---:|---:|---:|
+| **LFM2.5** | **61** | **48** | **36** | 22–53 |
+| Qwen3-30B（对照） | **1** | **0** | **0** | 4–52 |
+
+计数不是约数：48 = 2 个 residual add × 24 层，36 = 2 个 gating mul × 18 个 conv 层。**对照组是决定性的** —— Qwen 一整个 forward 只有 1 个未融合 norm、0 个独立 add。
+
+**两个 gap + 修复**（`scripts/lfm_fusion/lfm_fusion_patch.py`，`LFM_FUSION_PATCH` 环境变量 opt-in，默认路径零改动）：
+- **G1 `norm`**：`Lfm2MoeDecoderLayer` 调 RMSNorm 时不传 residual，再用单独 elementwise kernel 加 residual。而 `RMSNorm.forward_cuda(x, residual)` 本来就会走 `fused_add_rmsnorm`，且 model loop **本来就在层间传 residual**——层直接忽略了它。改成 sglang 其他模型都用的 deferred-residual 写法，每层省 2 个 kernel。
+- **G2 `scale`**：`final_hidden_states * routed_scaling_factor`，而 LFM2.5 的该值 **= 1.0** → 每 forward 22 个"乘以 1"的空 kernel。跳过是 **bit-exact**。
+- **G3 `conv`**（已审计未修）：ShortConv prefill 路径的 `.transpose(0,1).contiguous()` 物化，占长 prefill 2.9%，需改 kernel 布局约定。
+
+**端到端**（`lf_e2e.py`，只变环境变量，5 重复 + Welch t，server log 校验 patch 真的生效）：
+| regime | `scale` | `norm` | **`norm+scale`** |
+|---|---:|---:|---:|
+| A 低批 decode | +1.40% | +2.35% | **+3.82%** (p<1e-4) |
+| B 并发 decode | +1.02% | +2.89% | **+3.96%** (p<1e-4) |
+| C 长 prefill | +0.73%(n.s.) | +1.42% | **+0.91%** (p=0.031) |
+
+**收益是 regime-dependent 的，且方向与 config 研究相反**：省掉的是**每 forward 固定数量的 kernel + 固定次数的全激活读写**，与该 forward 做多少计算无关 → decode（每 forward 才 2ms）占比大，长 prefill（157ms）被摊薄。**config 调优帮 prefill 不帮 decode；fusion 帮 decode 不帮 prefill —— 两者互补，只测一个 regime 都看不到。**
+
+**正确性**：G2 bit-exact。G1 代数等价但非 bit-exact（`fused_add_rmsnorm` 累加顺序不同）。三层证据：①原语单测 residual 差 **0.0**、normed 差约 2 个 bf16 ulp；②6 层代数替身栈相对偏差 1.1%（纯 bf16 漂移）；③整模型 top-1 11/12 一致但 KL 到 0.99 —— 原因是 **LFM2.5 top-4/32 专家路由是离散 argmax**，bf16 级扰动偶尔翻转选中的专家。**所以 token-identity 对这个模型是结构性不可用的门禁**，改用任务指标。
+**GSM8K 全量 1319 题 × 3 次**：baseline 0.347 / scale(bit-exact) **0.339** / norm 0.364 / norm+scale 0.359。**bit-exact 的 arm 自己就偏了 0.8 点** → 免费标定出 harness 噪声底（`--parallel 32` 的 batch 组成差异）。全部 4 个 arm 跨度 2.5 点，在噪声内。**结论口径：未检测到质量回归**，不是"质量提升"。
+
+**这改变了什么**：之前的立场"成熟 bf16 MoE 上 kernel 层不转化为端到端收益"仍然成立，但补上边界条件 —— **覆盖空缺是"架构成熟度"的函数，不是 sglang 的属性**。上游优化过的模型族没剩空间；新加入的架构在**新算子周围的调用点胶水**上带着几个百分点（新算子 `causal_conv1d` 本身只占 0.7%，很快）。这正是 plan 给 agent 的定位"自动发现并补 sglang 的覆盖空缺"，也是该定位第一次拿到同模型正向显著的全 regime 端到端数字。且**检测很便宜**：一次 profiled `bench_one_batch`，signature 是"随层数线性增长的 kernel 计数"，可机械判定。
+
+**诚实范围**：绝对值不大（≈4%）；单模型单卡；`norm` 非 bit-identical，质量结论靠噪声较大的任务指标；**没有写新 kernel** —— 收益来自把已有的融合原语用在漏用的调用点上，与本项目其他所有正向结果同形。
+
+**产物**：`docs/lfm_fusion_results.md`（主报告）· `scripts/lfm_fusion/`（audit / patch / e2e / correctness / analyze / plots）· `results/lfm_fusion/`（audit JSON + e2e + correctness + fusion_ab.csv + 2 图）。
+
+## 2026-07-27：regime-kernel K1 跨模型验证 —— regime→backend 规则**不可迁移** ✅
+HANDOFF §8.1。同协议在 Qwen3-30B-A3B 上重跑，3 regime × 4 backend × 5 rep，0 失败。
+
+| backend | A decode LFM/Qwen | B 并发 LFM/Qwen | C 长 prefill LFM/Qwen |
+|---|---:|---:|---:|
+| triton | 0.999 / 1.001 | 1.006 / **1.033** | 1.004 / 0.987 |
+| **triton_kernel** | **0.650 / 0.641** | 0.966 / 1.008 | 0.996 / **0.647** |
+| **flashinfer_cutlass** | 0.965 / 0.934 | **1.017 / 1.047** | **0.664** / **1.027** |
+
+- 两个 regime **两模型一致**：triton_kernel 在低批 decode 都是灾难（0.650/0.641）；cutlass 在并发 decode 都最好（1.017/1.047）。
+- **长 prefill 完全反转**：断崖不是变小，而是**换到了另一个 backend**。LFM 上 cutlass 最差（0.664×）、triton_kernel 无害；Qwen 上 cutlass **最好**（1.027×）、triton_kernel 才是灾难（0.647×）。
+- → **可迁移的结论不是"regime → backend"**。把 LFM 的长 prefill 规则用到 Qwen 会放弃它最好的 backend；把 Qwen 的规则用到 LFM 会 **−34%**。**静态 regime→backend 查找表不只是不完整，而是有害的** —— 这是"必须按部署实测（即需要 agent）"的直接论据。
+- 不对称性保持并略微扩大：最好 +4.7%（Qwen 并发 decode），最差 −36%。**backend 选择仍是避坑杠杆。**
+- 新增 `rk_backend_table.py`：表格从原始 JSON 重建（之前是手工拼的），覆盖两个模型 → `processed/backend_comparison_all.csv`。
 
 ## ★最新汇总文档：`docs/2026-07-20/qwen_optimization_full_report.md`（Qwen 全纪录，含 4 图 + §1.5 kernel 重写 + §1.6 kernel-config 调优 + §1.7 kernel-config e2e + §1.8 server/agent e2e）
 
