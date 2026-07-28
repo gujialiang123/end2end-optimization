@@ -225,6 +225,18 @@ conclusion in this project before.
    **0.90 / 0.70 / 0.49** across three regimes, and that ordering tracks how
    saturated the regime is. Reporting a sum overstates the stack, worst exactly
    where the system is most loaded.
+8. **Treat the audit's `pct_of_kernel_time` as an upper bound, never as an
+   expected gain — especially for the *second* gap in the same model.** After
+   the Gemma-3 norm fix landed, the audit priced the next gap (52 standalone
+   residual adds, 2.00/layer) at **3.00 % of decode kernel time**. Implementing
+   it delivered **−0.09 % and +0.44 %, neither significant**. The dominant
+   fixed overhead was already gone, so the remaining same-class overhead had
+   nothing left to convert against.
+
+   Practical rule: **after a large fix lands, re-audit to find the next gap, but
+   re-measure end-to-end before believing it — and before enlarging a PR for
+   it.** In this case the data retroactively justified keeping the change out of
+   the PR.
 
 ## PR READINESS
 
