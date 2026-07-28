@@ -18,7 +18,8 @@ import importlib.util
 import os
 import sys
 
-TARGETS = ("sglang.srt.layers.layernorm", "sglang.srt.models.gemma3_causal")
+TARGETS = ("sglang.srt.layers.layernorm", "sglang.srt.models.gemma3_causal",
+           "sglang.srt.models.olmo2")
 
 if os.environ.get("GEMMA_FUSION_PATCH"):
 
@@ -38,7 +39,10 @@ if os.environ.get("GEMMA_FUSION_PATCH"):
                 # Each target is patched only once its own module has finished
                 # executing — patching gemma3_causal from inside layernorm's
                 # exec is a circular import.
-                gemma_fusion_patch.apply_for(self._fullname)
+                if self._fullname == "sglang.srt.models.olmo2":
+                    gemma_fusion_patch.apply_olmo2()
+                else:
+                    gemma_fusion_patch.apply_for(self._fullname)
             except Exception as e:
                 print(f"[gemma_fusion_patch] FAILED to apply: {e!r}", flush=True)
                 raise

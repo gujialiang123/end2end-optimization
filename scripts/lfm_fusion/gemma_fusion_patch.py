@@ -84,6 +84,17 @@ def _fused_weight(self, like: torch.Tensor) -> torch.Tensor:
     return w
 
 
+# Reproduces upstream main's norm coverage exactly: 2-D fused, higher rank
+# falls back to eager. Used as the A/B baseline so the increment attributable to
+# the high-rank fix is measured directly rather than inferred across runs.
+def _patched_gemma3_forward_cuda_2d_only(self, x: torch.Tensor) -> torch.Tensor:
+    from sgl_kernel import gemma_rmsnorm
+
+    if x.dtype not in (torch.bfloat16, torch.float16) or x.dim() != 2:
+        return self.forward_native(x)
+    return gemma_rmsnorm(x.contiguous(), _fused_weight(self, x), self.eps)
+
+
 def _patched_gemma3_forward_cuda(self, x: torch.Tensor) -> torch.Tensor:
     from sgl_kernel import gemma_rmsnorm
 
@@ -175,7 +186,7 @@ def apply_for(module_name: str) -> list[str]:
     want = _enabled()
     if not want:
         return []
-    unknown = want - {"norm", "residual"}
+    unknown = want - {"norm", "norm2d", "residual", "olmo2_qknorm"}
     if unknown:
         raise ValueError(f"unknown GEMMA_FUSION_PATCH components: {sorted(unknown)}")
 
@@ -190,8 +201,10 @@ def apply_for(module_name: str) -> list[str]:
 
     from sglang.srt.layers import layernorm as LN
 
-    if "norm" in want:
-        LN.Gemma3RMSNorm.forward_cuda = _patched_gemma3_forward_cuda
+    if want & {"norm", "norm2d"}:
+        LN.Gemma3RMSNorm.forward_cuda = (
+            _patched_gemma3_forward_cuda_2d_only if "norm2d" in want
+            else _patched_gemma3_forward_cuda)
         # MultiPlatformOp binds the dispatch target at construction time, so
         # replacing the method alone is not enough for modules that already
         # exist; patch the constructor too.
@@ -202,7 +215,67 @@ def apply_for(module_name: str) -> list[str]:
             self._forward_method = self.forward_cuda
 
         LN.Gemma3RMSNorm.__init__ = patched_init
-        _APPLIED.append("norm")
+        _APPLIED.append("norm2d" if "norm2d" in want else "norm")
 
     print(f"[gemma_fusion_patch] applied: {_APPLIED}", flush=True)
     return list(_APPLIED)
+
+
+# ---------------------------------------------------------------------------
+# OLMo-2 — `_apply_qk_norm` calls forward_native explicitly on the non-capture
+# path, bypassing the fused kernel.
+# ---------------------------------------------------------------------------
+# Found by the same static signature. `models/olmo2.py:190-191`:
+#
+#     else:
+#         q = self.q_norm.forward_native(q)     # <- explicit eager call
+#         k = self.k_norm.forward_native(k)
+#
+# The `if` branch immediately above already proves the fused call works — it
+# reshapes to 2-D and calls `self.q_norm(...)`, which dispatches to the fused
+# CUDA kernel. Only the fallback path was left eager. Measured at 7.71 % of
+# decode CUDA kernel time (32 calls, 2.00/layer) on OLMo-2-1B.
+def _patched_olmo2_apply_qk_norm(self, q, k):
+    from sglang.srt.distributed import (
+        get_tensor_model_parallel_rank, tensor_model_parallel_all_gather)
+    from sglang.srt.layers.dp_attention import get_is_capture_mode
+    from sglang.srt.utils import split_tensor_along_last_dim
+    from functools import partial
+    import torch
+
+    if self.tp_size > 1:
+        q = tensor_model_parallel_all_gather(q.contiguous())
+        k = tensor_model_parallel_all_gather(k.contiguous())
+
+    if self.alt_stream is not None and get_is_capture_mode():
+        current_stream = torch.cuda.current_stream()
+        self.alt_stream.wait_stream(current_stream)
+        q_shape, k_shape = q.shape, k.shape
+        q_by_last = self.q_norm(q.reshape(-1, q_shape[-1]))
+        with torch.cuda.stream(self.alt_stream):
+            k_by_last = self.k_norm(k.reshape(-1, k_shape[-1]))
+        current_stream.wait_stream(self.alt_stream)
+        q, k = q_by_last.view(q_shape), k_by_last.view(k_shape)
+    else:
+        # was: self.q_norm.forward_native(q). RMSNorm reduces over the last
+        # dimension only, so reshaping to 2-D and back is exact, and is exactly
+        # what the capture-mode branch above already does.
+        q_shape, k_shape = q.shape, k.shape
+        q = self.q_norm(q.reshape(-1, q_shape[-1])).view(q_shape)
+        k = self.k_norm(k.reshape(-1, k_shape[-1])).view(k_shape)
+
+    if self.tp_size > 1:
+        splitter = partial(split_tensor_along_last_dim, num_partitions=self.tp_size)
+        q = splitter(q)[self.tp_rank]
+        k = splitter(k)[self.tp_rank]
+    return q, k
+
+
+def apply_olmo2() -> bool:
+    if "olmo2_qknorm" not in _enabled():
+        return False
+    from sglang.srt.models import olmo2 as M
+
+    M.Olmo2Attention._apply_qk_norm = _patched_olmo2_apply_qk_norm
+    print("[gemma_fusion_patch] applied: ['olmo2_qknorm']", flush=True)
+    return True

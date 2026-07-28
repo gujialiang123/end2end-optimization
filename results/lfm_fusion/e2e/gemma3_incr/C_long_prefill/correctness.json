@@ -1,0 +1,22 @@
+{
+  "prompts": [
+    "Explain in one paragraph why memory bandwidth limits decoding speed.",
+    "List the first ten prime numbers, separated by commas.",
+    "Write a haiku about a GPU kernel.",
+    "The capital of France is",
+    "def quicksort(arr):"
+  ],
+  "outputs": {},
+  "patch_checks": [
+    {
+      "arm": "gemma_norm2d",
+      "patch_check": "[gemma_fusion_patch] applied: ['norm2d']",
+      "ok": true
+    },
+    {
+      "arm": "gemma_norm",
+      "patch_check": "[gemma_fusion_patch] applied: ['norm']",
+      "ok": true
+    }
+  ]
+}

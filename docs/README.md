@@ -24,7 +24,7 @@ Read top-down; each entry says what it is and whether it is still current.
 |---|---|
 | [`2026-07-28/cross_architecture_audit.md`](2026-07-28/cross_architecture_audit.md) | 6 models / 3 families / 0.6 B–80 B. **Refutes** the "architecture maturity" hypothesis — the predictor is model family, not novelty, type or size. |
 | [`2026-07-28/three_fusion_cases.md`](2026-07-28/three_fusion_cases.md) | Every case in technical detail — the three that paid off, the four that did **not**, and a precision analysis answering whether any of it is lossy. **Start here for the engineering.** |
-| [`2026-07-28/PR_DRAFT_gemma3_rmsnorm.md`](2026-07-28/PR_DRAFT_gemma3_rmsnorm.md) | The upstream PR and everything backing it → [sgl-project/sglang#32670](https://github.com/sgl-project/sglang/pull/32670) (draft). |
+| [`2026-07-28/PR_DRAFT_gemma3_rmsnorm_v2.md`](2026-07-28/PR_DRAFT_gemma3_rmsnorm_v2.md) | The upstream PR and everything backing it → [sgl-project/sglang#32670](https://github.com/sgl-project/sglang/pull/32670) (draft). Rescoped after upstream #32383 landed the 2-D half: the claim is now the high-rank + dtype increment, measured against a main-equivalent baseline. Supersedes [`..._v1_superseded.md`](2026-07-28/PR_DRAFT_gemma3_rmsnorm_v1_superseded.md). |
 
 ### 2026-07-27 — LFM2.5 fusion work
 

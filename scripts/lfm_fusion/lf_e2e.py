@@ -61,12 +61,19 @@ ARMS = {
     "moesum": "moesum",
     "all7": "norm,scale,conv,gate,idx,qkrope,moesum",
     # Gemma-3 arms use GEMMA_FUSION_PATCH instead; see arm_overlay().
+    "gemma_norm2d": "@gemma:norm2d",   # upstream main-equivalent norm coverage
     "gemma_norm": "@gemma:norm",
+    "olmo2_qknorm": "@gemma:olmo2_qknorm",
     "gemma_norm_res": "@gemma:norm,residual",
     # PR-grade arm: runs the REAL source patch from a separate sglang worktree
     # via PYTHONPATH, rather than a monkeypatch, so the A/B exercises exactly
     # what would be merged.
     "gemma_src": "@src:/tmp/sglang_pr/python",
+    # Rebased onto current upstream main: baseline is main as-is, patched is
+    # main + the remaining high-rank/dtype fix. Both need the newer
+    # transformers, so they run under the gemma-sglang interpreter.
+    "main_base": "@src:/tmp/sglang_main_base/python",
+    "main_fix":  "@src:/tmp/sglang_pr2/python",
     "all": "norm,scale,conv,gate,idx,qkrope",
 }
 
@@ -74,8 +81,17 @@ ARMS = {
 def launch_server(model, cfg, gpu, port, log_path):
     """Launch the canonical server while preserving the caller's cache path."""
     m = S.MODELS[model]
+    # An arm may run under a different interpreter (e.g. a checkout of sglang
+    # main that needs a newer transformers than the default env). CUDA_HOME and
+    # PATH have to follow it, or it picks up the wrong toolchain.
+    py = os.environ.get("SGLANG_PY_OVERRIDE", S.PY)
+    envdir = str(Path(py).parent.parent) if py != S.PY else S.ENVDIR
+    # The override env may lack a CUDA toolchain; sglang main JIT-compiles some
+    # kernels at startup and needs nvcc. Keep CUDA_HOME pointing at an env that
+    # has one, independently of which interpreter runs.
+    cuda_home = os.environ.get("SGLANG_CUDA_HOME", envdir)
     argv = [
-        S.PY, "-m", "sglang.launch_server",
+        py, "-m", "sglang.launch_server",
         "--model-path", m["path"],
         "--served-model-name", m["served"],
         "--host", "127.0.0.1",
@@ -92,9 +108,9 @@ def launch_server(model, cfg, gpu, port, log_path):
     ] + m["extra"]
     env = os.environ.copy()
     env.update(
-        CUDA_HOME=S.ENVDIR,
+        CUDA_HOME=cuda_home,
         HF_HOME=str(S.REPO / ".hf_cache"),
-        PATH=f"{S.ENVDIR}/bin:" + env.get("PATH", ""),
+        PATH=f"{cuda_home}/bin:{envdir}/bin:" + env.get("PATH", ""),
         CUDA_VISIBLE_DEVICES=str(gpu),
         TRITON_CACHE_DIR=env.get(
             "TRITON_CACHE_DIR", str(L.RESULTS / "moesum" / "triton_cache")
@@ -135,7 +151,12 @@ def arm_overlay(arm: str) -> dict:
     existing = os.environ.get("PYTHONPATH", "")
     if spec.startswith("@src:"):
         tree = spec[len("@src:"):]
-        return {"PYTHONPATH": f"{tree}{os.pathsep}{existing}" if existing else tree}
+        ov = {"PYTHONPATH": f"{tree}{os.pathsep}{existing}" if existing else tree}
+        # trees built from upstream main need the newer transformers
+        if "/tmp/sglang_main" in tree or "/tmp/sglang_pr2" in tree:
+            ov["SGLANG_PY_OVERRIDE"] = \
+                "/home/t-jialianggu/.conda/envs/gemma-sglang/bin/python"
+        return ov
     if spec.startswith("@gemma:"):
         var, spec = "GEMMA_FUSION_PATCH", spec[len("@gemma:"):]
         py_path = os.pathsep.join([str(GM_INJECT), str(PATCH_DIR)])

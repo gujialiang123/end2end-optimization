@@ -1,3 +1,8 @@
+> **作废（superseded）。** 上游 #32383 已经落地了本文所主张收益的一部分（2-D 与 residual 融合），
+> 因此本文的标题和 `2.13×/2.00×/1.52×` 这组 headline 数字**会误导 reviewer**——它把上游已拿到的收益
+> 算在了自己账上。重新限定范围后的版本见 [`PR_DRAFT_gemma3_rmsnorm_v2.md`](PR_DRAFT_gemma3_rmsnorm_v2.md)。
+> 保留本文是为了留下当时（main @ `a82ead53b`）的真实测量记录。
+
 # PR 草稿 — `fix(gemma3): dispatch Gemma3RMSNorm to the fused CUDA kernel`
 
 **目标仓库**：`sgl-project/sglang` · **分支**：`fix/gemma3-rmsnorm-cuda-fused`

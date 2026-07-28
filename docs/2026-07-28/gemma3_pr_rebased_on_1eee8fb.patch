@@ -1,0 +1,192 @@
+From 69537cbbe25ed756471aa7d7a9366bceb2940e2e Mon Sep 17 00:00:00 2001
+From: gujialiang123 <gujialiang123@users.noreply.github.com>
+Date: Tue, 28 Jul 2026 19:00:03 +0000
+Subject: [PATCH] fix(gemma3): fuse high-rank RMSNorm and harden mixed-dtype
+ weights
+
+#32383 landed fused paths for the 2-D and residual cases of Gemma3RMSNorm.
+Two gaps remain.
+
+1. Higher-rank inputs still fall back to the eager path. q_norm and k_norm are
+   called with [tokens, heads, head_dim], so on Gemma-3 that is 2 of the 6 norms
+   per layer -- 52 of 157 norm calls per forward on gemma-3-1b. RMSNorm reduces
+   over the last dimension only, so flattening the leading dimensions and
+   restoring the shape is exact.
+
+2. Both fused paths pass self.weight.data unconditionally. The weight is
+   nn.Parameter(torch.zeros(dim)), so its dtype follows whatever default is in
+   effect at construction. Under the loader's set_default_torch_dtype that
+   matches the activations, but a module built outside that context keeps an
+   fp32 weight -- and the fused kernels do not raise on a dtype mismatch, they
+   return NaNs. Verified directly:
+
+     gemma_rmsnorm(bf16_input, bf16_weight) -> finite
+     gemma_rmsnorm(bf16_input, fp32_weight) -> NaN/Inf, no exception
+
+   The cast is cached on (dtype, device) so a module that is moved or re-cast is
+   not served a stale buffer.
+
+Benchmarks are the increment attributable to this change, not to fusing
+Gemma3RMSNorm from scratch. Baseline is a build whose norm coverage matches
+current main (2-D fused, higher rank eager); the patched arm adds the high-rank
+path. gemma-3-1b-it, 1x H200, BF16, 6 reps per arm, Welch t with the exact
+Student-t tail:
+
+  regime               baseline      patched    gain     p
+  low-batch decode     1.300 req/s   1.776     +36.6%   2.4e-14
+  concurrent decode   33.648        41.891     +24.5%   1.2e-06
+  long prefill        23.385        25.085      +7.3%   0.053 (not significant)
+
+Numerics: 20 shape/dtype/weight-dtype combinations pass, including the fp32
+weight case that currently produces NaNs. No NaN/Inf anywhere. Outputs are not
+bit-identical to the eager path -- the fused kernel applies the weight in the
+activation dtype -- which is the same trade-off the 2-D path already accepted.
+
+Adds TestGemma3RMSNorm, which this class had none of. It covers 2-D and 3-D
+inputs, bf16/fp16, and fp32 weights, and is mutation-checked: dropping the dtype
+cast fails 64 subtests and dropping the shape restore fails 24.
+---
+ python/sglang/srt/layers/layernorm.py | 39 +++++++++++++++--
+ test/manual/layers/test_layernorm.py  | 62 ++++++++++++++++++++++++++-
+ 2 files changed, 97 insertions(+), 4 deletions(-)
+
+diff --git a/python/sglang/srt/layers/layernorm.py b/python/sglang/srt/layers/layernorm.py
+index 2cd3b4eaef..a401af0390 100644
+--- a/python/sglang/srt/layers/layernorm.py
++++ b/python/sglang/srt/layers/layernorm.py
+@@ -1076,16 +1076,49 @@ class Gemma3RMSNorm(MultiPlatformOp):
+             return torch.ops.sgl_kernel.gemma3_rmsnorm_cpu(x, self.weight, self.eps)
+         return self.forward_native(x)
+ 
++    def _fused_weight(self, x: torch.Tensor) -> torch.Tensor:
++        """Weight matching the activation's dtype and device, materialised once.
++
++        `self.weight` is `nn.Parameter(torch.zeros(dim))`, so its dtype follows
++        whatever default is in effect when the module is built. Under the
++        loader's `set_default_torch_dtype` that matches the activations, but a
++        module constructed outside that context keeps an fp32 weight, and the
++        fused kernels do not raise on a dtype mismatch -- they return NaNs.
++        Cached on (dtype, device) so a module that is moved or re-cast is not
++        served a stale buffer.
++        """
++        cached = getattr(self, "_fused_weight_cache", None)
++        if (
++            cached is not None
++            and cached.dtype == x.dtype
++            and cached.device == x.device
++        ):
++            return cached
++        w = self.weight.data
++        if w.dtype != x.dtype or w.device != x.device:
++            w = w.to(device=x.device, dtype=x.dtype)
++        w = w.contiguous()
++        self._fused_weight_cache = w
++        return w
++
+     def forward_cuda(self, x, residual: Optional[torch.Tensor] = None):
+         if residual is not None:
+             # The decoder residual is token-major and contiguous. The fused
+             # kernel updates both tensors in place: x becomes the normalized
+             # output and residual becomes x + residual for the next layer.
+-            gemma_fused_add_rmsnorm(x, residual, self.weight.data, self.eps)
++            gemma_fused_add_rmsnorm(x, residual, self._fused_weight(x), self.eps)
+             return x, residual
++        if x.shape[-1] != self.weight.numel():
++            return self.forward_native(x)
+         if x.dim() == 2:
+-            return gemma_rmsnorm(x, self.weight.data, self.eps)
+-        return self.forward_native(x)
++            return gemma_rmsnorm(x, self._fused_weight(x), self.eps)
++        # q_norm / k_norm are called with [tokens, heads, head_dim]. RMSNorm
++        # reduces over the last dimension only, so flattening the leading
++        # dimensions and restoring the shape afterwards is exact.
++        flat = x.reshape(-1, x.shape[-1])
++        if not flat.is_contiguous():
++            flat = flat.contiguous()
++        return gemma_rmsnorm(flat, self._fused_weight(x), self.eps).view_as(x)
+ 
+     def forward_npu(self, x, residual: Optional[torch.Tensor] = None):
+         if residual is not None:
+diff --git a/test/manual/layers/test_layernorm.py b/test/manual/layers/test_layernorm.py
+index 299e5dcffa..4bbdbe9239 100644
+--- a/test/manual/layers/test_layernorm.py
++++ b/test/manual/layers/test_layernorm.py
+@@ -3,7 +3,12 @@ import unittest
+ 
+ import torch
+ 
+-from sglang.srt.layers.layernorm import GemmaRMSNorm, LayerNorm, RMSNorm
++from sglang.srt.layers.layernorm import (
++    Gemma3RMSNorm,
++    GemmaRMSNorm,
++    LayerNorm,
++    RMSNorm,
++)
+ from sglang.test.test_utils import CustomTestCase
+ 
+ 
+@@ -109,6 +114,61 @@ class TestGemmaRMSNorm(CustomTestCase):
+                 self._run_gemma_rms_norm_test(*params)
+ 
+ 
++class TestGemma3RMSNorm(CustomTestCase):
++    """Covers Gemma3RMSNorm, whose CUDA path had no test.
++
++    Includes the rank-3 shapes that q_norm/k_norm receive, and an explicitly
++    fp32 weight against half-precision activations, which is how the module is
++    actually constructed (`nn.Parameter(torch.zeros(dim))`).
++    """
++
++    DTYPES = [torch.half, torch.bfloat16]
++    NUM_TOKENS = [1, 7, 83, 4096]
++    HIDDEN_SIZES = [256, 768, 1152, 5120, 5126]
++    SEEDS = [0]
++
++    @classmethod
++    def setUpClass(cls):
++        if not torch.cuda.is_available():
++            raise unittest.SkipTest("CUDA is not available")
++        torch.set_default_device("cuda")
++
++    def _run(self, x, hidden_size, dtype, seed, weight_fp32):
++        torch.manual_seed(seed)
++        layer = Gemma3RMSNorm(hidden_size)
++        layer.weight.data.normal_(mean=0.0, std=0.1)
++        if not weight_fp32:
++            layer.weight.data = layer.weight.data.to(dtype)
++        with torch.inference_mode():
++            ref_out = layer.forward_native(x)
++            out = layer(x)
++        self.assertEqual(out.shape, ref_out.shape)
++        self.assertFalse(torch.isnan(out).any() or torch.isinf(out).any())
++        self.assertTrue(torch.allclose(out, ref_out, atol=1e-2, rtol=1e-2))
++
++    def test_gemma3_rms_norm(self):
++        for num_tokens, hidden_size, dtype, seed, weight_fp32 in itertools.product(
++            self.NUM_TOKENS, self.HIDDEN_SIZES, self.DTYPES, self.SEEDS,
++            [True, False],
++        ):
++            with self.subTest(num_tokens=num_tokens, hidden_size=hidden_size,
++                              dtype=dtype, seed=seed, weight_fp32=weight_fp32):
++                scale = 1 / (2 * hidden_size)
++                x = torch.randn(num_tokens, hidden_size, dtype=dtype) * scale
++                self._run(x, hidden_size, dtype, seed, weight_fp32)
++
++    def test_gemma3_rms_norm_3d(self):
++        """q_norm / k_norm are called with [tokens, heads, head_dim]."""
++        for num_tokens, heads, head_dim, dtype in itertools.product(
++            [1, 37], [1, 4, 8], [128, 256], self.DTYPES
++        ):
++            with self.subTest(num_tokens=num_tokens, heads=heads,
++                              head_dim=head_dim, dtype=dtype):
++                scale = 1 / (2 * head_dim)
++                x = torch.randn(num_tokens, heads, head_dim, dtype=dtype) * scale
++                self._run(x, head_dim, dtype, 0, weight_fp32=True)
++
++
+ class TestLayerNorm(CustomTestCase):
+     DTYPES = [torch.half, torch.bfloat16]
+     PARAM_DTYPES = [torch.bfloat16, torch.float32]
+-- 
+2.45.4
+

@@ -34,6 +34,30 @@ MODELS = {
         path="/data/hf/LFM2.5-8B-A1B",
         served="lfm2.5-8b-a1b", extra=["--max-prefill-tokens", "16384"],
     ),
+    "olmo2": dict(
+        path="/data/hf/gujialiang123/models/OLMo-2-1B-Instruct",
+        served="olmo-2-1b-instruct", extra=[],
+    ),
+    "exaone4": dict(
+        path="/data/hf/gujialiang123/models/EXAONE-4.0-1.2B",
+        served="exaone-4.0-1.2b", extra=[],
+    ),
+    "falconh1": dict(
+        path="/data/hf/gujialiang123/models/Falcon-H1-1.5B-Instruct",
+        served="falcon-h1-1.5b-instruct", extra=[],
+    ),
+    "granite": dict(
+        path="/data/hf/gujialiang123/models/granite-3.3-2b-instruct",
+        served="granite-3.3-2b-instruct", extra=[],
+    ),
+    "phi4mini": dict(
+        path="/data/hf/gujialiang123/models/Phi-4-mini-instruct",
+        served="phi-4-mini-instruct", extra=[],
+    ),
+    "olmoe": dict(
+        path="/data/hf/gujialiang123/models/OLMoE-1B-7B-Instruct",
+        served="olmoe-1b-7b-instruct", extra=[],
+    ),
     "gemma3": dict(
         path="/data/hf/models/gemma-3-1b-it",
         served="gemma-3-1b-it", extra=[],
@@ -184,8 +208,17 @@ def launch_server(model, cfg, gpu, port, log_path):
             "--chunked-prefill-size", str(cfg["chunk"]),
             "--schedule-policy", cfg["policy"]] + m["extra"]
     env = os.environ.copy()
-    env.update(dict(CUDA_HOME=ENVDIR, HF_HOME=str(REPO / ".hf_cache"),
-                    PATH=f"{ENVDIR}/bin:" + env.get("PATH", ""),
+    # allow an arm to run under a different interpreter (e.g. a build of
+    # sglang main that needs a newer transformers than the default env)
+    py_override = os.environ.get("SGLANG_PY_OVERRIDE")
+    envdir = ENVDIR
+    if py_override:
+        argv = [py_override] + argv[1:]
+        # CUDA_HOME/PATH must follow the interpreter, not stay pinned to the
+        # default env, or the override picks up the wrong toolchain.
+        envdir = str(Path(py_override).parent.parent)
+    env.update(dict(CUDA_HOME=envdir, HF_HOME=str(REPO / ".hf_cache"),
+                    PATH=f"{envdir}/bin:" + env.get("PATH", ""),
                     CUDA_VISIBLE_DEVICES=str(gpu),
                     TRITON_CACHE_DIR=f"/tmp/sgl_triton_ceiling_gpu{gpu}"))
     lf = open(log_path, "w")
@@ -248,8 +281,15 @@ def run_workload(model, workload, port, out_jsonl, seed=SEED, timeout=1800):
             "--seed", str(seed), "--output-details",
             "--output-file", str(out_jsonl)] + WORKLOADS[workload]["args"]
     env = os.environ.copy()
-    env.update(dict(CUDA_HOME=ENVDIR, HF_HOME=str(REPO / ".hf_cache"),
-                    PATH=f"{ENVDIR}/bin:" + env.get("PATH", "")))
+    # allow an arm to run under a different interpreter (e.g. a build of
+    # sglang main that needs a newer transformers than the default env)
+    py_override = os.environ.get("SGLANG_PY_OVERRIDE")
+    envdir = ENVDIR
+    if py_override:
+        argv = [py_override] + argv[1:]
+        envdir = str(Path(py_override).parent.parent)
+    env.update(dict(CUDA_HOME=envdir, HF_HOME=str(REPO / ".hf_cache"),
+                    PATH=f"{envdir}/bin:" + env.get("PATH", "")))
     try:
         r = subprocess.run(argv, env=env, capture_output=True, text=True,
                            timeout=timeout)

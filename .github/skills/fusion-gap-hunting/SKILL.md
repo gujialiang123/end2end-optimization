@@ -253,7 +253,29 @@ If the fix is going upstream, add:
 - check whether upstream `main` already fixed it, and whether the fall-through
   might be a deliberate accuracy choice. For Gemma-3 both were checked: still
   broken on `main`, and the two classes' reference implementations are
-  byte-identical, so it is not an accuracy trade-off.
+  byte-identical, so it is not an accuracy trade-off;
+- **re-check `main` again right before you post, and re-scope to whatever gap is
+  actually left.** Upstream moves while you measure. Between our audit
+  (`a82ead53b`) and our submission, #32383 landed the 2-D and residual halves of
+  exactly this fix. Our `2.13× / 2.00× / 1.52×` headline silently became a claim
+  on someone else's work — the honest number was the *increment* over a
+  main-equivalent baseline (`+36.6% / +24.5% / +7.3% n.s.`), roughly a third of
+  what we had been about to claim.
+
+  Two habits fall out of this, and both are cheap:
+
+  - **Diff the specific function against `origin/main` on the day you post**, not
+    the day you found it. A `git log -p <file>` on the touched file is enough.
+  - **When you cannot run current `main` directly, build a baseline arm that
+    reproduces its coverage** rather than reusing your old baseline. We could not
+    run `main` locally (it needs `transformers==5.12.1`; our envs had 4.57.1 and
+    5.6.0, conda clone failed, cross-env toolchains broke the JIT link), so we
+    added a `norm2d` arm that fuses exactly the 2-D case and leaves higher rank
+    eager. That arm *is* main's behaviour, so the A/B against it is the increment
+    — and it costs one component flag, not a working `main` install.
+
+  Corollary for reporting: if a regime comes back `p = 0.053`, it is **not** a
+  result. Print it with the verdict attached and keep it out of the headline.
 
 ## ROADMAP
 
