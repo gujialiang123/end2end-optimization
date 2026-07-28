@@ -1,5 +1,37 @@
 # Plan / 项目状态（2026-07-27 更新）
 
+## 2026-07-27 深夜：跨架构审计 —— Gemma-3 的 RMSNorm 跑在 eager PyTorch 上，一行修复 **2.07×** ✅
+**做法**：把算子级审计扩展到 4 个架构（Qwen3-0.6B dense / Qwen3-30B MoE / Gemma-3-1B dense+滑窗 / LFM2.5 MoE+shortconv），新增**按层归一化**让不同深度的模型可比。
+
+**审计结果（eager norm 分解占 CUDA kernel 时间）**：
+| 模型 | 低批 decode | prefill(短) | prefill(T=16000) |
+|---|---:|---:|---:|
+| Qwen3-0.6B / Qwen3-30B / LFM2.5 | **0.00%** | **0.00%** | **0.00%** |
+| **Gemma-3-1B** | **15.98%** | **19.31%** | **11.07%** |
+
+**根因（一行 fall-through）**：`layers/layernorm.py` 里相隔 ~100 行有两个类 —— `GemmaRMSNorm` 用融合 CUDA kernel，而 `Gemma3RMSNorm.forward_cuda()` **直接 `return self.forward_native(x)`**，展开成 `pow→mean→add→rsqrt→mul` 每 norm ~6 个 kernel。**CPU 有融合 kernel（`gemma3_rmsnorm_cpu`）、NPU 有（`npu_gemma_rms_norm`），唯独 CUDA 掉队**，而 `sgl_kernel.gemma_rmsnorm` 是预编译好的。26 层 × 6 norm = **157 次/forward**。
+
+**端到端（6 重复，精确 Welch t，两臂 resolved 配置逐项核验一致）**：
+| regime | baseline | patched | **加速** | p |
+|---|---:|---:|---:|---:|
+| A 低批 decode | 0.808 | 1.669 | **2.065×** | 1.4e-07 |
+| B 并发 decode | 20.320 | 35.648 | **1.754×** | 1.6e-05 |
+| C 长 prefill | 16.718 | 26.200 | **1.567×** | 5.2e-06 |
+
+GSM8K 1319 题×3：0.2233 vs 0.2210（二项误差 ±2.2 点，噪声内）。
+
+**机械闭环**：打补丁后重新审计 → eager norm 调用 **157 → 0**，decode kernel 时间 **3.81 → 1.89 ms（−50.4%）**。
+
+**两个只有实测才能发现的坑**：① `weight` 是 fp32 而激活是 bf16，传给融合 kernel **静默出 NaN**；② `q_norm`/`k_norm` 输入是 3-D，rank-2 守卫会漏掉每层 6 个 norm 里的 2 个 —— **是"打补丁后重新审计"才发现的**（残留 52 次 = 2.00/层）。
+
+**假设判决**：成立但需修正措辞 —— 不是"新架构有更多同类空缺"，而是"**新架构有空缺，且空缺形态不可预测**"（LFM2.5 是胶水、Gemma-3 是整个实现掉进 eager）。这**加强**了"必须实测、不能靠规则"的论点。
+
+**诚实自评**：在 LFM2.5 上手写两个 Triton kernel 拿到 ~6%；**扩展审计 + 一行 fall-through 修复拿到 2×**。杠杆在"找对地方"，不在"写得多精巧"。
+
+**最大缺口**：`Qwen3-Coder-Next`（`qwen3_next`，GDN 线性注意力 + 512 专家，149GB 需 TP2）**没测** —— 它正是 `fused_gdn_gating` 那批"CPU 有 CUDA 没有"算子服务的架构，最可能再中一次。
+
+**产物**：`docs/cross_architecture_audit.md` · `scripts/lfm_fusion/gemma_fusion_patch.py` + `gm_inject/` · `results/lfm_fusion/audit/{gemma3,qwen06}_*`
+
 ## 2026-07-27 晚：LFM2.5 kernel fusion 第二轮 —— 全 regime +4.7~5.5%，且发现"同类优化不叠加"规律 ✅
 **做法**：并行两个调查 agent（nsys 时间线 / torch.compile FX+Inductor），都跑在**已打补丁的路径**上，所以找到的是"还剩什么"。
 

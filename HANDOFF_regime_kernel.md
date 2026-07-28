@@ -256,9 +256,22 @@ A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单�
 2. **枚举代码库里已有的融合原语,检查哪些模型的调用点没用它们** —— 这一条就找到了
    四个赢家里的三个,而且完全不需要 profiling,是纯静态检查。
 
-### 8.2c 把审计跑到其他新架构上(**最便宜的下一步,~15 分钟/模型**)
-"架构成熟度决定 fusion 空缺"目前是**单模型观察**。在第二、第三个新架构上复现
-才能变成规律 —— 而这正是把它做成 agent 检查的前提。
+### 8.2c ✅ 已完成:跨架构审计(`docs/cross_architecture_audit.md`)
+扩展到 4 个架构。两个成熟模型(Qwen3-0.6B dense / Qwen3-30B MoE)**都干净**;
+两个较新的都有空缺但**形态完全不同**。→ 假设成立但需修正措辞:不是"新架构有更多
+同类空缺",而是"**新架构有空缺,且形态不可预测**",这**加强**了"必须实测"的论点。
+
+**★ 在 Gemma-3 上拿到 2.07× / 1.75× / 1.57×(一行 fall-through)**:
+`Gemma3RMSNorm.forward_cuda()` 直接 `return self.forward_native(x)` → RMSNorm
+展开成 eager PyTorch,157 次/forward × ~6 kernel。**CPU 和 NPU 都有融合路径,
+唯独 CUDA 掉队**,而 `sgl_kernel.gemma_rmsnorm` 是预编译好的,就在同一个文件里
+相隔 100 行。**这是真正的上游 bug,值得提 PR。**
+
+### 8.2d 剩下最该做的:`Qwen3-Coder-Next`(**最高优先**)
+`qwen3_next` = GDN 线性注意力 + 512 专家,正是 `fused_gdn_gating` 那批
+"CPU 有 CUDA 没有"算子服务的架构,**最可能再中一次**。149GB 需 **TP2**(GPU 4+5)。
+模型已在本机:`/data/hf/hub/models--Qwen--Qwen3-Coder-Next/snapshots/a7fbcb5c...`
+`lf_lib.py` 里已加好条目(`qwen3next`,tp=2),`lf_audit.py` 已支持 `--tp`。
 
 ### 8.3 验证 waterfall 的非叠加机制
 用 tracer 在 tuned serving(`chunk=2048`)下测 M 分布,和 cookbook 对比,验证"serving tuning 改变了 M 分布"这个假设。约 20 分钟。
@@ -299,6 +312,17 @@ TMA 路径在这台机器上**是激活的**(`support_tensor_descriptor()=True`)
 P0 与 §8.1 已完成。建议接 §8.2b(把 fusion 审计做成 agent 的机械检查)
 或 §8.4/§9.1(ShortConv 的 layout copy 与 gating 融合)。
 ```
+
+### 新增的坑(跨架构审计,2026-07-27 深夜)
+- **融合 kernel 要求 weight 与激活同 dtype**。`nn.Parameter(torch.zeros(dim))` 建的是
+  **fp32**,而激活是 bf16;传给融合 kernel **静默出 NaN**(不是报错)。
+- **打完补丁必须重新跑审计**。rank-2 守卫漏掉了 3-D 的 `q_norm`/`k_norm`,
+  每层 6 个 norm 里有 2 个没修到 —— 只有重新审计才看得见(残留 52 次 = 2.00/层)。
+  修完 signature 归零 = 机械闭环。
+- **`MultiPlatformOp` 在 `__init__` 里绑定 `_forward_method`**,只替换类方法对
+  已构造的模块无效,**必须同时 patch 构造函数**。
+- **产物文件名必须带模型名**。accuracy 文件原来只按 arm 命名,审计第二个模型时
+  **覆盖了第一个模型的 baseline**(已修 + 从 git 恢复)。
 
 ### 新增的坑(fusion 线,2026-07-27)
 - **token-identity 对 LFM2.5 是结构性不可用的正确性门禁**。它 top-4/32 专家路由是

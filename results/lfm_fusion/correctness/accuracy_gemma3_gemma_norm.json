@@ -1,0 +1,28 @@
+{
+  "arm": "gemma_norm",
+  "patch": "@gemma:norm",
+  "model": "gemma3",
+  "num_questions": 1319,
+  "num_shots": 5,
+  "reps": 3,
+  "accuracies": [
+    0.221,
+    0.217,
+    0.225
+  ],
+  "mean": 0.221,
+  "spread": 0.008000000000000007,
+  "logs": [
+    "gsm8k_gemma3_gemma_norm_rep0.log",
+    "gsm8k_gemma3_gemma_norm_rep1.log",
+    "gsm8k_gemma3_gemma_norm_rep2.log"
+  ],
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

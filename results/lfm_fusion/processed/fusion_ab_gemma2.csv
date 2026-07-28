@@ -1,0 +1,13 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+gemma3_gemma2/A_low_batch_decode,baseline,request_throughput,6,0.808,0.0061,0.808,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/A_low_batch_decode,baseline,output_throughput,6,206.8567,1.5523,206.8567,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/A_low_batch_decode,gemma_norm,request_throughput,6,1.6687,0.0436,0.808,2.0652,106.52,38.337,1.42e-07,improvement
+gemma3_gemma2/A_low_batch_decode,gemma_norm,output_throughput,6,427.1919,11.1574,206.8567,2.0652,106.52,38.337,1.42e-07,improvement
+gemma3_gemma2/B_concurrent_decode,baseline,request_throughput,6,20.3205,0.5406,20.3205,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/B_concurrent_decode,baseline,output_throughput,6,5202.0406,138.3866,5202.0406,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/B_concurrent_decode,gemma_norm,request_throughput,6,35.6478,2.1432,20.3205,1.7543,75.43,13.592,1.61e-05,improvement
+gemma3_gemma2/B_concurrent_decode,gemma_norm,output_throughput,6,9125.8241,548.6563,5202.0406,1.7543,75.43,13.592,1.61e-05,improvement
+gemma3_gemma2/C_long_prefill,baseline,request_throughput,6,16.7183,0.1973,16.7183,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/C_long_prefill,baseline,output_throughput,6,534.9857,6.315,534.9857,1.0,0.0,0.0,1,baseline
+gemma3_gemma2/C_long_prefill,gemma_norm,request_throughput,6,26.2004,1.0157,16.7183,1.5672,56.72,17.961,5.24e-06,improvement
+gemma3_gemma2/C_long_prefill,gemma_norm,output_throughput,6,838.4137,32.5036,534.9857,1.5672,56.72,17.961,5.24e-06,improvement

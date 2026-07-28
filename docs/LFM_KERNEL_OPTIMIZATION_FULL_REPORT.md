@@ -10,6 +10,11 @@
 
 ---
 
+> **2026-07-27 续篇**：把审计扩展到第四个架构后，在 **Gemma-3** 上发现了一个远大于
+> 本文所有内容的空缺——它的 RMSNorm 在 CUDA 上跑 **eager PyTorch**，**一行 fall-through**。
+> 修复后端到端 **2.07× / 1.75× / 1.57×**。详见 **`docs/cross_architecture_audit.md`**。
+> 那份报告也是对本文 §11.1 建议的直接执行。
+
 ## 0. 三句话总结
 
 1. **拿到了什么**：在 LFM2.5-8B-A1B 上，通过 7 个内核层改动，端到端请求吞吐 **低批 decode +6.57% · 并发 decode +6.21% · 长 prefill +5.30%**（各 6 次重复，精确 Welch t，p = 4.6e-14 / 2.4e-08 / 1.2e-05），GSM8K 无质量回归。**这是本项目第一个同模型、正向、全 regime 显著的内核级端到端结果。**
@@ -541,7 +546,10 @@ python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B ...
 
 ## 11. 建议的下一步
 
-1. **把审计跑到其他新架构上**（~15 分钟/模型，**最便宜且最有价值**）。"架构成熟度决定 fusion 空缺"目前仍是**单模型观察**；在第二、第三个新架构上复现才能变成规律——而这正是把它做成 agent 检查的前提。
+1. ~~**把审计跑到其他新架构上**~~ ✅ **已完成**，见 `docs/cross_architecture_audit.md`。
+   在 Qwen3-0.6B / Gemma-3-1B 上扩展后，假设成立但需修正措辞：新架构确实有空缺，
+   但**空缺形态不可预测**。并且在 Gemma-3 上拿到 **2.07×** —— 比本文全部工作大一个数量级。
+   **剩余最大缺口：`Qwen3-Coder-Next`（GDN 线性注意力，需 TP2）没测。**
 2. **把两条 signature 做成 agent 的机械检查**：(a) 随层数线性增长的 kernel 计数，Qwen 作为"干净"的对照；(b) **枚举已有融合原语、找没调用的模型**——纯静态，不需要 profiling。
 3. **上游那两个 bit-exact 的修复**（乘以 1.0、`.to(int32)` 提升），review 成本几乎为零。
 4. **去掉 ShortConv 的形状门控**：FX 研究实测 **GPU 侧 crossover 在 T=512 以下**，T≈2048 的门控只是因为 Triton 的 Python launch 把 wall time 钉在 ~19–30 µs。用 CUDA graph 捕获或预编译 launcher 就能让它全程可用。
