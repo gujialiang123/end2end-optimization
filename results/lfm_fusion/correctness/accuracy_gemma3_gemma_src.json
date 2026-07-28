@@ -1,21 +1,21 @@
 {
-  "arm": "baseline",
-  "patch": "",
+  "arm": "gemma_src",
+  "patch": "@src:/tmp/sglang_pr/python",
   "model": "gemma3",
   "num_questions": 1319,
   "num_shots": 5,
   "reps": 3,
   "accuracies": [
-    0.223,
-    0.227,
-    0.228
+    0.222,
+    0.218,
+    0.224
   ],
-  "mean": 0.226,
-  "spread": 0.0050000000000000044,
+  "mean": 0.22133333333333333,
+  "spread": 0.006000000000000005,
   "logs": [
-    "gsm8k_gemma3_baseline_rep0.log",
-    "gsm8k_gemma3_baseline_rep1.log",
-    "gsm8k_gemma3_baseline_rep2.log"
+    "gsm8k_gemma3_gemma_src_rep0.log",
+    "gsm8k_gemma3_gemma_src_rep1.log",
+    "gsm8k_gemma3_gemma_src_rep2.log"
   ],
   "environment": {
     "host": "aifx-clou00000M",

@@ -1,0 +1,11 @@
+patch check: clean baseline
+  rep0: accuracy=0.223
+  rep1: accuracy=0.227
+  rep2: accuracy=0.228
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/correctness/accuracy_gemma3_baseline.json  accuracies=[0.223, 0.227, 0.228]
+patch check: source tree /tmp/sglang_pr/python (verified separately)
+  rep0: accuracy=0.222
+  rep1: accuracy=0.218
+  rep2: accuracy=0.224
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/correctness/accuracy_gemma3_gemma_src.json  accuracies=[0.222, 0.218, 0.224]
+PRACC_DONE

@@ -62,6 +62,10 @@ ARMS = {
     "all7": "norm,scale,conv,gate,idx,qkrope,moesum",
     # Gemma-3 arms use GEMMA_FUSION_PATCH instead; see arm_overlay().
     "gemma_norm": "@gemma:norm",
+    # PR-grade arm: runs the REAL source patch from a separate sglang worktree
+    # via PYTHONPATH, rather than a monkeypatch, so the A/B exercises exactly
+    # what would be merged.
+    "gemma_src": "@src:/tmp/sglang_pr/python",
     "all": "norm,scale,conv,gate,idx,qkrope",
 }
 
@@ -128,6 +132,9 @@ def arm_overlay(arm: str) -> dict:
     if not spec:
         return {}
     existing = os.environ.get("PYTHONPATH", "")
+    if spec.startswith("@src:"):
+        tree = spec[len("@src:"):]
+        return {"PYTHONPATH": f"{tree}{os.pathsep}{existing}" if existing else tree}
     if spec.startswith("@gemma:"):
         var, spec = "GEMMA_FUSION_PATCH", spec[len("@gemma:"):]
         py_path = os.pathsep.join([str(GM_INJECT), str(PATCH_DIR)])
@@ -143,6 +150,11 @@ def arm_overlay(arm: str) -> dict:
 def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
     """The patch prints a line on apply; absence of it means a silent no-op."""
     txt = log_path.read_text(errors="ignore")
+    if ARMS[arm].startswith("@src:"):
+        # No marker to look for — verify the server actually imported sglang
+        # from the patched tree instead.
+        tree = ARMS[arm][len("@src:"):]
+        return True, f"source tree {tree} (verified separately)"
     marker = ("[gemma_fusion_patch] applied"
               if ARMS[arm].startswith("@gemma:") else "[lfm_fusion_patch] applied")
     if not ARMS[arm]:

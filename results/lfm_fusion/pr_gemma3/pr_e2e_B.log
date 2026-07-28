@@ -1,0 +1,28 @@
+{
+  "model": "gemma3",
+  "regime": "B_concurrent_decode",
+  "workload": "R_concurrent_decode",
+  "arms": [
+    "baseline",
+    "gemma_src"
+  ],
+  "reps": 8,
+  "gpu": 7,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[B_concurrent_decode] arm=baseline
+  patch check: clean baseline
+
+[B_concurrent_decode] arm=gemma_src
+  patch check: source tree /tmp/sglang_pr/python (verified separately)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/gemma3_prsrc/B_concurrent_decode/e2e_runs.json (16 rows)
+  baseline       21.671 +/- 0.074 req/s   1.0000x  n=8
+  gemma_src      43.247 +/- 0.218 req/s   1.9956x  n=8
+PRSRC_B_DONE

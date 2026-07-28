@@ -1,0 +1,210 @@
+From 6a2fda79135a841c9665af91385324df21fdb91f Mon Sep 17 00:00:00 2001
+From: gujialiang123 <gujialiang123@users.noreply.github.com>
+Date: Tue, 28 Jul 2026 16:39:39 +0000
+Subject: [PATCH] fix(gemma3): dispatch Gemma3RMSNorm to the fused CUDA kernel
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+`Gemma3RMSNorm.forward_cuda` returns `self.forward_native(x)`, so on CUDA every
+Gemma-3 normalisation runs as eager PyTorch — pow, mean, add, rsqrt, mul, plus
+the fp32 up/down casts. That is roughly six kernels and seven HBM round trips
+per norm, where one fused kernel would do.
+
+`gemma_rmsnorm` already implements exactly this class's semantics,
+out = (x / RMS(x)) * (1 + weight), is pre-built in sgl_kernel, and is what
+`GemmaRMSNorm` in this same file already uses for gemma/gemma2. The two classes
+have identical reference implementations (both upcast to fp32, both apply
+(1.0 + weight), both cast back), so this is not an accuracy trade-off that was
+deliberately taken for gemma3 — the CPU path dispatches to
+`gemma3_rmsnorm_cpu` and the NPU path to `npu_gemma_rms_norm`; CUDA is the only
+backend that falls through.
+
+Gemma-3-1B runs 6 norms per layer (input, post_attention, pre_feedforward,
+post_feedforward, q_norm, k_norm) across 26 layers = 157 norm calls per forward.
+
+Two details the implementation has to get right:
+
+* `self.weight` is created as fp32 by `nn.Parameter(torch.zeros(dim))` while
+  activations are half precision. Handing the fused kernel a mismatched weight
+  does not raise — it silently produces NaNs. The cast is cached per module and
+  keyed on dtype.
+* `q_norm`/`k_norm` are called with `[tokens, heads, head_dim]`. RMSNorm reduces
+  over the last dimension only, so flattening to 2-D and restoring the shape is
+  exact; a rank-2 guard would leave 2 of the 6 norms per layer on the slow path.
+
+Adds `TestGemma3RMSNorm`, which this class previously had none of — covering
+2-D and 3-D inputs, bf16/fp16, fp32 and half weights. Mutation-checked: removing
+the dtype cast fails 64 subtests and dropping the shape restore fails 24.
+
+Measured on 1x H200, gemma-3-1b-it, bf16, 8 repetitions per arm, Welch t with
+the exact Student-t tail:
+
+  regime                baseline      patched     speedup   p
+  low-batch decode      0.839 req/s   1.784 req/s  2.128x   3.5e-22
+  concurrent decode    21.671        43.247        1.996x   4.2e-18
+  long prefill         17.156        26.088        1.521x   4.5e-15
+
+Profiling confirms the mechanism: eager-norm kernel launches go from 157 to 0
+per forward and decode CUDA kernel time falls from 3.81 ms to 1.89 ms.
+
+GSM8K (1319 questions, 3 runs, greedy): 0.2260 -> 0.2213, within the +/-2.2
+point binomial error at that accuracy.
+
+Numeric verification across 120 combinations of shape, dtype, magnitude and
+weight dtype: worst relative deviation 9.3e-3, no NaN/Inf, consistent with
+half-precision rounding — the same trade-off `GemmaRMSNorm` already ships.
+---
+ python/sglang/srt/layers/layernorm.py | 47 +++++++++++++++++++-
+ test/manual/layers/test_layernorm.py  | 62 ++++++++++++++++++++++++++-
+ 2 files changed, 107 insertions(+), 2 deletions(-)
+
+diff --git a/python/sglang/srt/layers/layernorm.py b/python/sglang/srt/layers/layernorm.py
+index 8b0ca5141..07e8c778d 100644
+--- a/python/sglang/srt/layers/layernorm.py
++++ b/python/sglang/srt/layers/layernorm.py
+@@ -869,6 +869,20 @@ class GemmaRMSNorm(MultiPlatformOp):
+         )
+ 
+ 
++# `gemma_rmsnorm` is only imported on the CUDA/XPU path, and only supports the
++# half-precision dtypes. Anything else keeps the reference implementation.
++_GEMMA3_FUSED_DTYPES = (torch.bfloat16, torch.float16)
++
++
++def _gemma3_rmsnorm_fused_available(x: torch.Tensor, weight: torch.Tensor) -> bool:
++    return (
++        (_is_cuda or _is_xpu)
++        and x.dtype in _GEMMA3_FUSED_DTYPES
++        and x.dim() >= 2
++        and x.shape[-1] == weight.numel()
++    )
++
++
+ class Gemma3RMSNorm(MultiPlatformOp):
+     def __init__(self, dim: int, eps: float = 1e-6):
+         super().__init__()
+@@ -891,8 +905,39 @@ class Gemma3RMSNorm(MultiPlatformOp):
+             return torch.ops.sgl_kernel.gemma3_rmsnorm_cpu(x, self.weight, self.eps)
+         return self.forward_native(x)
+ 
++    def _fused_weight(self, dtype: torch.dtype) -> torch.Tensor:
++        """Weight in the activation dtype, materialised once.
++
++        `self.weight` is created as fp32 by `nn.Parameter(torch.zeros(dim))`,
++        while activations are typically bf16/fp16. The fused kernel requires
++        both to share a dtype, so the cast is cached rather than repeated on
++        every call. Keyed on the dtype so a module that is later re-cast is not
++        served a stale buffer.
++        """
++        cached = getattr(self, "_fused_weight_cache", None)
++        if cached is not None and cached.dtype == dtype:
++            return cached
++        w = self.weight.data
++        w = (w.to(dtype) if w.dtype != dtype else w).contiguous()
++        self._fused_weight_cache = w
++        return w
++
+     def forward_cuda(self, x):
+-        return self.forward_native(x)
++        # `gemma_rmsnorm` implements exactly this class's semantics,
++        # out = (x / RMS(x)) * (1 + weight), and is what `GemmaRMSNorm` above
++        # already uses for gemma/gemma2. Running `forward_native` here instead
++        # decomposes one kernel into pow/mean/add/rsqrt/mul plus the fp32
++        # casts, which is ~6 kernels and ~7 round trips to HBM per norm.
++        if not _gemma3_rmsnorm_fused_available(x, self.weight):
++            return self.forward_native(x)
++
++        # The kernel takes [tokens, hidden]. RMSNorm reduces over the last
++        # dimension only, so a higher-rank input (q_norm/k_norm receive
++        # [tokens, heads, head_dim]) can be flattened and restored exactly.
++        if x.dim() == 2:
++            return gemma_rmsnorm(x.contiguous(), self._fused_weight(x.dtype), self.eps)
++        flat = x.reshape(-1, x.shape[-1]).contiguous()
++        return gemma_rmsnorm(flat, self._fused_weight(x.dtype), self.eps).view_as(x)
+ 
+     def forward_npu(self, x):
+         output, _ = torch_npu.npu_gemma_rms_norm(x, self.weight, self.eps)
+diff --git a/test/manual/layers/test_layernorm.py b/test/manual/layers/test_layernorm.py
+index 299e5dcff..4bbdbe923 100644
+--- a/test/manual/layers/test_layernorm.py
++++ b/test/manual/layers/test_layernorm.py
+@@ -3,7 +3,12 @@ import unittest
+ 
+ import torch
+ 
+-from sglang.srt.layers.layernorm import GemmaRMSNorm, LayerNorm, RMSNorm
++from sglang.srt.layers.layernorm import (
++    Gemma3RMSNorm,
++    GemmaRMSNorm,
++    LayerNorm,
++    RMSNorm,
++)
+ from sglang.test.test_utils import CustomTestCase
+ 
+ 
+@@ -109,6 +114,61 @@ class TestGemmaRMSNorm(CustomTestCase):
+                 self._run_gemma_rms_norm_test(*params)
+ 
+ 
++class TestGemma3RMSNorm(CustomTestCase):
++    """Covers Gemma3RMSNorm, whose CUDA path had no test.
++
++    Includes the rank-3 shapes that q_norm/k_norm receive, and an explicitly
++    fp32 weight against half-precision activations, which is how the module is
++    actually constructed (`nn.Parameter(torch.zeros(dim))`).
++    """
++
++    DTYPES = [torch.half, torch.bfloat16]
++    NUM_TOKENS = [1, 7, 83, 4096]
++    HIDDEN_SIZES = [256, 768, 1152, 5120, 5126]
++    SEEDS = [0]
++
++    @classmethod
++    def setUpClass(cls):
++        if not torch.cuda.is_available():
++            raise unittest.SkipTest("CUDA is not available")
++        torch.set_default_device("cuda")
++
++    def _run(self, x, hidden_size, dtype, seed, weight_fp32):
++        torch.manual_seed(seed)
++        layer = Gemma3RMSNorm(hidden_size)
++        layer.weight.data.normal_(mean=0.0, std=0.1)
++        if not weight_fp32:
++            layer.weight.data = layer.weight.data.to(dtype)
++        with torch.inference_mode():
++            ref_out = layer.forward_native(x)
++            out = layer(x)
++        self.assertEqual(out.shape, ref_out.shape)
++        self.assertFalse(torch.isnan(out).any() or torch.isinf(out).any())
++        self.assertTrue(torch.allclose(out, ref_out, atol=1e-2, rtol=1e-2))
++
++    def test_gemma3_rms_norm(self):
++        for num_tokens, hidden_size, dtype, seed, weight_fp32 in itertools.product(
++            self.NUM_TOKENS, self.HIDDEN_SIZES, self.DTYPES, self.SEEDS,
++            [True, False],
++        ):
++            with self.subTest(num_tokens=num_tokens, hidden_size=hidden_size,
++                              dtype=dtype, seed=seed, weight_fp32=weight_fp32):
++                scale = 1 / (2 * hidden_size)
++                x = torch.randn(num_tokens, hidden_size, dtype=dtype) * scale
++                self._run(x, hidden_size, dtype, seed, weight_fp32)
++
++    def test_gemma3_rms_norm_3d(self):
++        """q_norm / k_norm are called with [tokens, heads, head_dim]."""
++        for num_tokens, heads, head_dim, dtype in itertools.product(
++            [1, 37], [1, 4, 8], [128, 256], self.DTYPES
++        ):
++            with self.subTest(num_tokens=num_tokens, heads=heads,
++                              head_dim=head_dim, dtype=dtype):
++                scale = 1 / (2 * head_dim)
++                x = torch.randn(num_tokens, heads, head_dim, dtype=dtype) * scale
++                self._run(x, head_dim, dtype, 0, weight_fp32=True)
++
++
+ class TestLayerNorm(CustomTestCase):
+     DTYPES = [torch.half, torch.bfloat16]
+     PARAM_DTYPES = [torch.bfloat16, torch.float32]
+-- 
+2.45.4
+

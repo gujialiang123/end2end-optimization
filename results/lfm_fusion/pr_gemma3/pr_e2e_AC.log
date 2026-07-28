@@ -1,0 +1,55 @@
+{
+  "model": "gemma3",
+  "regime": "A_low_batch_decode",
+  "workload": "R_short_decode",
+  "arms": [
+    "baseline",
+    "gemma_src"
+  ],
+  "reps": 8,
+  "gpu": 6,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[A_low_batch_decode] arm=baseline
+  patch check: clean baseline
+
+[A_low_batch_decode] arm=gemma_src
+  patch check: source tree /tmp/sglang_pr/python (verified separately)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/gemma3_prsrc/A_low_batch_decode/e2e_runs.json (16 rows)
+  baseline        0.839 +/- 0.001 req/s   1.0000x  n=8
+  gemma_src       1.784 +/- 0.003 req/s   2.1276x  n=8
+{
+  "model": "gemma3",
+  "regime": "C_long_prefill",
+  "workload": "R_long_prefill",
+  "arms": [
+    "baseline",
+    "gemma_src"
+  ],
+  "reps": 8,
+  "gpu": 6,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[C_long_prefill] arm=baseline
+  patch check: clean baseline
+
+[C_long_prefill] arm=gemma_src
+  patch check: source tree /tmp/sglang_pr/python (verified separately)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/gemma3_prsrc/C_long_prefill/e2e_runs.json (16 rows)
+  baseline       17.156 +/- 0.204 req/s   1.0000x  n=8
+  gemma_src      26.088 +/- 0.370 req/s   1.5207x  n=8
+PRSRC_AC_DONE
