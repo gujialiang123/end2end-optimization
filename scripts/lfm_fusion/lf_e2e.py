@@ -60,6 +60,8 @@ ARMS = {
     "gate+idx": "gate,idx",
     "moesum": "moesum",
     "all7": "norm,scale,conv,gate,idx,qkrope,moesum",
+    # Gemma-3 arms use GEMMA_FUSION_PATCH instead; see arm_overlay().
+    "gemma_norm": "@gemma:norm",
     "all": "norm,scale,conv,gate,idx,qkrope",
 }
 
@@ -117,15 +119,23 @@ def kill_server(process):
     time.sleep(4)
 
 
+GM_INJECT = Path(__file__).resolve().parent / "gm_inject"
+
+
 def arm_overlay(arm: str) -> dict:
     """Env vars that distinguish one arm. Baseline gets none at all."""
     spec = ARMS[arm]
     if not spec:
         return {}
-    py_path = os.pathsep.join([str(INJECT), str(PATCH_DIR)])
     existing = os.environ.get("PYTHONPATH", "")
+    if spec.startswith("@gemma:"):
+        var, spec = "GEMMA_FUSION_PATCH", spec[len("@gemma:"):]
+        py_path = os.pathsep.join([str(GM_INJECT), str(PATCH_DIR)])
+    else:
+        var = "LFM_FUSION_PATCH"
+        py_path = os.pathsep.join([str(INJECT), str(PATCH_DIR)])
     return {
-        "LFM_FUSION_PATCH": spec,
+        var: spec,
         "PYTHONPATH": f"{py_path}{os.pathsep}{existing}" if existing else py_path,
     }
 
@@ -133,11 +143,12 @@ def arm_overlay(arm: str) -> dict:
 def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
     """The patch prints a line on apply; absence of it means a silent no-op."""
     txt = log_path.read_text(errors="ignore")
+    marker = ("[gemma_fusion_patch] applied"
+              if ARMS[arm].startswith("@gemma:") else "[lfm_fusion_patch] applied")
     if not ARMS[arm]:
-        if "[lfm_fusion_patch] applied" in txt:
+        if "fusion_patch] applied" in txt:
             return False, "baseline arm unexpectedly has the patch applied"
         return True, "clean baseline"
-    marker = "[lfm_fusion_patch] applied"
     if marker not in txt:
         return False, "patch never applied (silent no-op)"
     line = [l for l in txt.splitlines() if marker in l][-1]

@@ -191,7 +191,8 @@ def accuracy(arm: str, gpu: int, port: int, model: str, n_questions: int,
     cfg = dict(cap=32, chunk=-1, policy="lpm", mem=0.85, config_id=-1,
                is_cookbook=False, hash="accuracy")
     OUT.mkdir(parents=True, exist_ok=True)
-    log = OUT / f"acc_server_{arm.replace('+','_')}.log"
+    tag = f"{model}_{arm.replace('+','_')}"
+    log = OUT / f"acc_server_{tag}.log"
 
     old = dict(os.environ)
     os.environ.update(arm_overlay(arm))
@@ -210,7 +211,7 @@ def accuracy(arm: str, gpu: int, port: int, model: str, n_questions: int,
         import subprocess
         accs, logs = [], []
         for rep in range(reps):
-            out_log = OUT / f"gsm8k_{arm.replace('+','_')}_rep{rep}.log"
+            out_log = OUT / f"gsm8k_{tag}_rep{rep}.log"
             cmd = [L.PY, "-m", "sglang.test.few_shot_gsm8k",
                    "--num-questions", str(n_questions),
                    "--num-shots", str(num_shots),
@@ -236,7 +237,7 @@ def accuracy(arm: str, gpu: int, port: int, model: str, n_questions: int,
         os.environ.update(old)
 
     ok_accs = [x for x in accs if x is not None]
-    path = OUT / f"accuracy_{arm.replace('+','_')}.json"
+    path = OUT / f"accuracy_{tag}.json"
     path.write_text(json.dumps(dict(arm=arm, patch=ARMS[arm], model=model,
                                     num_questions=n_questions,
                                     num_shots=num_shots, reps=reps,

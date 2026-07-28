@@ -28,7 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import lf_lib as L
 
 
-def run_bench(model: str, regime: str, gpu: int, outdir: Path, disable_graph: bool):
+def run_bench(model: str, regime: str, gpu, outdir: Path, disable_graph: bool,
+              tp: int = 1):
     m = L.MODELS[model]
     shape = L.REGIME_SHAPES[regime]
     prof_dir = outdir / "trace"
@@ -40,7 +41,7 @@ def run_bench(model: str, regime: str, gpu: int, outdir: Path, disable_graph: bo
         "--batch", str(shape["batch"]),
         "--input-len", str(shape["input_len"]),
         "--output-len", str(shape["output_len"]),
-        "--tensor-parallel-size", "1",
+        "--tensor-parallel-size", str(tp),
         "--mem-fraction-static", "0.85",
         "--trust-remote-code",
         "--profile",
@@ -53,7 +54,7 @@ def run_bench(model: str, regime: str, gpu: int, outdir: Path, disable_graph: bo
     log = outdir / "bench.log"
     with open(log, "w") as lf:
         p = subprocess.run(argv, env=env, stdout=lf, stderr=subprocess.STDOUT,
-                           timeout=3600)
+                           timeout=5400)
     return p.returncode, log, prof_dir, argv
 
 
@@ -84,8 +85,13 @@ def parse_trace(path: Path):
     return rows
 
 
-def summarize_gaps(rows, total):
-    """Aggregate the fusion-gap signatures — the point of the whole audit."""
+def summarize_gaps(rows, total, layers=None):
+    """Aggregate the fusion-gap signatures — the point of the whole audit.
+
+    `per_layer` is what makes the number comparable across models: the gaps are
+    structural, so a model with twice the layers issues twice the stray kernels
+    without being any worse. The hypothesis is about the per-layer rate.
+    """
     agg = defaultdict(lambda: dict(us=0.0, calls=0, kernels=0))
     for r in rows:
         if r["gap"] is None:
@@ -97,11 +103,14 @@ def summarize_gaps(rows, total):
     notes = {g["gap"]: g for g in L.GAP_SIGNATURES}
     out = []
     for name, v in sorted(agg.items(), key=lambda kv: -kv[1]["us"]):
-        out.append(dict(gap=name, total_us=round(v["us"], 1),
-                        pct_of_kernel_time=round(100 * v["us"] / total, 2),
-                        calls=v["calls"], distinct_kernels=v["kernels"],
-                        removable_by_fusion=notes[name]["removable"],
-                        note=notes[name]["note"]))
+        row = dict(gap=name, total_us=round(v["us"], 1),
+                   pct_of_kernel_time=round(100 * v["us"] / total, 2),
+                   calls=v["calls"], distinct_kernels=v["kernels"],
+                   removable_by_fusion=notes[name]["removable"],
+                   note=notes[name]["note"])
+        if layers:
+            row["calls_per_layer"] = round(v["calls"] / layers, 3)
+        out.append(row)
     return out
 
 
@@ -126,10 +135,13 @@ def main():
     ap.add_argument("--model", default="lfm25", choices=list(L.MODELS))
     ap.add_argument("--regime", default="A_low_batch_decode",
                     choices=list(L.REGIME_SHAPES))
-    ap.add_argument("--gpu", type=int, required=True)
+    ap.add_argument("--gpu", required=True,
+                    help="GPU id, or a comma list for TP (e.g. 4,5)")
     ap.add_argument("--cuda-graph", action="store_true",
                     help="keep CUDA graphs on (default: disabled for attribution)")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--tp", type=int, default=None,
+                    help="tensor-parallel size; defaults to the model's entry")
     ap.add_argument("--reparse", action="store_true",
                     help="re-analyse the traces already on disk, no GPU needed")
     a = ap.parse_args()
@@ -141,8 +153,10 @@ def main():
     if a.reparse:
         argv = ["<reparse>"]
     else:
+        tp = a.tp if a.tp else L.MODELS[a.model].get("tp", 1)
         rc, log, prof_dir, argv = run_bench(a.model, a.regime, a.gpu, outdir,
-                                            disable_graph=not a.cuda_graph)
+                                            disable_graph=not a.cuda_graph,
+                                            tp=tp)
         print(f"bench_one_batch rc={rc}, log={log}")
         if rc != 0:
             print(log.read_text(errors="ignore")[-3000:])
@@ -153,8 +167,12 @@ def main():
         print(f"no trace produced in {prof_dir}")
         sys.exit(1)
 
+    meta = L.MODELS[a.model]
+    layers = meta.get("layers")
     report = dict(model=a.model, regime=a.regime,
                   shape=L.REGIME_SHAPES[a.regime],
+                  arch=meta.get("arch"), maturity=meta.get("maturity"),
+                  layers=layers, tp=a.tp or meta.get("tp", 1),
                   cuda_graph=a.cuda_graph, argv=argv,
                   environment=L.environment(), stages={})
 
@@ -163,7 +181,7 @@ def main():
             "decode" if "decode" in t.name else t.stem)
         rows = parse_trace(t)
         buckets, total = summarize(rows)
-        gaps = summarize_gaps(rows, total)
+        gaps = summarize_gaps(rows, total, layers)
         report["stages"][stage] = dict(
             trace=t.name, total_kernel_us=round(total, 1),
             buckets=buckets, fusion_gaps=gaps, top_kernels=rows[:40])
@@ -176,8 +194,10 @@ def main():
             print("  -- fusion gaps --")
             for g in gaps:
                 flag = "REMOVABLE" if g["removable_by_fusion"] else "reducible"
+                per = g.get("calls_per_layer")
                 print(f"  {g['gap']:20s} {g['pct_of_kernel_time']:6.2f}%  "
-                      f"{g['total_us']/1000:8.3f} ms  calls={g['calls']:6d}  {flag}")
+                      f"{g['total_us']/1000:8.3f} ms  calls={g['calls']:5d}"
+                      f"{f' ({per:.2f}/layer)' if per is not None else ''}  {flag}")
 
     L.snapshot(outdir, "audit", report)
     print(f"\nwrote {outdir/'audit.json'}")

@@ -34,6 +34,10 @@ MODELS = {
         path="/data/hf/LFM2.5-8B-A1B",
         served="lfm2.5-8b-a1b", extra=["--max-prefill-tokens", "16384"],
     ),
+    "gemma3": dict(
+        path="/data/hf/models/gemma-3-1b-it",
+        served="gemma-3-1b-it", extra=[],
+    ),
 }
 
 # ---- Canonical serving search space (192 unique configs) --------------------

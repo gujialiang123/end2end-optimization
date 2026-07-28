@@ -6,28 +6,13 @@
     "input_len": 4000,
     "output_len": 8
   },
+  "arch": "MoE + gated short conv (hybrid)",
+  "maturity": "new",
+  "layers": 24,
+  "tp": 1,
   "cuda_graph": false,
   "argv": [
-    "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python",
-    "-m",
-    "sglang.bench_one_batch",
-    "--model-path",
-    "/data/hf/LFM2.5-8B-A1B",
-    "--batch",
-    "4",
-    "--input-len",
-    "4000",
-    "--output-len",
-    "8",
-    "--tensor-parallel-size",
-    "1",
-    "--mem-fraction-static",
-    "0.85",
-    "--trust-remote-code",
-    "--profile",
-    "--max-prefill-tokens",
-    "16384",
-    "--disable-cuda-graph"
+    "<reparse>"
   ],
   "environment": {
     "host": "aifx-clou00000M",
@@ -107,7 +92,8 @@
           "calls": 61,
           "distinct_kernels": 1,
           "removable_by_fusion": false,
-          "note": "RMSNorm invoked without the residual add fused in; sglang's RMSNorm.forward_cuda(x, residual) would call fused_add_rmsnorm"
+          "note": "RMSNorm invoked without the residual add fused in; sglang's RMSNorm.forward_cuda(x, residual) would call fused_add_rmsnorm",
+          "calls_per_layer": 2.542
         },
         {
           "gap": "gating_mul",
@@ -116,7 +102,8 @@
           "calls": 36,
           "distinct_kernels": 1,
           "removable_by_fusion": false,
-          "note": "elementwise gating multiply (ShortConv B*x and C*conv_out)"
+          "note": "elementwise gating multiply (ShortConv B*x and C*conv_out)",
+          "calls_per_layer": 1.5
         },
         {
           "gap": "residual_add",
@@ -125,7 +112,8 @@
           "calls": 48,
           "distinct_kernels": 1,
           "removable_by_fusion": true,
-          "note": "standalone residual addition; absorbed by fused_add_rmsnorm"
+          "note": "standalone residual addition; absorbed by fused_add_rmsnorm",
+          "calls_per_layer": 2.0
         },
         {
           "gap": "layout_copy",
@@ -134,7 +122,8 @@
           "calls": 34,
           "distinct_kernels": 3,
           "removable_by_fusion": true,
-          "note": "explicit .contiguous()/transpose materialisation"
+          "note": "explicit .contiguous()/transpose materialisation, or a dtype cast introduced by an eager-mode numeric path",
+          "calls_per_layer": 1.417
         }
       ],
       "top_kernels": [
@@ -468,7 +457,8 @@
           "calls": 61,
           "distinct_kernels": 1,
           "removable_by_fusion": false,
-          "note": "RMSNorm invoked without the residual add fused in; sglang's RMSNorm.forward_cuda(x, residual) would call fused_add_rmsnorm"
+          "note": "RMSNorm invoked without the residual add fused in; sglang's RMSNorm.forward_cuda(x, residual) would call fused_add_rmsnorm",
+          "calls_per_layer": 2.542
         },
         {
           "gap": "gating_mul",
@@ -477,7 +467,8 @@
           "calls": 36,
           "distinct_kernels": 1,
           "removable_by_fusion": false,
-          "note": "elementwise gating multiply (ShortConv B*x and C*conv_out)"
+          "note": "elementwise gating multiply (ShortConv B*x and C*conv_out)",
+          "calls_per_layer": 1.5
         },
         {
           "gap": "layout_copy",
@@ -486,7 +477,8 @@
           "calls": 53,
           "distinct_kernels": 4,
           "removable_by_fusion": true,
-          "note": "explicit .contiguous()/transpose materialisation"
+          "note": "explicit .contiguous()/transpose materialisation, or a dtype cast introduced by an eager-mode numeric path",
+          "calls_per_layer": 2.208
         },
         {
           "gap": "residual_add",
@@ -495,7 +487,8 @@
           "calls": 50,
           "distinct_kernels": 2,
           "removable_by_fusion": true,
-          "note": "standalone residual addition; absorbed by fused_add_rmsnorm"
+          "note": "standalone residual addition; absorbed by fused_add_rmsnorm",
+          "calls_per_layer": 2.083
         }
       ],
       "top_kernels": [

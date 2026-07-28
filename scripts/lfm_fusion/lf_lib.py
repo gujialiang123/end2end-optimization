@@ -24,11 +24,41 @@ MODELS = {
         path="/data/hf/LFM2.5-8B-A1B",
         served="lfm2.5-8b-a1b",
         extra=["--max-prefill-tokens", "16384"],
+        layers=24, arch="MoE + gated short conv (hybrid)",
+        maturity="new", tp=1,
     ),
     "qwen": dict(
         path="/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
         served="qwen3-30b-a3b",
         extra=[],
+        layers=48, arch="MoE + full attention",
+        maturity="mature", tp=1,
+    ),
+    # --- added for the cross-architecture audit -----------------------------
+    # The hypothesis under test is that fusion headroom tracks how long an
+    # architecture has been in SGLang, not the framework itself. These span
+    # both axes: dense vs MoE, and mature vs recently added.
+    "qwen06": dict(
+        path="/data/hf/models/Qwen3-0.6B",
+        served="qwen3-0.6b",
+        extra=[],
+        layers=28, arch="dense, llama-style",
+        maturity="very mature", tp=1,
+    ),
+    "gemma3": dict(
+        path="/data/hf/models/gemma-3-1b-it",
+        served="gemma-3-1b-it",
+        extra=[],
+        layers=26, arch="dense + sliding-window attention",
+        maturity="mature", tp=1,
+    ),
+    "qwen3next": dict(
+        path="/data/hf/hub/models--Qwen--Qwen3-Coder-Next/snapshots/"
+             "a7fbcb5c0e12d62a448eaa0e260346bf5dcc0feb",
+        served="qwen3-coder-next",
+        extra=["--max-prefill-tokens", "16384"],
+        layers=48, arch="MoE(512E) + gated DeltaNet linear attention (hybrid)",
+        maturity="new", tp=2,
     ),
 }
 
@@ -101,6 +131,16 @@ def bucket_of(kernel_name: str) -> str:
 # direct upper bound on the saving); non-removable gaps only get cheaper.
 # ---------------------------------------------------------------------------
 GAP_SIGNATURES = [
+    dict(gap="eager_norm_decomp", removable=True,
+         must=("reduce_kernel", "meanops"), must_not=(),
+         note="RMSNorm running as eager PyTorch (pow->mean->rsqrt->mul) instead "
+              "of a fused kernel; the mean reduction is the unambiguous marker"),
+    dict(gap="eager_norm_rsqrt", removable=True,
+         must=("rsqrt_kernel",), must_not=(),
+         note="rsqrt of the eager RMSNorm decomposition"),
+    dict(gap="eager_norm_pow", removable=True,
+         must=("pow_tensor_scalar",), must_not=(),
+         note="square step of the eager RMSNorm decomposition"),
     dict(gap="unfused_rmsnorm", removable=False,
          must=("rmsnormkernel",), must_not=("fusedadd", "gemma"),
          note="RMSNorm invoked without the residual add fused in; sglang's "
@@ -113,7 +153,8 @@ GAP_SIGNATURES = [
          note="elementwise gating multiply (ShortConv B*x and C*conv_out)"),
     dict(gap="layout_copy", removable=True,
          must=("direct_copy_kernel",), must_not=(),
-         note="explicit .contiguous()/transpose materialisation"),
+         note="explicit .contiguous()/transpose materialisation, or a dtype "
+              "cast introduced by an eager-mode numeric path"),
 ]
 
 
