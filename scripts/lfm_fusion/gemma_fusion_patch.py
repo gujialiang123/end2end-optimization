@@ -104,15 +104,91 @@ def _patched_gemma3_forward_cuda(self, x: torch.Tensor) -> torch.Tensor:
     return self.forward_native(x)
 
 
-def apply() -> list[str]:
+# ---------------------------------------------------------------------------
+# `residual` — fold the post-attention residual add into the following norm
+# ---------------------------------------------------------------------------
+# After the `norm` component lands, the audit's next-largest gap in Gemma-3 is
+# 52 standalone residual adds per forward (2.00 per layer, 3.00 % of decode
+# kernel time). The layer does:
+#
+#     h = post_attention_layernorm(attn_out)
+#     h = residual + h                        # <- standalone add
+#     residual = h
+#     h = pre_feedforward_layernorm(h)        # <- immediately followed by a norm
+#
+# `add then norm` is exactly `gemma_fused_add_rmsnorm`, which is already in the
+# CUDA build. Only the FIRST of the two adds is fused here: the second one's
+# following norm is the *next layer's* `input_layernorm`, so fusing it would
+# mean carrying a residual across the layer boundary and changing the layer's
+# return signature. That is deliberately left alone.
+def _patched_gemma3_layer_forward(
+    self, positions, hidden_states, position_embeddings_global,
+    position_embeddings_local, forward_batch, **kwargs,
+):
+    from sgl_kernel import gemma_fused_add_rmsnorm
+
+    residual = hidden_states
+    hidden_states = self.input_layernorm(hidden_states)
+
+    position_embeddings = (position_embeddings_local if self.self_attn.is_sliding
+                           else position_embeddings_global)
+    hidden_states = self.self_attn(
+        positions=positions, hidden_states=hidden_states,
+        position_embeddings=position_embeddings,
+        forward_batch=forward_batch, **kwargs,
+    )
+    hidden_states = self.post_attention_layernorm(hidden_states)
+
+    ffn_norm = self.pre_feedforward_layernorm
+    if _gemma3_fused_add_ok(hidden_states, residual, ffn_norm):
+        # in-place: residual := residual + hidden_states,
+        #           hidden_states := pre_feedforward_layernorm(residual)
+        hidden_states = hidden_states.contiguous()
+        residual = residual.contiguous()
+        gemma_fused_add_rmsnorm(
+            hidden_states, residual,
+            ffn_norm._fused_weight(hidden_states.dtype), ffn_norm.eps)
+    else:
+        hidden_states = residual + hidden_states
+        residual = hidden_states
+        hidden_states = ffn_norm(hidden_states)
+
+    hidden_states = self.mlp(hidden_states)
+    hidden_states = self.post_feedforward_layernorm(hidden_states)
+    hidden_states = residual + hidden_states
+    return (hidden_states,)
+
+
+def _gemma3_fused_add_ok(x, residual, norm) -> bool:
+    return (
+        x.dim() == 2
+        and x.dtype in (torch.bfloat16, torch.float16)
+        and residual.shape == x.shape
+        and residual.dtype == x.dtype
+        and hasattr(norm, "_fused_weight")
+        and x.shape[-1] == norm.weight.numel()
+    )
+
+
+def apply_for(module_name: str) -> list[str]:
+    """Apply the components owned by `module_name`, once it has finished importing."""
     want = _enabled()
     if not want:
         return []
-    from sglang.srt.layers import layernorm as LN
-
-    unknown = want - {"norm"}
+    unknown = want - {"norm", "residual"}
     if unknown:
         raise ValueError(f"unknown GEMMA_FUSION_PATCH components: {sorted(unknown)}")
+
+    if module_name == "sglang.srt.models.gemma3_causal":
+        if "residual" in want:
+            from sglang.srt.models import gemma3_causal as G
+
+            G.Gemma3DecoderLayer.forward = _patched_gemma3_layer_forward
+            _APPLIED.append("residual")
+            print(f"[gemma_fusion_patch] applied: {_APPLIED}", flush=True)
+        return list(_APPLIED)
+
+    from sglang.srt.layers import layernorm as LN
 
     if "norm" in want:
         LN.Gemma3RMSNorm.forward_cuda = _patched_gemma3_forward_cuda

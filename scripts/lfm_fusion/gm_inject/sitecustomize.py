@@ -18,30 +18,34 @@ import importlib.util
 import os
 import sys
 
-TARGET = "sglang.srt.layers.layernorm"
+TARGETS = ("sglang.srt.layers.layernorm", "sglang.srt.models.gemma3_causal")
 
 if os.environ.get("GEMMA_FUSION_PATCH"):
 
     class _PatchingLoader(importlib.abc.Loader):
-        def __init__(self, inner):
-            self._inner = inner
-
         def create_module(self, spec):
             return self._inner.create_module(spec)
+
+        def __init__(self, inner, fullname):
+            self._inner = inner
+            self._fullname = fullname
 
         def exec_module(self, module):
             self._inner.exec_module(module)
             try:
                 import gemma_fusion_patch
 
-                gemma_fusion_patch.apply()
+                # Each target is patched only once its own module has finished
+                # executing — patching gemma3_causal from inside layernorm's
+                # exec is a circular import.
+                gemma_fusion_patch.apply_for(self._fullname)
             except Exception as e:
                 print(f"[gemma_fusion_patch] FAILED to apply: {e!r}", flush=True)
                 raise
 
     class _Finder(importlib.abc.MetaPathFinder):
         def find_spec(self, fullname, path=None, target=None):
-            if fullname != TARGET:
+            if fullname not in TARGETS:
                 return None
             saved = sys.meta_path
             sys.meta_path = [f for f in saved if not isinstance(f, _Finder)]
@@ -51,7 +55,7 @@ if os.environ.get("GEMMA_FUSION_PATCH"):
                 sys.meta_path = saved
             if spec is None or spec.loader is None:
                 return None
-            spec.loader = _PatchingLoader(spec.loader)
+            spec.loader = _PatchingLoader(spec.loader, fullname)
             return spec
 
     if not any(isinstance(f, _Finder) for f in sys.meta_path):

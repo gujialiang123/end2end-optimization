@@ -62,6 +62,7 @@ ARMS = {
     "all7": "norm,scale,conv,gate,idx,qkrope,moesum",
     # Gemma-3 arms use GEMMA_FUSION_PATCH instead; see arm_overlay().
     "gemma_norm": "@gemma:norm",
+    "gemma_norm_res": "@gemma:norm,residual",
     # PR-grade arm: runs the REAL source patch from a separate sglang worktree
     # via PYTHONPATH, rather than a monkeypatch, so the A/B exercises exactly
     # what would be merged.
