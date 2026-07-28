@@ -495,7 +495,15 @@ The previous position was "kernel-level work does not convert to end-to-end
 gains on mature bf16 MoE serving". That stands. What this adds is a boundary
 condition:
 
-> The coverage gap is a function of **architecture maturity**, not of SGLang.
+> **[Superseded 2026-07-27]** This paragraph said *architecture maturity*. A
+> five-architecture audit refuted that: the newest architecture tested
+> (Qwen3-Next) is nearly clean at 0.64 %, while the mature Gemma-3 is the
+> worst at 46.32 %. The real split is **model family** — see
+> `docs/cross_architecture_audit.md`. The mechanism below still holds; only
+> the predictor was wrong.
+>
+> The coverage gap is a function of **how much optimisation attention that
+> model file has had**, not of SGLang.
 > A model family that upstream has optimised (Qwen3-30B: 1 un-fused norm, 0
 > stray adds) has nothing left at the fusion layer. A recently added
 > architecture (LFM2.5: 61 un-fused norms, 48 stray adds, 36 multiplies, an

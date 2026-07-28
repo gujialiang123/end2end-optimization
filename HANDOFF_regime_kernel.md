@@ -267,11 +267,15 @@ A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单�
 唯独 CUDA 掉队**,而 `sgl_kernel.gemma_rmsnorm` 是预编译好的,就在同一个文件里
 相隔 100 行。**这是真正的上游 bug,值得提 PR。**
 
-### 8.2d 剩下最该做的:`Qwen3-Coder-Next`(**最高优先**)
-`qwen3_next` = GDN 线性注意力 + 512 专家,正是 `fused_gdn_gating` 那批
-"CPU 有 CUDA 没有"算子服务的架构,**最可能再中一次**。149GB 需 **TP2**(GPU 4+5)。
-模型已在本机:`/data/hf/hub/models--Qwen--Qwen3-Coder-Next/snapshots/a7fbcb5c...`
-`lf_lib.py` 里已加好条目(`qwen3next`,tp=2),`lf_audit.py` 已支持 `--tp`。
+### 8.2d ✅ 已完成:`Qwen3-Coder-Next`(TP2) —— **判决实验,推翻了原假设**
+`qwen3_next`(GDN 线性注意力 + 512 专家)是这批里最新的架构之一,**却几乎干净
+(0.64%)**,而成熟的 Gemma-3 最差(46.32%)。→ **"架构越新空缺越多"不成立**。
+真正的分界是**模型家族**:三个 Qwen 模型横跨 dense/MoE/线性注意力、横跨成熟度
+全部干净(0.23/0.57/0.64%);两个非 Qwen 都有空缺(11.31/46.32%)。
+**修正后的可操作结论:去查非框架主力家族的模型,而不是查新架构。**
+
+### 8.2e 下一步:再加几个**非 Qwen 家族**的模型
+现在只有 2 个非 Qwen 家族(Google/Liquid),这是结论最弱的一环。
 
 ### 8.3 验证 waterfall 的非叠加机制
 用 tracer 在 tuned serving(`chunk=2048`)下测 M 分布,和 cookbook 对比,验证"serving tuning 改变了 M 分布"这个假设。约 20 分钟。
