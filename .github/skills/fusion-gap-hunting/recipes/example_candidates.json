@@ -1,0 +1,200 @@
+{
+  "src": "/home/t-jialianggu/work/sglang",
+  "n_cuda_symbols": 150,
+  "hits": [
+    {
+      "kind": "cuda_fallthrough",
+      "file": "python/sglang/srt/layers/activation.py",
+      "line": 151,
+      "cls": "NewGELU",
+      "sibling_fused": {},
+      "primitive_available_on_cuda": [],
+      "verdict": "probably not actionable (no CUDA-side primitive)"
+    },
+    {
+      "kind": "cuda_fallthrough",
+      "file": "python/sglang/srt/layers/activation.py",
+      "line": 171,
+      "cls": "QuickGELU",
+      "sibling_fused": {
+        "hip": [
+          "gelu_quick"
+        ],
+        "npu": [
+          "npu_fast_gelu"
+        ]
+      },
+      "primitive_available_on_cuda": [],
+      "verdict": "probably not actionable (no CUDA-side primitive)"
+    },
+    {
+      "kind": "cuda_fallthrough",
+      "file": "python/sglang/srt/layers/layernorm.py",
+      "line": 527,
+      "cls": "Gemma3RMSNorm",
+      "sibling_fused": {
+        "cpu": [
+          "gemma3_rmsnorm_cpu"
+        ],
+        "npu": [
+          "npu_gemma_rms_norm"
+        ]
+      },
+      "primitive_available_on_cuda": [
+        "gemma_fused_add_rmsnorm",
+        "gemma_rmsnorm"
+      ],
+      "verdict": "LIKELY REAL"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/afmoe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/apertus.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/bailing_moe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/commandr.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/deepseek_janus_pro.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/exaone4.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/exaone_moe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/falcon_h1.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/gemma3_causal.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/gemma3n_causal.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/glm4_moe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/glm4v.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/lfm2.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/lfm2_moe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/llada2.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/minimax_m2.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/olmo2.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/olmoe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/persimmon.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/qwen3.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/qwen3_5.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/qwen3_next.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/sdar.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/sdar_moe.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    },
+    {
+      "kind": "model_missing_primitive",
+      "file": "python/sglang/srt/models/step3p5.py",
+      "primitive": "fused_qk_norm_rope",
+      "verdict": "CANDIDATE - confirm with an operator audit"
+    }
+  ]
+}

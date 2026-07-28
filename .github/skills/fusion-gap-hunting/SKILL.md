@@ -1,0 +1,254 @@
+---
+name: fusion-gap-hunting
+description: Find kernels a model runs unfused that the framework already ships a fused implementation for, by combining a cheap static scan with an operator-level profile audit.
+version: 1
+stage: [1, 2]
+inputs:
+  - framework_src: path to the serving framework checkout (e.g. /home/.../sglang)
+  - model: model key runnable by the bench harness
+  - gpu: a single free GPU id
+outputs:
+  - fusion_gap_candidates.json    # static scan, cheap, high recall / low precision
+  - audit.json                    # measured per-kernel gap counts and time share
+  - verdict: confirmed | refuted, with the numbers that decided it
+triggers:
+  - "a model family is newly supported, or is not the framework's primary user base"
+  - "before deciding to hand-write a kernel for a model — run this first, it is cheaper"
+  - "an operator audit shows a large 'elementwise'/'other'/'norm' bucket"
+depends_on: [pytorch-profiling, e2e-bench-runner, noise-aware-scoring]
+---
+
+# fusion-gap-hunting
+
+## WHEN
+
+Run this **before** any attempt to write a new kernel for a model. It is the
+cheapest high-yield check available, and in the 2026-07 study it found a **2.13×**
+end-to-end win in a model file that had been in the framework for months.
+
+Concretely, trigger on:
+
+- a model whose family is **not** the framework's primary user base (see WHY —
+  this, not architecture novelty, is the predictor);
+- an operator-level profile where `elementwise`, `other` or `norm` buckets are
+  more than a few percent of kernel time;
+- any newly added architecture, *before* concluding "the hot path is already
+  optimised" — that conclusion is per-model, never framework-wide.
+
+## WHY
+
+The framework accumulates fused CUDA kernels over time. Each new model file has
+to *opt in* to them. Nothing enforces that it does, and nothing fails when it
+doesn't — the model is still **correct**, just slower. So the gap is invisible
+to tests and only shows up in a profile.
+
+**Measured evidence (2026-07-27/28, sglang, 1× H200).** Three independent hits
+of the same pattern, none of which required writing a kernel:
+
+| model | primitive that already existed | who used it | who didn't | e2e |
+|---|---|---|---|---|
+| LFM2.5 | `fused_add_rmsnorm` | llama, qwen2, nearly all | `Lfm2MoeDecoderLayer` | +2.35 % |
+| LFM2.5 | `fused_qk_norm_rope` | Qwen3-MoE | `Lfm2MoeAttention` | +5.42 % |
+| **Gemma-3** | `gemma_rmsnorm` | **`GemmaRMSNorm`, same file, ~100 lines above** | `Gemma3RMSNorm.forward_cuda` | **+112.8 %** |
+
+**The single most important calibration:** in the same study, hand-writing two
+Triton kernels (with tile sweeps, correctness gates and shape guards) consumed
+most of the effort and returned **~6 %**. Finding one un-called primitive and
+changing ~10 lines returned **2.13×**.
+
+> **Leverage is in finding the right place, not in writing something clever.**
+> Always run this skill before proposing to write a kernel.
+
+**What predicts a gap — refuted and corrected.** The initial hypothesis was
+"newer architecture → more gaps". A six-model audit **refuted** it:
+
+| model | family | size | gap % of decode kernel time |
+|---|---|---:|---:|
+| Gemma-3-1B | Google | 1 B | **46.32 %** |
+| LFM2.5-8B | Liquid | 8 B | **11.31 %** |
+| Qwen3-Coder-Next | Qwen | ~80 B | 0.64 % |
+| Qwen3-0.6B | Qwen | 0.6 B | 0.57 % |
+| Qwen3-30B | Qwen | 30 B | 0.23 % |
+| Qwen3-32B | Qwen | 32 B | 0.05 % |
+
+The *newest* architecture tested is 72× cleaner than a *mature* one. Four Qwen
+models spanning dense / MoE / linear-attention and 0.6 B–80 B are all under 1 %;
+both non-Qwen models are over 11 %. Architecture type, architecture age and
+model size are each ruled out by this table (note Qwen3-0.6B is **smaller** than
+Gemma-3-1B and 81× cleaner).
+
+> **Predictor: how much optimisation attention that specific model file has
+> received — which tracks the family's prominence in the framework's user base.**
+> Actionable form: **audit models from families that are not the framework's
+> primary users.**
+
+## HOW
+
+Two techniques. Use **both** — they have opposite error profiles and the
+combination is what works.
+
+### Step 1 — static scan (seconds, no GPU, high recall / low precision)
+
+Two greps. Neither needs the model to run.
+
+**1a. Backends that fall through to the reference implementation.**
+
+```bash
+grep -rn "def forward_cuda" -A 2 "$SRC"/python/sglang/srt/layers/*.py \
+  | grep -B1 "return self.forward_native" | grep "def forward_cuda"
+```
+
+A hit means: this op has a dispatch mechanism, other backends have real
+implementations, and CUDA is falling back to eager PyTorch. **Then check whether
+the sibling backends (`forward_cpu`, `forward_hip`, `forward_npu`) call a fused
+kernel.** If they do and CUDA does not, that is the Gemma-3 shape exactly.
+
+**1b. Models that never name a primitive their peers use.**
+
+```bash
+# example: who has q_norm + rotary but never calls the fused version?
+for f in "$SRC"/python/sglang/srt/models/*.py; do
+  grep -q "q_norm\|q_layernorm" "$f" && grep -q "rotary_emb" "$f" \
+    && ! grep -q "fused_qk_norm_rope" "$f" && echo "$f"
+done
+```
+
+### Step 2 — operator audit (one profiled run, ~10 min, this is the ground truth)
+
+```bash
+python scripts/lfm_fusion/lf_audit.py --model <key> --regime A_low_batch_decode --gpu <id>
+```
+
+Runs `bench_one_batch --profile` with **CUDA graphs disabled** (so every
+operator appears as its own kernel), buckets kernel time by name, and counts
+*fusion-gap signatures*. Report **per layer**, not absolute — the counts are
+structural, so a deeper model naturally issues more.
+
+The decisive signature for eager norms is the reduction kernel:
+`reduce_kernel<...MeanOps...>` alongside `rsqrt_kernel` and `pow_tensor_scalar`
+at equal call counts is an RMSNorm decomposed into primitives.
+
+### Step 3 — confirm the mechanism, then fix
+
+Fix by calling the primitive the sibling/peer already calls. Then **re-run the
+audit with the fix applied** (Step 5).
+
+## OUTPUT CONTRACT
+
+`audit.json`:
+
+```jsonc
+{
+  "model": "gemma3", "regime": "A_low_batch_decode",
+  "arch": "dense + sliding-window attention",
+  "layers": 26, "tp": 1,
+  "stages": {
+    "decode": {
+      "total_kernel_us": 3814.1,
+      "buckets":      [{"bucket": "norm", "pct": 15.98, "calls": 157}],
+      "fusion_gaps":  [{"gap": "eager_norm_decomp",
+                        "calls": 157, "calls_per_layer": 6.04,
+                        "pct_of_kernel_time": 15.98,
+                        "removable_by_fusion": true}],
+      "top_kernels":  [{"kernel": "...", "total_us": 741.8, "calls": 317,
+                        "bucket": "layout_copy", "gap": "layout_copy"}]
+    }
+  }
+}
+```
+
+`calls_per_layer` is the comparable number across models. `pct_of_kernel_time`
+is **kernel time**, never end-to-end — keep them separate in every report.
+
+## FAILURE MODES
+
+**Static scan has false positives — always confirm by measurement.**
+
+- *"Doesn't name the primitive" ≠ "runs eager."* Qwen3-0.6B does not mention
+  `fused_qk_norm_rope`, but the audit showed it already calls
+  `fused_qknorm_warp` via a helper. The grep was wrong; the profile was right.
+- *"Primitive exists in the repo" ≠ "exists on this platform."* `QuickGELU`
+  looks identical to the Gemma-3 case — `forward_cuda` returns
+  `forward_native` while `forward_hip` calls `gelu_quick`. But `gelu_quick` is
+  imported only under `elif _is_hip` and is **not in the CUDA build** of
+  `sgl_kernel`. Check the import guard and the actual module contents.
+- `NewGELU` carries an explicit `# TODO: Implement the CUDA kernel` — a known
+  absence, not an un-called primitive.
+
+Precision of scan 1a in the 2026-07 run: **1 real hit out of 3 candidates.**
+That is fine — candidates are cheap, the audit is the arbiter.
+
+**Traps when implementing the fix** (each cost real debugging time):
+
+1. **dtype mismatch fails silently.** `nn.Parameter(torch.zeros(dim))` is fp32
+   while activations are bf16. Fused kernels typically require matching dtypes
+   and **return NaNs rather than raising**. Cache the cast per module, keyed on
+   dtype so a re-cast module is not served a stale buffer.
+2. **Rank > 2 inputs.** `q_norm`/`k_norm` receive `[tokens, heads, head_dim]`.
+   A rank-2 guard silently leaves those on the slow path — 2 of 6 norms per
+   layer, the difference between 1.56× and 2.13×. Flattening is exact when the
+   op reduces over the last dimension only.
+3. **Dispatch bound at construction.** `MultiPlatformOp.__init__` assigns
+   `self._forward_method = self.dispatch_forward()`. Replacing the class method
+   afterwards does nothing for already-constructed modules — patch the
+   constructor too. (Only affects monkeypatch-style A/B; a source patch is fine.)
+4. **Lazy model imports.** Model modules load long after `sitecustomize`. Use a
+   `sys.meta_path` finder that patches when the target module finishes
+   executing; a timer is a race.
+
+## VERIFICATION DISCIPLINE
+
+Non-negotiable, in this order. Skipping any of these has produced a wrong
+conclusion in this project before.
+
+1. **Correctness before performance.** Never time a variant that failed its
+   gate.
+2. **Choose a gate the model can actually satisfy.** Token identity is
+   *structurally unavailable* for top-k routed MoE models: expert selection is a
+   discrete argmax, so a bf16-level perturbation flips which expert fires and
+   the output changes discontinuously. Use a task metric instead.
+3. **Calibrate the noise floor with a bit-exact arm.** Include a change that
+   *provably* cannot alter the result (e.g. skipping a multiply by 1.0). In this
+   study that arm moved GSM8K by **0.8 points** — that is the harness noise,
+   measured rather than assumed. Any claim smaller than it is not a claim.
+4. **Verify the patch actually applied.** Print a marker and assert on it, or a
+   silently no-op patch scores as "identical to baseline" and you will believe
+   it.
+5. **Re-run the audit with the fix applied.** This is the mechanical closure —
+   the gap signature should go to zero. It is also what catches an *incomplete*
+   fix: 52 residual eager calls (exactly 2.00/layer) exposed the rank-2 bug.
+6. **Multiple repetitions + exact Welch t.** A normal approximation is
+   anti-conservative at n≈6 and will overstate significance on the marginal
+   arms. Use `scipy.stats.t.sf`.
+7. **Measure combinations as combinations.** Optimisations that remove the same
+   *kind* of cost do not add up: measured realisation of the sum of parts was
+   **0.90 / 0.70 / 0.49** across three regimes, and that ordering tracks how
+   saturated the regime is. Reporting a sum overstates the stack, worst exactly
+   where the system is most loaded.
+
+## PR READINESS
+
+If the fix is going upstream, add:
+
+- apply it as a **real source patch**, not a monkeypatch, and A/B *that*
+  (`lf_e2e.py` supports an `@src:<tree>` arm via PYTHONPATH). The source patch
+  measured *better* than the monkeypatch — 1.996× vs 1.754× on one regime;
+- run the framework's own tests **patched and unpatched** and compare. Identical
+  results, including identical pre-existing failures, is the evidence of no
+  regression;
+- if the op had no test, add one — and **mutation-test it** by reintroducing
+  each trap to confirm it fails. An added test that cannot fail proves nothing;
+- check whether upstream `main` already fixed it, and whether the fall-through
+  might be a deliberate accuracy choice. For Gemma-3 both were checked: still
+  broken on `main`, and the two classes' reference implementations are
+  byte-identical, so it is not an accuracy trade-off.
+
+## ROADMAP
+
+- Automate scan 1a/1b into `impl/scan_fusion_gaps.py` emitting
+  `fusion_gap_candidates.json`, including the per-platform import-guard check
+  that would have rejected `QuickGELU` automatically.
+- Extend the audit's `GAP_SIGNATURES` beyond norms (activation decompositions,
+  attention epilogues).
+- Sample more non-primary-family models. The family conclusion currently rests
+  on **only two** non-Qwen families, which is its weakest link.
