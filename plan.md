@@ -1,4 +1,19 @@
-# Plan / 项目状态（2026-07-27 更新）
+# Plan / 项目状态（2026-07-28 更新）
+
+## 2026-07-28：Gemma-3 修复的 PR 级验证 + 方法论沉淀成 skill ✅
+- **PR 级验证**（真实源码补丁经 PYTHONPATH 加载，非 monkeypatch，8 次重复）：
+  低批 decode **2.128×**(p=3.5e-22) · 并发 decode **1.996×**(p=4.2e-18) · 长 prefill **1.521×**(p=4.5e-15)。
+  比 monkeypatch 版本还好（源码补丁在构造时正确绑定 dispatch，不走 wrapper）。
+- **零回归证明**：打补丁前后各跑一遍上游 `test_layernorm.py`，结果**完全相同**（201 failed/3 passed/423 subtests passed；失败是环境预存、在另一个类）。
+- **补上缺失的测试**：`Gemma3RMSNorm` 原本**没有任何单元测试**（这是它没被发现的原因之一）。新增 `TestGemma3RMSNorm` 并**变异测试验证其有效性**：去掉 dtype 转换 → 64 个 subtest 失败；去掉 3-D 还原 → 24 个失败。
+- **数值验证**：120 组合（shape×dtype×量级×weight dtype）零失败，最差相对偏差 9.3e-3。
+- **产物**：`docs/PR_DRAFT_gemma3_rmsnorm.md`（PR 草稿，**未提交，等用户确认**）· `results/lfm_fusion/pr_gemma3/`（补丁+全部证据）· PR 分支在 `/tmp/sglang_pr_main`
+- **★ skill 沉淀**：`.github/skills/fusion-gap-hunting/` —— 含可执行扫描器 `impl/scan_fusion_gaps.py`。
+  它**自动复现了这个发现**：28 个候选精确挑出 1 个 `LIKELY REAL`，正确否决 QuickGELU（HIP/NPU 有但 CUDA 无）和 NewGELU（上游 TODO）。秒级、无需 GPU。
+  第一版扫描器**漏掉了自己的样本**（只认直接 import 的标识符，而 sibling 写作 `torch.ops.sgl_kernel.*`）——已修，"扫描器必须能找到它自己的动机样本"是硬性验收。
+- **三案例文档**：`docs/three_fusion_cases.md`（逐案的 before/after 代码、为什么被漏、等价性论证、收益）
+- **下一步已定位**：修完 norm 后 gemma3 还剩每层 2 次独立 residual add（3.00% decode），同型于案例 1，`gemma_fused_add_rmsnorm` 已存在。未并入 PR 以保持聚焦。
+
 
 ## 2026-07-27 深夜：跨架构审计 —— Gemma-3 的 RMSNorm 跑在 eager PyTorch 上，一行修复 **2.07×** ✅
 **做法**：把算子级审计扩展到 4 个架构（Qwen3-0.6B dense / Qwen3-30B MoE / Gemma-3-1B dense+滑窗 / LFM2.5 MoE+shortconv），新增**按层归一化**让不同深度的模型可比。
