@@ -1,7 +1,7 @@
 # Regime-aware Kernel Specialization — results
 
-**Date:** 2026-07-26 · Status and plan: `docs/regime_kernel_status.md`,
-`docs/regime_kernel_experiment_plan.md`
+**Date:** 2026-07-26 · Status and plan: `docs/2026-07-26/regime_kernel_status.md`,
+`docs/2026-07-26/regime_kernel_experiment_plan.md`
 
 Fixed frame: 1× H200, TP1, BF16, sglang 0.5.12.post1 @ `17f7a1da1`, torch
 2.9.1+cu128, Triton 3.5.1, driver 580.105.08. Hot kernel: fused-MoE Triton.
@@ -48,7 +48,7 @@ transferable findings:
 varies the *configuration* of one kernel — the fused-MoE Triton kernel's tile
 shape (`BLOCK_SIZE_M/N/K`, `GROUP_SIZE_M`, `num_warps`, `num_stages`). **No
 kernel source was written or modified.** That was a deliberate scoping decision
-for a 1–2 week budget, recorded in `docs/regime_kernel_status.md`.
+for a 1–2 week budget, recorded in `docs/2026-07-26/regime_kernel_status.md`.
 
 **What the baseline is.** For LFM2.5 the baseline is SGLang's *heuristic
 default*, because no tuned config file exists for this shape on this GPU. That

@@ -499,7 +499,7 @@ condition:
 > five-architecture audit refuted that: the newest architecture tested
 > (Qwen3-Next) is nearly clean at 0.64 %, while the mature Gemma-3 is the
 > worst at 46.32 %. The real split is **model family** — see
-> `docs/cross_architecture_audit.md`. The mechanism below still holds; only
+> `docs/2026-07-28/cross_architecture_audit.md`. The mechanism below still holds; only
 > the predictor was wrong.
 >
 > The coverage gap is a function of **how much optimisation attention that

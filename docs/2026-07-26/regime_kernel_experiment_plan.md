@@ -4,8 +4,8 @@
 refactor. Default code paths stay unchanged; specialization is opt-in through
 `SGLANG_MOE_CONFIG_DIR` (E2E) or `override_config()` (microbenchmark).
 
-Status and feasibility audit: `docs/regime_kernel_status.md`.
-Running log and results: `docs/regime_kernel_results.md`.
+Status and feasibility audit: `docs/2026-07-26/regime_kernel_status.md`.
+Running log and results: `docs/2026-07-27/regime_kernel_results.md`.
 
 ---
 
@@ -130,7 +130,7 @@ serving tuning + kernel specialization — to show whether the two levels are
 complementary.
 
 **Cost gate:** E2E is estimated at 4–6 GPU-hours, above the 2 GPU-hour
-threshold, so its exact scope is re-reported in `docs/regime_kernel_results.md`
+threshold, so its exact scope is re-reported in `docs/2026-07-27/regime_kernel_results.md`
 before launch.
 
 ## 9. Minimal agent closed loop (P1)
@@ -156,7 +156,7 @@ configs/regime_kernel/     generated kernel profiles (JSON, SGLANG_MOE_CONFIG_DI
 results/regime_kernel/raw/        per-run raw timings, traces, correctness logs
 results/regime_kernel/processed/  tidy tables consumed by plotting
 analysis/regime_kernel/    strategy comparison, transfer matrices
-docs/regime_kernel_results.md     running log: commands, files, results, blockers, next
+docs/2026-07-27/regime_kernel_results.md     running log: commands, files, results, blockers, next
 ```
 
 Every entry point supports `--dry-run`, prints the exact command it will run,

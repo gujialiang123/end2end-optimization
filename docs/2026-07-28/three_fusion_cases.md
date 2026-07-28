@@ -4,9 +4,9 @@
 **软件**：sglang 0.5.12.post1 @ `17f7a1da1` · torch 2.9.1+cu128 · Triton 3.5.1
 
 这份文档只讲**三个同型案例**的技术细节。整体研究背景见
-`docs/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md`，跨架构审计见
-`docs/cross_architecture_audit.md`，方法论沉淀见
-`docs/skills/finding-fusion-gaps.md`。
+`docs/2026-07-27/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md`，跨架构审计见
+`docs/2026-07-28/cross_architecture_audit.md`，方法论沉淀见
+`.github/skills/fusion-gap-hunting/SKILL.md`。
 
 ---
 
@@ -323,7 +323,7 @@ A 2.128×/2.123×，B 1.996×/1.961×。）
 | 案例 1、2 的实现 | `scripts/lfm_fusion/lfm_fusion_patch.py`（`norm` / `qkrope` 组件） |
 | 案例 3 的实现（monkeypatch，用于 A/B） | `scripts/lfm_fusion/gemma_fusion_patch.py` |
 | 案例 3 的**正式源码补丁 + 单元测试** | `results/lfm_fusion/pr_gemma3/0001-*.patch` |
-| PR 草稿 | `docs/PR_DRAFT_gemma3_rmsnorm.md` |
+| PR 草稿 | `docs/2026-07-28/PR_DRAFT_gemma3_rmsnorm.md` |
 | 数值验证脚本 | `scripts/lfm_fusion/pr_verify_gemma3.py` |
 | 端到端 A/B | `scripts/lfm_fusion/lf_e2e.py` + `lf_analyze.py` |
 | 算子级审计 | `scripts/lfm_fusion/lf_audit.py` |

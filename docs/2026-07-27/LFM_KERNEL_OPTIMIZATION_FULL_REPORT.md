@@ -12,13 +12,13 @@
 
 > **2026-07-27 续篇**：把审计扩展到第四个架构后，在 **Gemma-3** 上发现了一个远大于
 > 本文所有内容的空缺——它的 RMSNorm 在 CUDA 上跑 **eager PyTorch**，**一行 fall-through**。
-> 修复后端到端 **2.07× / 1.75× / 1.57×**。详见 **`docs/cross_architecture_audit.md`**。
+> 修复后端到端 **2.07× / 1.75× / 1.57×**。详见 **`docs/2026-07-28/cross_architecture_audit.md`**。
 > 那份报告也是对本文 §11.1 建议的直接执行。
 
 ## 0. 三句话总结
 
 1. **拿到了什么**：在 LFM2.5-8B-A1B 上，通过 7 个内核层改动，端到端请求吞吐 **低批 decode +6.57% · 并发 decode +6.21% · 长 prefill +5.30%**（各 6 次重复，精确 Welch t，p = 4.6e-14 / 2.4e-08 / 1.2e-05），GSM8K 无质量回归。**这是本项目第一个同模型、正向、全 regime 显著的内核级端到端结果。**
-2. **为什么以前没有**：项目此前的结论"成熟 bf16 MoE 上内核层不转化为端到端收益"是**在 Qwen 一个模型上**得出的。该结论对 Qwen 成立，但**覆盖空缺是模型文件受到多少优化关注的函数**——某些模型在算子**周围的调用点胶水**上带着几个百分点。（本文原先写的是"架构成熟度"，已被跨架构审计推翻，见 `docs/cross_architecture_audit.md`。）
+2. **为什么以前没有**：项目此前的结论"成熟 bf16 MoE 上内核层不转化为端到端收益"是**在 Qwen 一个模型上**得出的。该结论对 Qwen 成立，但**覆盖空缺是模型文件受到多少优化关注的函数**——某些模型在算子**周围的调用点胶水**上带着几个百分点。（本文原先写的是"架构成熟度"，已被跨架构审计推翻，见 `docs/2026-07-28/cross_architecture_audit.md`。）
 3. **最可迁移的产出**（比那 6% 更重要）：**消除同一"种类"成本的优化不会相加**，兑现率随 regime 饱和度单调下降（0.90 / 0.70 / 0.49）；以及 **regime→backend 规则跨模型不可迁移**（用错最差 −34%）。
 
 ---
@@ -495,9 +495,9 @@ GSM8K 全量 1319 题，贪心解码：
 ### 文档
 | 文件 | 内容 |
 |---|---|
-| **`docs/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md`** | 本文（总结） |
-| `docs/lfm_fusion_results.md` | fusion 线主报告（577 行，含全部方法学细节） |
-| `docs/regime_kernel_results.md` §11c | K1 跨模型 backend |
+| **`docs/2026-07-27/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md`** | 本文（总结） |
+| `docs/2026-07-27/lfm_fusion_results.md` | fusion 线主报告（577 行，含全部方法学细节） |
+| `docs/2026-07-27/regime_kernel_results.md` §11c | K1 跨模型 backend |
 | `results/lfm_fusion/nsys/FINDINGS.md` | nsys agent 完整证据 |
 | `results/lfm_fusion/fx/FINDINGS.md` | FX/Inductor agent 完整证据（637 行） |
 | `results/lfm_fusion/moesum/FINDINGS.md` | moesum agent 完整证据 |
@@ -548,7 +548,7 @@ python -m sglang.launch_server --model-path /data/hf/LFM2.5-8B-A1B ...
 
 ## 11. 建议的下一步
 
-1. ~~**把审计跑到其他新架构上**~~ ✅ **已完成**，见 `docs/cross_architecture_audit.md`。
+1. ~~**把审计跑到其他新架构上**~~ ✅ **已完成**，见 `docs/2026-07-28/cross_architecture_audit.md`。
    在 Qwen3-0.6B / Gemma-3-1B 上扩展后，假设成立但需修正措辞：新架构确实有空缺，
    但**空缺形态不可预测**。并且在 Gemma-3 上拿到 **2.07×** —— 比本文全部工作大一个数量级。
    **剩余最大缺口：`Qwen3-Coder-Next`（GDN 线性注意力，需 TP2）没测。**

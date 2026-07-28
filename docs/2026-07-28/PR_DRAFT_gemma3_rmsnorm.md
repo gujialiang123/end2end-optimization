@@ -3,9 +3,10 @@
 **目标仓库**：`sgl-project/sglang` · **分支**：`fix/gemma3-rmsnorm-cuda-fused`
 **本地分支位置**：`/tmp/sglang_pr_main`（基于 `origin/main` @ `a82ead53b`）
 **补丁文件**：`results/lfm_fusion/pr_gemma3/0001-fix-gemma3-rmsnorm-cuda.patch`
-**状态**：**草稿，未提交。** 需要用户确认后才发。
+**状态**：✅ **已以 draft 形式开出** → **https://github.com/sgl-project/sglang/pull/32670**
 
-> ⚠️ 提 PR 是公开行为且会署名，我不会未经许可提交。这份文档是给你审的。
+> draft 状态意味着它**不会**进入维护者的 review 队列，也不能被合并，直到有人点 "Ready for review"。
+> 由你决定何时转正式。
 
 ---
 
@@ -127,16 +128,17 @@ ships for gemma/gemma2.
 
 ---
 
-## 发之前还需要做的
+## 已完成
 
-1. **你确认要发**（会署你的名）
-2. 把分支 push 到 `gujialiang123/sglang` 的 fork，再开 PR
-3. 建议在 PR 里主动 @ 维护者说明"main 的 CI 我没能在本地跑通，请帮忙跑一遍"
-4. 可选：先开 issue 描述现象，让维护者确认是不是他们已知的取舍
+1. ✅ 分支 push 到 `gujialiang123/sglang:fix/gemma3-rmsnorm-cuda-fused`
+2. ✅ **draft PR 已开**：https://github.com/sgl-project/sglang/pull/32670
+   （2 files changed, +107 −2）
+3. ✅ PR 正文已主动写明两条局限：只在 1B 上测过（更大的 checkpoint 是 gated，
+   已请求有权限的人补一个数据点）、以及 main 的 CI 本地跑不了（需要更新的
+   `transformers`），请维护者复跑
 
-**命令**（确认后我可以执行）：
-```bash
-cd /tmp/sglang_pr_main
-git push fork fix/gemma3-rmsnorm-cuda-fused
-# 然后到 GitHub 上从 gujialiang123/sglang 向 sgl-project/sglang 开 PR
-```
+## 你要做的
+
+- 审 PR 正文，觉得没问题就点 **"Ready for review"** 转成正式 PR
+- 如果想更保守，也可以先在 PR 里 comment 询问维护者这个 fall-through 是否有
+  已知背景，再转正式
