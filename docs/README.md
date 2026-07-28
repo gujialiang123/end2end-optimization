@@ -22,7 +22,7 @@ Read top-down; each entry says what it is and whether it is still current.
 
 | doc | what it is |
 |---|---|
-| [`2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md`](2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md) | 第二个上游候选：LFM2.5 的 H200 MoE tuned config。#22791 已为同一 shape 提交了 H100/B200/MI325X，唯独漏了 H200。长 prefill **+23.3%**（8/8 不重叠），decode 经顺序对照后中性。 |
+| [`2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md`](2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md) | 第二个上游候选 → [sgl-project/sglang#32687](https://github.com/sgl-project/sglang/pull/32687) (draft)。LFM2.5 的 H200 MoE tuned config。#22791 已为同一 shape 提交了 H100/B200/MI325X，唯独漏了 H200。长 prefill **+23.3%**（8/8 不重叠），decode 经顺序对照后中性。 |
 | [`2026-07-28/four_kernel_cases_comparison.md`](2026-07-28/four_kernel_cases_comparison.md) | **对照报告：四种干预方式的收益对比。** 调 config（LFM，+22.3%）vs 重写 kernel（Qwen b=1，+1.17% 且 b≥2 回归）vs 补融合（LFM 七组件，+6.6%）vs 接线（Gemma-3，+36.6%）。收益与"写了多少 kernel 代码"成反比，并给出机制解释。 |
 | [`2026-07-28/cross_architecture_audit.md`](2026-07-28/cross_architecture_audit.md) | 11 models / 8 families / 0.6 B–80 B. **Refutes** the "architecture maturity" hypothesis. §7.1 further corrects "family" as the predictor (IBM granite at 0.30% is the counter-example); §7.2 documents a systematic over-estimate in the audit itself when a gap sits behind a CUDA-graph capture guard. |
 | [`2026-07-28/three_fusion_cases.md`](2026-07-28/three_fusion_cases.md) | Every case in technical detail — the three that paid off, the four that did **not**, and a precision analysis answering whether any of it is lossy. **Start here for the engineering.** |

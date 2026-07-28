@@ -1,6 +1,7 @@
 # PR 草稿 — LFM2.5 的 H200 MoE tuned config（补 #22791 漏掉的那块）
 
-**目标仓库**：`sgl-project/sglang` · **状态**：候选，尚未开 PR
+**目标仓库**：`sgl-project/sglang` · **状态**：✅ **已开 draft** → **https://github.com/sgl-project/sglang/pull/32687**
+**分支**：`gujialiang123:tune/lfm2-moe-h200-config`（1 文件 +140/-0）
 **要提交的文件**：`python/sglang/srt/layers/moe/moe_runner/triton_utils/configs/triton_3_5_1/E=32,N=1792,device_name=NVIDIA_H200.json`
 **本地副本**：`configs/regime_kernel/pr_candidate/`
 **原始数据**：`results/regime_kernel/processed/pr_candidate_e2e.csv`、`pr_candidate_buckets.csv`、`raw/pr_fill/`
@@ -108,5 +109,6 @@ LFM2.5-8B-A1B · 1×H200 · BF16 · sglang 0.5.12.post1 · Triton 3.5.1
 - [x] 补扫 5 个缺失桶
 - [x] 端到端 A/B（长 prefill +23.34%，8/8 不重叠）
 - [x] decode 顺序对照，排除位置效应
-- [ ] 在 Triton 3.6 上重扫（可选，但会让 PR 更强）
+- [ ] 在 Triton 3.6 上重扫（可选，但会让 PR 更强）—— sweep 本身约 **2 小时** GPU（19 桶 × 6.3 分钟均值），
+      真正的成本是先搭一个 torch 2.11 的环境
 - [ ] 用上游官方 `benchmark/kernels/fused_moe_triton/tuning_fused_moe_triton.py` 复现一遍，便于 reviewer 自证
