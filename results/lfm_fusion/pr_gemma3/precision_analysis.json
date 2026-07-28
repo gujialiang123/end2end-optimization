@@ -1,0 +1,100 @@
+{
+  "rows": [
+    {
+      "tokens": 1,
+      "hidden": 1152,
+      "dtype": "bfloat16",
+      "eager_rel_err": 0.003751186479452655,
+      "fused_rel_err": 0.003751186479452655,
+      "best_possible_rel_err": 0.003751186479452655,
+      "max_abs_diff": 0.0078125,
+      "diff_in_ulp": 0.2545679860862558,
+      "identical_frac": 0.983506977558136
+    },
+    {
+      "tokens": 1,
+      "hidden": 1152,
+      "dtype": "float16",
+      "eager_rel_err": 0.00045857308055733233,
+      "fused_rel_err": 0.0005494083492048305,
+      "best_possible_rel_err": 0.00045857308055733233,
+      "max_abs_diff": 0.001953125,
+      "diff_in_ulp": 0.508543527528966,
+      "identical_frac": 0.983506977558136
+    },
+    {
+      "tokens": 64,
+      "hidden": 1152,
+      "dtype": "bfloat16",
+      "eager_rel_err": 0.0038888624718793237,
+      "fused_rel_err": 0.004656080992662729,
+      "best_possible_rel_err": 0.0038888624718793237,
+      "max_abs_diff": 0.015625,
+      "diff_in_ulp": 0.4631059286770004,
+      "identical_frac": 0.9788275957107544
+    },
+    {
+      "tokens": 64,
+      "hidden": 1152,
+      "dtype": "float16",
+      "eager_rel_err": 0.0004849284089548753,
+      "fused_rel_err": 0.0005805159657760821,
+      "best_possible_rel_err": 0.0004849284089548753,
+      "max_abs_diff": 0.001953125,
+      "diff_in_ulp": 0.4635093108451692,
+      "identical_frac": 0.9797499179840088
+    },
+    {
+      "tokens": 4096,
+      "hidden": 1152,
+      "dtype": "bfloat16",
+      "eager_rel_err": 0.0038909941583355604,
+      "fused_rel_err": 0.005127220464871261,
+      "best_possible_rel_err": 0.003891106571574018,
+      "max_abs_diff": 0.03125,
+      "diff_in_ulp": 0.7320243472267679,
+      "identical_frac": 0.9783740639686584
+    },
+    {
+      "tokens": 4096,
+      "hidden": 1152,
+      "dtype": "float16",
+      "eager_rel_err": 0.04124289597957732,
+      "fused_rel_err": 0.04124289597957732,
+      "best_possible_rel_err": 0.04124289597957732,
+      "max_abs_diff": 0.00390625,
+      "diff_in_ulp": 0.7348727745767337,
+      "identical_frac": 0.9804185032844543
+    },
+    {
+      "tokens": 64,
+      "hidden": 256,
+      "dtype": "bfloat16",
+      "eager_rel_err": 0.003883686347040502,
+      "fused_rel_err": 0.004325099118266667,
+      "best_possible_rel_err": 0.003883686347040502,
+      "max_abs_diff": 0.015625,
+      "diff_in_ulp": 0.49515547314887054,
+      "identical_frac": 0.98028564453125
+    },
+    {
+      "tokens": 64,
+      "hidden": 256,
+      "dtype": "float16",
+      "eager_rel_err": 0.0004843195047834153,
+      "fused_rel_err": 0.0005127311216320332,
+      "best_possible_rel_err": 0.0004843195047834153,
+      "max_abs_diff": 0.001953125,
+      "diff_in_ulp": 0.4954409853055494,
+      "identical_frac": 0.98284912109375
+    }
+  ],
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

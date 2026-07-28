@@ -1,9 +1,10 @@
-# 三个 kernel fusion 案例 —— 具体改了什么、为什么被漏掉、拿到多少
+# Kernel fusion 案例全集 —— 改了什么、为什么被漏掉、拿到多少（含未兑现的）
 
 **日期**：2026-07-27 ~ 28 · **硬件**：1× NVIDIA H200 · BF16
 **软件**：sglang 0.5.12.post1 @ `17f7a1da1` · torch 2.9.1+cu128 · Triton 3.5.1
 
-这份文档只讲**三个同型案例**的技术细节。整体研究背景见
+这份文档讲**全部案例**的技术细节：三个兑现的（§1–3）、四个未兑现或被否决的（§没有收益的案例）、
+以及**精度分析**（这些改动是否"有损"）。整体研究背景见
 `docs/2026-07-27/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md`，跨架构审计见
 `docs/2026-07-28/cross_architecture_audit.md`，方法论沉淀见
 `.github/skills/fusion-gap-hunting/SKILL.md`。
@@ -255,6 +256,156 @@ GSM8K 1319 题 × 3：0.2260 → 0.2213（二项误差 ±2.2 点内）。
 
 ---
 
+---
+
+## 精度分析：这些改动"有损"吗？
+
+一个必须回答清楚的问题。结论先行：
+
+> **三个案例里两个是 bit-exact；`norm` 类的两个不是 bit-exact，但也不是"有损优化"
+> —— 它们是同一精度等级内的浮点计算顺序差异，两条路径都紧贴 bf16 这个存储格式
+> 本身的表示极限。**
+
+### 先说清楚 ulp 是什么
+
+**ulp = Unit in the Last Place**，某个数值附近浮点格式**相邻两个可表示数之间的间距**。
+bf16 只有 8 位尾数，所以它能表示的数很稀疏，在 1.0 附近：
+
+```
+... 0.99609375,   1.0,   1.0078125,   1.015625 ...
+                   └───┬───┘
+              间距 = 2⁻⁷ = 0.0078125  ← 这就是 1 ulp
+```
+
+**1 ulp 是 bf16 能表达的最小差别。** 两个数差 1 ulp，意味着它们在 bf16 里是相邻的
+两个合法值，中间不存在别的数。所以"差 0.5 ulp"= **差距小于该数据类型能分辨的粒度**。
+
+### 方法：用 fp64 当真值，看谁更接近
+
+关键不是"两条路径差多少"（这个数字本身没有信息量），而是**"谁更接近正确答案"**。
+所以用 fp64 算同一个归一化作为真值，并额外计算**"bf16 理论下界"**——把 fp64 真值
+一次性舍入到 bf16 所能达到的最好结果。
+
+脚本：`scripts/lfm_fusion/lf_precision_analysis.py` ·
+数据：`results/lfm_fusion/pr_gemma3/precision_analysis.json`
+
+### 结果（Gemma-3 案例，对 fp64 真值的最大相对误差）
+
+| shape | dtype | eager（现状） | fused（PR） | **bf16 理论下界** | 两者相差 | 逐位相同 |
+|---|---|---:|---:|---:|---:|---:|
+| 1×1152 | bf16 | 3.751e-03 | 3.751e-03 | **3.751e-03** | 0.25 ulp | 98.4% |
+| 64×1152 | bf16 | 3.889e-03 | 4.656e-03 | **3.889e-03** | 0.46 ulp | 97.9% |
+| 4096×1152 | bf16 | 3.891e-03 | 5.127e-03 | **3.891e-03** | 0.73 ulp | 97.8% |
+| 64×256 | bf16 | 3.884e-03 | 4.325e-03 | **3.884e-03** | 0.50 ulp | 98.0% |
+| 64×1152 | fp16 | 4.849e-04 | 5.805e-04 | **4.849e-04** | 0.46 ulp | 98.0% |
+
+**关键读法：`eager` 那一列恒等于 `bf16 理论下界`。** 现状路径已经达到了 bf16 能表达的
+极限，**不可能更准**。fused 只多出不到 1 个 ulp，也就是最低有效位上的差别。
+**97.8–98.4% 的元素逐位完全相同**，其余差最低那一位。
+
+误差**不是"融合 kernel 算得糙"造成的，而是 bf16 只有 8 位尾数**。两条路径撞的是
+同一堵墙，只是撞的位置差半格。
+
+### 量级对照
+
+| | 相对误差 | 性质 |
+|---|---|---|
+| 真正的有损优化（bf16 → fp8 量化） | 1e-2 ~ 1e-1 | **系统性偏移** |
+| **本案例（eager vs fused）** | **~5e-3，且 < 1 ulp** | **随机舍入方向差异** |
+
+差 1~2 个数量级，且性质不同。
+
+### 三个案例的精度状态
+
+| 案例 | bit-exact？ | 说明 |
+|---|---|---|
+| LFM2.5 `scale`（跳过 ×1.0） | ✅ **完全 bit-exact** | 有限 bf16 数乘 1.0 就是它自己 |
+| LFM2.5 ShortConv Triton kernel | ✅ **完全 bit-exact** | 每个测试形状 max diff = 0.0 |
+| LFM2.5 MoEsum Triton kernel | ✅ residual 全程 bit-exact | 归一化输出到 T=4096 精确，T=16000 差 4.9e-4 |
+| LFM2.5 `norm`（fused_add_rmsnorm） | ❌ ~2 ulp | **且融合版更准**（加法保持更高精度） |
+| **Gemma-3 `norm`** | ❌ **0.25–0.73 ulp** | 见上表 |
+
+### 三条支持"可接受"的独立证据
+
+1. **上游自己已经接受了同样的权衡。** `GemmaRMSNorm`（gemma/gemma2 用）**早就在调
+   这个融合 kernel**，且它的 `forward_native` 与 Gemma3 的**逐字相同**（同样 fp32
+   上转、同样 `(1.0 + weight)`、同样最后转回）。这不是新引入的权衡，而是**让 gemma3
+   走上 gemma/gemma2 已经在走的那条路**。
+2. **任务指标无变化。** GSM8K 全量 1319 题 × 3：0.2260 → 0.2213。而 n=1319、
+   p≈0.22 的二项抽样误差是 **±2.2 个百分点**，0.23 点在噪声内。
+3. **120 组数值验证零失败**（10 shape × 2 dtype × 3 量级 × 2 weight dtype），
+   最差相对偏差 9.3e-3，无 NaN/Inf。
+
+### 诚实的保留
+
+有一类场景**没有覆盖**：需要**跨版本 bit-wise 可复现**的用途（例如某些 RL 训练要求
+rollout 与 training 逐位一致）。对这类需求，任何非 bit-exact 的改动都算"有损"——
+但同样的话对上游**已经合入**的 `GemmaRMSNorm` 也成立。
+
+PR 正文里明确写了 *"the change is not bit-identical to the eager path"*，没有回避
+这一点。若维护者认为需要开关控制，那是合理的 review 意见。
+
+---
+
+## 没有收益的案例（同样重要）
+
+只报告成功的案例会给出错误的命中率印象。这一轮里**测过但没兑现**的同类改动如下。
+
+### N1. Gemma-3 的 residual add 融合 —— 端到端 **0**
+
+见下一节详述。审计定价 **3.00% kernel 时间**，实测边际贡献 **−0.09% / +0.44%，
+两个 regime 都不显著**。
+
+### N2. LFM2.5 `gate` + `idx` —— 三个 regime 全不显著
+
+| 组件 | 机制 | 审计定价 | 端到端 |
+|---|---|---:|---|
+| `gate` | decode 的 gate mul 读 `proj` 的 **strided rows**，导致 `TensorIterator` 退化成标量 kernel（只跑到 54% 峰值带宽） | ~1.9% | **不显著** |
+| `idx` | `req_pool_indices.to(int32)` 在 18 个 conv 层里各算一遍，kernel 只搬 **12 字节**，纯 launch 开销 | ~1.3% | **不显著** |
+
+合并测量 `gate+idx`：A `−0.00%` (p=0.97) · B `+0.65%` (p=0.12) · C `+0.40%` (p=0.54)。
+
+**机制是真的、kernel 级可测**，但没能转化到端到端。
+
+### N3. `QuickGELU` —— 静态扫描的假阳性
+
+`QuickGELU.forward_cuda` 返回 `forward_native`，而 `forward_hip` 调 `gelu_quick`、
+NPU 调 `npu_fast_gelu` —— **静态特征上与 Gemma-3 案例完全同型**。
+
+但 `gelu_quick` **只在 `elif _is_hip` 分支导入**，CUDA 版 `sgl_kernel` 里根本没有
+这个符号。这是"**原语不存在**"而非"存在但没调用"，无法修复。
+
+**这个假阳性直接改进了工具**：扫描器现在会检查原语**在当前平台的构建里是否真的存在**，
+而不只是"在仓库某处出现过"。
+
+### N4. `NewGELU` —— 上游明确的已知缺口
+
+同型，但源码里就写着 `# TODO: Implement the CUDA kernel for NewGELU in sgl-kernel`。
+已知的空缺，不是被漏掉的调用点。
+
+### 命中率小结
+
+`scan_fusion_gaps.py` 在 sglang @ `17f7a1da1` 上的实际表现：
+
+| | 数量 |
+|---|---:|
+| `forward_cuda` fall-through 候选 | 3 |
+| 其中**真实可行动** | **1**（Gemma3RMSNorm） |
+| 被正确否决 | 2（QuickGELU 无 CUDA 原语；NewGELU 上游 TODO）|
+| "模型没提到某原语"候选 | 25（低精度，多数经 helper 分发，需审计确认）|
+
+**扫描精度 1/3。** 这没问题——候选很便宜（秒级、无需 GPU），**算子审计才是仲裁者**。
+
+### 三条教训
+
+1. **审计的 `% of kernel time` 是上界，不是预期收益。** N1、N2 都是"机制真实、
+   kernel 级可测、端到端为零"。
+2. **同类空缺在大修复之后转化率骤降**（次可加性）。N1 是最干净的例子：norm 修复
+   已经把主导性固定开销拿走，剩下的同类开销无从转化。
+3. **静态扫描必须按平台验证原语是否真的存在。** N3 在静态特征上与真实发现无法区分。
+
+---
+
 ## 修完之后还剩什么（gemma3 的下一步）
 
 打上 norm 补丁后重新审计 gemma-3-1b（低批 decode，kernel 总时间已从 3.81 → 1.84 ms）：
@@ -320,6 +471,9 @@ A 2.128×/2.123×，B 1.996×/1.961×。）
 
 | 内容 | 位置 |
 |---|---|
+| **精度分析脚本**（fp64 对照） | `scripts/lfm_fusion/lf_precision_analysis.py` |
+| 精度分析数据 | `results/lfm_fusion/pr_gemma3/precision_analysis.json` |
+| 静态扫描器 | `.github/skills/fusion-gap-hunting/impl/scan_fusion_gaps.py` |
 | 案例 1、2 的实现 | `scripts/lfm_fusion/lfm_fusion_patch.py`（`norm` / `qkrope` 组件） |
 | 案例 3 的实现（monkeypatch，用于 A/B） | `scripts/lfm_fusion/gemma_fusion_patch.py` |
 | 案例 3 的**正式源码补丁 + 单元测试** | `results/lfm_fusion/pr_gemma3/0001-*.patch` |
