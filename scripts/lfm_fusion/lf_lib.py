@@ -52,6 +52,13 @@ MODELS = {
         layers=26, arch="dense + sliding-window attention",
         maturity="mature", tp=1,
     ),
+    "qwen32": dict(
+        path="/data/hf/spec_decode/Qwen3-32B",
+        served="qwen3-32b",
+        extra=[],
+        layers=64, arch="dense, llama-style (large)",
+        maturity="mature", tp=1,
+    ),
     "qwen3next": dict(
         path="/data/hf/hub/models--Qwen--Qwen3-Coder-Next/snapshots/"
              "a7fbcb5c0e12d62a448eaa0e260346bf5dcc0feb",

@@ -30,7 +30,10 @@ GSM8K 1319 题×3：0.2233 vs 0.2210（二项误差 ±2.2 点，噪声内）。
 
 **最大缺口**：`Qwen3-Coder-Next`（`qwen3_next`，GDN 线性注意力 + 512 专家，149GB 需 TP2）**没测** —— 它正是 `fused_gdn_gating` 那批"CPU 有 CUDA 没有"算子服务的架构，最可能再中一次。
 
-**产物**：`docs/cross_architecture_audit.md` · `scripts/lfm_fusion/gemma_fusion_patch.py` + `gm_inject/` · `results/lfm_fusion/audit/{gemma3,qwen06}_*`
+**产物**：`docs/cross_architecture_audit.md`（含图）· `scripts/lfm_fusion/gemma_fusion_patch.py` + `gm_inject/` · `lf_plot_crossarch.py` · `results/lfm_fusion/audit/{gemma3,qwen06,qwen32,qwen3next}_*`
+
+> **2026-07-28 补充**：又加了 Qwen3-32B（大 dense）。最终 6 个模型 / 3 个家族 / 0.6B–80B：四个 Qwen 全部 ≤0.64%（0.05 / 0.23 / 0.57 / 0.64），两个非 Qwen 是 11.31% 和 46.32% —— **最差的 Qwen 与最好的非 Qwen 差 18 倍，中间没有任何模型**。并且 **Qwen3-0.6B 比 Gemma-3-1B 更小却干净 81 倍**，一并排除了"模型小所以空缺大"。
+
 
 ## 2026-07-27 晚：LFM2.5 kernel fusion 第二轮 —— 全 regime +4.7~5.5%，且发现"同类优化不叠加"规律 ✅
 **做法**：并行两个调查 agent（nsys 时间线 / torch.compile FX+Inductor），都跑在**已打补丁的路径**上，所以找到的是"还剩什么"。
