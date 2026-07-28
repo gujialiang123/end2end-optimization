@@ -255,6 +255,34 @@ GSM8K 1319 题 × 3：0.2260 → 0.2213（二项误差 ±2.2 点内）。
 
 ---
 
+## 修完之后还剩什么（gemma3 的下一步）
+
+打上 norm 补丁后重新审计 gemma-3-1b（低批 decode，kernel 总时间已从 3.81 → 1.84 ms）：
+
+| 剩余空缺 | 次数 | 每层 | 占比 |
+|---|---:|---:|---:|
+| **独立 residual add** | 52 | **2.00** | **3.00%** |
+| layout copy | 6 | 0.23 | 0.49% |
+
+**这正是案例 1 的同型。** `gemma3_causal.py:295-316` 的结构是：
+
+```python
+hidden_states = self.post_attention_layernorm(hidden_states)
+hidden_states = residual + hidden_states      # ← 独立 add
+residual = hidden_states
+hidden_states = self.pre_feedforward_layernorm(hidden_states)   # ← 紧接着的 norm
+```
+
+`add 然后 norm` 正好是 `gemma_fused_add_rmsnorm` 的语义——而这个原语**已经存在**
+（我的扫描器在 CUDA 符号表里列出了它）。
+
+**为什么没放进这次的 PR**：它改的是模型文件（`gemma3_causal.py`）而非层实现，
+需要重构 layer forward，比 `forward_cuda` 一处 dispatch 侵入性大得多。
+**保持 PR 聚焦单一改动更容易过 review**，这条作为后续项记录。
+预估上限 3.0%（decode），远小于已拿到的 2.13×。
+
+---
+
 ## 对比：手写 kernel vs 补漏用的原语
 
 同一轮工作里我还手写了两个 Triton kernel（ShortConv 的 gate+transpose、MoE 归约+norm），投入远大于上面三个案例：
