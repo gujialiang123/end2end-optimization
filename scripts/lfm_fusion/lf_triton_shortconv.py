@@ -1,6 +1,6 @@
 """Fused Triton kernels for the LFM2.5 gated short-convolution path.
 
-The operator audit (`docs/lfm_fusion_results.md`) left three glue operations
+The operator audit (`docs/2026-07-27/lfm_fusion_results.md`) left three glue operations
 around `causal_conv1d`, all of them pure data movement:
 
     proj, _ = self.in_proj(hidden_states)        # [T, 3H]

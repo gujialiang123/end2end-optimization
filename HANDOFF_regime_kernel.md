@@ -201,16 +201,16 @@ if M <= E:
 - `configs/regime_kernel/profiles/*/` — 可直接 `SGLANG_MOE_CONFIG_DIR` 部署的 profile
 
 ### 文档 `docs/`
-- `regime_kernel_status.md` — 仓库审计、可复用资产、缺失项、成本估算
-- `regime_kernel_experiment_plan.md` — 方法论、搜索空间、测量协议、P0/P1
-- `regime_kernel_results.md` — **主报告**,含 §0b 的诚实范围说明和修正记录
+- `docs/2026-07-26/regime_kernel_status.md` — 仓库审计、可复用资产、缺失项、成本估算
+- `docs/2026-07-26/regime_kernel_experiment_plan.md` — 方法论、搜索空间、测量协议、P0/P1
+- `docs/2026-07-27/regime_kernel_results.md` — **主报告**,含 §0b 的诚实范围说明和修正记录
 
 ---
 
 ## 8. 剩余可做的工作(按价值排序)
 
 > **2026-07-27 更新**:§8.1 已完成(见下方 §8.0),并且新开了一条 fusion 线
-> (`docs/lfm_fusion_results.md`),拿到本项目第一个同模型正向 kernel e2e 结果。
+> (`docs/2026-07-27/lfm_fusion_results.md`),拿到本项目第一个同模型正向 kernel e2e 结果。
 
 ### 8.0 ✅ 已完成:Qwen 的 backend 对比(原 §8.1)
 3 regime × 4 backend × 5 rep,0 失败。**结论比预期更强:regime→backend 规则不可迁移。**
@@ -224,7 +224,7 @@ if M <= E:
 但**长 prefill 完全反转** —— 断崖换到了另一个 backend。把一个模型的规则用到另一个
 模型,最差 **−34%**。→ 静态查找表有害,必须按部署实测。详见 results 文档 §11c。
 
-### 8.0b ✅ 新增:LFM2.5 fusion(`docs/lfm_fusion_results.md`,**已做两轮**)
+### 8.0b ✅ 新增:LFM2.5 fusion(`docs/2026-07-27/lfm_fusion_results.md`,**已做两轮**)
 v33 的"sglang 热路径已全部融合"是**在 Qwen 一个模型上**得出的。LFM2.5 每 forward
 有 **61 个未融合 RMSNorm + 48 个独立 residual add + 36 个 gating mul**(Qwen 对照:
 1 / 0 / 0),外加一条未融合的 QK-norm+RoPE 链。
@@ -256,7 +256,7 @@ A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单�
 2. **枚举代码库里已有的融合原语,检查哪些模型的调用点没用它们** —— 这一条就找到了
    四个赢家里的三个,而且完全不需要 profiling,是纯静态检查。
 
-### 8.2c ✅ 已完成:跨架构审计(`docs/cross_architecture_audit.md`)
+### 8.2c ✅ 已完成:跨架构审计(`docs/2026-07-28/cross_architecture_audit.md`)
 扩展到 4 个架构。两个成熟模型(Qwen3-0.6B dense / Qwen3-30B MoE)**都干净**;
 两个较新的都有空缺但**形态完全不同**。→ 假设成立但需修正措辞:不是"新架构有更多
 同类空缺",而是"**新架构有空缺,且形态不可预测**",这**加强**了"必须实测"的论点。
@@ -276,7 +276,7 @@ A 0.98 / B **0.57** / C 0.87。并发 decode 上 qkrope 单独 +5.42%,再加单�
 
 ### 8.2e ✅ 方法论已沉淀为 skill:`.github/skills/fusion-gap-hunting/`
 含可执行扫描器,秒级无 GPU 自动复现 Gemma-3 发现。**新会话做 kernel 工作前先读它。**
-PR 草稿 `docs/PR_DRAFT_gemma3_rmsnorm.md` 已就绪但**未提交**,等用户确认。
+PR 草稿 `docs/2026-07-28/PR_DRAFT_gemma3_rmsnorm.md` 已就绪但**未提交**,等用户确认。
 
 ### 8.2f 下一步:再加几个**非 Qwen 家族**的模型
 现在只有 2 个非 Qwen 家族(Google/Liquid),这是结论最弱的一环。
@@ -315,7 +315,7 @@ TMA 路径在这台机器上**是激活的**(`support_tensor_descriptor()=True`)
 ## 10. 给新会话的开场建议
 
 ```
-读 docs/regime_kernel_results.md(主报告)、docs/lfm_fusion_results.md
+读 docs/2026-07-27/regime_kernel_results.md(主报告)、docs/2026-07-27/lfm_fusion_results.md
 (fusion 线主报告)和 HANDOFF_regime_kernel.md(本文件)。
 P0 与 §8.1 已完成。建议接 §8.2b(把 fusion 审计做成 agent 的机械检查)
 或 §8.4/§9.1(ShortConv 的 layout copy 与 gating 融合)。

@@ -7,11 +7,11 @@
 - **零回归证明**：打补丁前后各跑一遍上游 `test_layernorm.py`，结果**完全相同**（201 failed/3 passed/423 subtests passed；失败是环境预存、在另一个类）。
 - **补上缺失的测试**：`Gemma3RMSNorm` 原本**没有任何单元测试**（这是它没被发现的原因之一）。新增 `TestGemma3RMSNorm` 并**变异测试验证其有效性**：去掉 dtype 转换 → 64 个 subtest 失败；去掉 3-D 还原 → 24 个失败。
 - **数值验证**：120 组合（shape×dtype×量级×weight dtype）零失败，最差相对偏差 9.3e-3。
-- **产物**：`docs/PR_DRAFT_gemma3_rmsnorm.md`（PR 草稿，**未提交，等用户确认**）· `results/lfm_fusion/pr_gemma3/`（补丁+全部证据）· PR 分支在 `/tmp/sglang_pr_main`
+- **产物**：`docs/2026-07-28/PR_DRAFT_gemma3_rmsnorm.md`（PR 草稿，**未提交，等用户确认**）· `results/lfm_fusion/pr_gemma3/`（补丁+全部证据）· PR 分支在 `/tmp/sglang_pr_main`
 - **★ skill 沉淀**：`.github/skills/fusion-gap-hunting/` —— 含可执行扫描器 `impl/scan_fusion_gaps.py`。
   它**自动复现了这个发现**：28 个候选精确挑出 1 个 `LIKELY REAL`，正确否决 QuickGELU（HIP/NPU 有但 CUDA 无）和 NewGELU（上游 TODO）。秒级、无需 GPU。
   第一版扫描器**漏掉了自己的样本**（只认直接 import 的标识符，而 sibling 写作 `torch.ops.sgl_kernel.*`）——已修，"扫描器必须能找到它自己的动机样本"是硬性验收。
-- **三案例文档**：`docs/three_fusion_cases.md`（逐案的 before/after 代码、为什么被漏、等价性论证、收益）
+- **三案例文档**：`docs/2026-07-28/three_fusion_cases.md`（逐案的 before/after 代码、为什么被漏、等价性论证、收益）
 - **下一步已定位**：修完 norm 后 gemma3 还剩每层 2 次独立 residual add（3.00% decode），同型于案例 1，`gemma_fused_add_rmsnorm` 已存在。未并入 PR 以保持聚焦。
 
 
@@ -45,7 +45,7 @@ GSM8K 1319 题×3：0.2233 vs 0.2210（二项误差 ±2.2 点，噪声内）。
 
 **最大缺口**：`Qwen3-Coder-Next`（`qwen3_next`，GDN 线性注意力 + 512 专家，149GB 需 TP2）**没测** —— 它正是 `fused_gdn_gating` 那批"CPU 有 CUDA 没有"算子服务的架构，最可能再中一次。
 
-**产物**：`docs/cross_architecture_audit.md`（含图）· `scripts/lfm_fusion/gemma_fusion_patch.py` + `gm_inject/` · `lf_plot_crossarch.py` · `results/lfm_fusion/audit/{gemma3,qwen06,qwen32,qwen3next}_*`
+**产物**：`docs/2026-07-28/cross_architecture_audit.md`（含图）· `scripts/lfm_fusion/gemma_fusion_patch.py` + `gm_inject/` · `lf_plot_crossarch.py` · `results/lfm_fusion/audit/{gemma3,qwen06,qwen32,qwen3next}_*`
 
 > **2026-07-28 补充**：又加了 Qwen3-32B（大 dense）。最终 6 个模型 / 3 个家族 / 0.6B–80B：四个 Qwen 全部 ≤0.64%（0.05 / 0.23 / 0.57 / 0.64），两个非 Qwen 是 11.31% 和 46.32% —— **最差的 Qwen 与最好的非 Qwen 差 18 倍，中间没有任何模型**。并且 **Qwen3-0.6B 比 Gemma-3-1B 更小却干净 81 倍**，一并排除了"模型小所以空缺大"。
 
@@ -88,7 +88,7 @@ B 上 qkrope 单独 +5.42%，再加上单独值 +3.65% 的 norm+scale+conv 只�
 
 **核心判断升级**："kernel 层不转化"仍成立，但**四个空缺里有三个是"sglang 已经有融合原语、这个模型的调用点没用"**（`fused_add_rmsnorm`、`fused_qk_norm_rope`、乘以 1.0）。**全程没有发明任何新东西。** 由此得到第二个可机械检查的 signature：**枚举代码库里已有的融合原语，检查哪些模型没调用它们**——这一条就找到了四个赢家里的三个。
 
-**产物**：`docs/lfm_fusion_results.md`（主报告，4 图）· `results/lfm_fusion/{nsys,fx}/FINDINGS.md`（两个 agent 的完整证据）· `scripts/lfm_fusion/`（audit/patch/triton/tune/e2e/correctness/analyze/plots + agent 的 nsys_*/fx_* 脚本）。GSM8K 全量 1319 题：全部 8 个 arm 跨度 0.339–0.368，在 bit-exact arm 标定的 0.8 点噪声底内。
+**产物**：`docs/2026-07-27/lfm_fusion_results.md`（主报告，4 图）· `results/lfm_fusion/{nsys,fx}/FINDINGS.md`（两个 agent 的完整证据）· `scripts/lfm_fusion/`（audit/patch/triton/tune/e2e/correctness/analyze/plots + agent 的 nsys_*/fx_* 脚本）。GSM8K 全量 1319 题：全部 8 个 arm 跨度 0.339–0.368，在 bit-exact arm 标定的 0.8 点噪声底内。
 
 ## 2026-07-27：LFM2.5 kernel fusion 第一轮 —— 本项目第一个同模型正向 kernel e2e 结果 ✅
 **问题**：v33 审计结论"sglang 热路径已全部 CUDA 融合，没有可补的空缺"是在 **Qwen 一个模型**上得出的。LFM2.5-8B-A1B（24 层里 18 层是 gated short conv 的新架构）从没在算子级审计过。
@@ -120,12 +120,12 @@ B 上 qkrope 单独 +5.42%，再加上单独值 +3.65% 的 norm+scale+conv 只�
 
 **这改变了什么**：之前的立场"成熟 bf16 MoE 上 kernel 层不转化为端到端收益"仍然成立，但补上边界条件 —— **覆盖空缺是"架构成熟度"的函数，不是 sglang 的属性**。上游优化过的模型族没剩空间；新加入的架构在**新算子周围的调用点胶水**上带着几个百分点（新算子 `causal_conv1d` 本身只占 0.7%，很快）。这正是 plan 给 agent 的定位"自动发现并补 sglang 的覆盖空缺"，也是该定位第一次拿到同模型正向显著的全 regime 端到端数字。
 
-> **⚠ 2026-07-27 深夜修正**：这个"架构成熟度"的说法**被后续跨架构审计推翻了**。最新的 Qwen3-Next 几乎干净（0.64%），成熟的 Gemma-3 最差（46.32%）。真正的分界是**模型家族**（三个 Qwen 模型横跨 dense/MoE/线性注意力全部干净，两个非 Qwen 都有空缺）。见 `docs/cross_architecture_audit.md`。
+> **⚠ 2026-07-27 深夜修正**：这个"架构成熟度"的说法**被后续跨架构审计推翻了**。最新的 Qwen3-Next 几乎干净（0.64%），成熟的 Gemma-3 最差（46.32%）。真正的分界是**模型家族**（三个 Qwen 模型横跨 dense/MoE/线性注意力全部干净，两个非 Qwen 都有空缺）。见 `docs/2026-07-28/cross_architecture_audit.md`。
 且**检测很便宜**：一次 profiled `bench_one_batch`，signature 是"随层数线性增长的 kernel 计数"，可机械判定。
 
 **诚实范围**：绝对值不大（≈4%）；单模型单卡；`norm` 非 bit-identical，质量结论靠噪声较大的任务指标；**没有写新 kernel** —— 收益来自把已有的融合原语用在漏用的调用点上，与本项目其他所有正向结果同形。
 
-**产物**：`docs/lfm_fusion_results.md`（主报告）· `scripts/lfm_fusion/`（audit / patch / e2e / correctness / analyze / plots）· `results/lfm_fusion/`（audit JSON + e2e + correctness + fusion_ab.csv + 2 图）。
+**产物**：`docs/2026-07-27/lfm_fusion_results.md`（主报告）· `scripts/lfm_fusion/`（audit / patch / e2e / correctness / analyze / plots）· `results/lfm_fusion/`（audit JSON + e2e + correctness + fusion_ab.csv + 2 图）。
 
 ## 2026-07-27：regime-kernel K1 跨模型验证 —— regime→backend 规则**不可迁移** ✅
 HANDOFF §8.1。同协议在 Qwen3-30B-A3B 上重跑，3 regime × 4 backend × 5 rep，0 失败。

@@ -6,7 +6,7 @@
 `conv_bias=false`, `num_dense_layers=2` ⇒ **22 MoE layers**, E=32 / top-4, `moe_intermediate=1792`,
 `routed_scaling_factor=1.0`, `use_expert_bias=true` (verified in `/data/hf/LFM2.5-8B-A1B/config.json`).
 
-Companion to `docs/lfm_fusion_results.md`. **Read §0 "Relationship to prior work" first** — the two prefill
+Companion to `docs/2026-07-27/lfm_fusion_results.md`. **Read §0 "Relationship to prior work" first** — the two prefill
 chains this study re-derives are already implemented and shipped in this repo.
 
 ---
@@ -32,7 +32,7 @@ kernel time — **more than the `in_proj` GEMM it feeds (9516.5 µs)** and **8.9
 (`fused_gate_transpose`, `fused_transpose_gate`) wired in at
 `scripts/lfm_fusion/lfm_fusion_patch.py::_patched_shortconv_forward` under `LFM_FUSION_PATCH=conv`, gated by
 `CONV_FUSION_MIN_TOKENS=2048`. Measured end-to-end in
-`docs/lfm_fusion_results.md` §6: **+2.33 % req/s on long prefill (p<1e-4)**, +0.13 % / −0.03 % (n.s.) on the two
+`docs/2026-07-27/lfm_fusion_results.md` §6: **+2.33 % req/s on long prefill (p<1e-4)**, +0.13 % / −0.03 % (n.s.) on the two
 decode regimes. Nothing in §4–§5 below should be read as a new proposal for those two chains — this study
 **independently re-derives and validates** them from the compiler's own output.
 
@@ -41,7 +41,7 @@ What is **new** in this study:
 | | |
 |---|---|
 | **N1** | **Inductor derives F1 by itself**, emitting a kernel structurally equivalent to the hand-written one (§5). Independent confirmation that the shipped design is the one a compiler would choose. |
-| **N2** | **The mechanism is two distinct effects, not one** (§3). The prior diagnosis (`docs/lfm_fusion_results.md:185-188`: *"The defect is not the amount of traffic, it is that the traffic is uncoalesced"*) named the transpose copy and the transposed read in `C_gate * conv_out` — correct for those two ops. But **`B_gate * x` is coalesced and still 1.87× slower than an identical contiguous multiply**, because strided *rows* defeat `TensorIterator` vectorization. Measured, not inferred. |
+| **N2** | **The mechanism is two distinct effects, not one** (§3). The prior diagnosis (`docs/2026-07-27/lfm_fusion_results.md:185-188`: *"The defect is not the amount of traffic, it is that the traffic is uncoalesced"*) named the transpose copy and the transposed read in `C_gate * conv_out` — correct for those two ops. But **`B_gate * x` is coalesced and still 1.87× slower than an identical contiguous multiply**, because strided *rows* defeat `TensorIterator` vectorization. Measured, not inferred. |
 | **N3** | **As of HEAD (`0574701`) the shipped patch leaves the whole decode path stock** (the `is_decode()` branch of `_patched_shortconv_forward`), and N2 says the batched-decode regime has the *same* non-vectorized multiply as prefill (88.5 µs, **1.92 %** of regime-B decode kernel time). `fused_gate_mul` already exists at `lf_triton_shortconv.py:179` and is currently used only by the benchmark. |
 | **N4** | **F4: `req_pool_indices.to(torch.int32)` runs once per conv layer**, in both the stock *and* the patched path — 18 launches/forward, **1.27 %** of regime-A decode kernel time, for a kernel that moves 12 bytes. Never previously identified. Allocation site pinned to `mem_cache/common.py:354`. |
 | **N5** | **`CONV_FUSION_MIN_TOKENS=2048` is a CPU-launch threshold, not a GPU one.** Under CUDA-graph timing the fused input kernel is **4.99× faster at T=512** and 5.87× at T=1000; the wall-clock ratios at those sizes are 1.11× and 1.15×, because Triton's python launch path pins wall time at ~19 µs. The prior work identified the ~30 µs floor; this quantifies that the *GPU* crossover is below T=512, so the guard is removable by making the launch cheaper rather than by making the kernel better. |
@@ -49,7 +49,7 @@ What is **new** in this study:
 | **N7** | **The `activation`-argument route for gating is a dead end** (§7), and the conv-epilogue fusion is feasible on decode but layout-hostile on prefill. |
 | **N8** | **F6 (gate+transpose into the `in_proj` GEMM epilogue) quantified and rejected** (§4) — break-even at best. |
 
-### Two corrections to `docs/lfm_fusion_results.md` §9 "Next"
+### Two corrections to `docs/2026-07-27/lfm_fusion_results.md` §9 "Next"
 
 * **§9.1 said G3 "needs a layout change in the `causal_conv1d_fn` call rather than a call-site edit."**
   No change to the call is needed, and the shipped patch confirms this: the fused kernel *produces* `[H, T]`
@@ -177,7 +177,7 @@ Decode is identical with one extra node (`shortconv_decode.fusion_decisions.txt`
 ## 3. Root cause: **two** distinct effects, only one of which was previously identified
 
 The prior campaign attributed the ShortConv glue cost to uncoalesced access
-(`docs/lfm_fusion_results.md:185-188`: *"The defect is not the amount of traffic, it is that the traffic is
+(`docs/2026-07-27/lfm_fusion_results.md:185-188`: *"The defect is not the amount of traffic, it is that the traffic is
 uncoalesced. `Bx.transpose(0,1).contiguous()` and the transposed read inside `C_gate * conv_out` both walk memory
 with a stride"*; also `lf_triton_shortconv.py:18-26`). That is correct for those two ops. It is **not** the
 whole story: the third glue op, `B_gate * x`, is **perfectly coalesced** (both operands have innermost stride 1)
@@ -552,7 +552,7 @@ listed at the bottom for completeness.
 | **5** | MoE top-k reduction as a `fused_moe_kernel` epilogue (removes `triton_poi_fused_copy__mul_sum_0` **and** `moe_sum_reduce`) | `fused_moe_triton` | 1.08 % decode-A / 1.05 % prefill | medium-high — touches the kernel that is 67 % of prefill time; any regression there dwarfs the gain | large |
 | **6** | **F6** — gate+transpose in the `in_proj` GEMM epilogue | replace cuBLAS/nvjet with a Triton GEMM | **−29 to +24 µs/layer: break-even at best** | high | **Do not do.** Quantified and rejected in §4. |
 | — | Hoist the per-layer `query_start_loc` construction (`lfm2_moe.py:356-362`; `aten::new_empty` n=18 and 41 pageable HtoD memcpys per prefill forward, 35.1 µs GPU but a possible CPU-side stall) | call site | ~0 GPU; CPU-side only | none | small; a CPU-latency item, not a kernel item |
-| ✅ | **F1 + F2** — already shipped as `LFM_FUSION_PATCH=conv` | `lf_triton_shortconv.py`, `lfm_fusion_patch.py::_patched_shortconv_forward` | 4.2–5.0 % of prefill kernel time → **+2.33 % e2e** (measured, `docs/lfm_fusion_results.md` §6) | — | done |
+| ✅ | **F1 + F2** — already shipped as `LFM_FUSION_PATCH=conv` | `lf_triton_shortconv.py`, `lfm_fusion_patch.py::_patched_shortconv_forward` | 4.2–5.0 % of prefill kernel time → **+2.33 % e2e** (measured, `docs/2026-07-27/lfm_fusion_results.md` §6) | — | done |
 
 **Remaining upside if 1+2 are done (no `sgl-kernel` rebuild): ~1.3 % of regime-A and ~1.5 % of regime-B decode
 kernel time.** Substituting 3 for 2 raises regime A to ~3.1 % and regime B to ~2.5 %. Prefill is already harvested.
@@ -563,7 +563,7 @@ kernel time.** Substituting 3 for 2 raises regime A to ~3.1 % and regime B to ~2
 
 * **Kernel time ≠ end-to-end gain, and the conversion ratio is not 1:1 in either direction.** Every percentage
   above is a fraction of *summed CUDA kernel duration*. Three calibration points exist, all from this repo's own
-  A/B runs (`docs/lfm_fusion_results.md` §6) combined with the kernel-time shares I attributed from the traces:
+  A/B runs (`docs/2026-07-27/lfm_fusion_results.md` §6) combined with the kernel-time shares I attributed from the traces:
 
   | arm | regime | kernel time removed | measured e2e | ratio |
   |---|---|---|---|---|
@@ -578,7 +578,7 @@ kernel time.** Substituting 3 for 2 raises regime A to ~3.1 % and regime B to ~2
   precisely why it must be measured, not asserted. Treat the ratio table as the calibration, not the projection.
 * **No end-to-end serving A/B was run in *this* study.** All numbers here are module-level microbenchmarks or
   trace attribution against the *existing* audit. F1/F2 do have a prior e2e A/B (+2.33 % prefill,
-  `docs/lfm_fusion_results.md` §6); **F3, F4 and F5 have none** and must be A/B'd via `scripts/lfm_fusion/lf_e2e.py`
+  `docs/2026-07-27/lfm_fusion_results.md` §6); **F3, F4 and F5 have none** and must be A/B'd via `scripts/lfm_fusion/lf_e2e.py`
   before any claim is made for them.
 * **F2 is not a fusion.** It has identical HBM traffic before and after (3·T·H·2 either way). Calling it a fusion
   win would be wrong; it is a retile of an op that was already a single kernel.
@@ -634,4 +634,4 @@ kernel time.** Substituting 3 for 2 raises regime A to ~3.1 % and regime B to ~2
 | `fx_bench_elementwise_paths.py` | §3: isolates the coalescing effect from the vectorization effect |
 
 Pre-existing, referenced throughout: `lf_triton_shortconv.py` (the shipped fused kernels), `lfm_fusion_patch.py`
-(the `norm` / `scale` / `conv` arms), `lf_e2e.py` (the serving A/B harness), `docs/lfm_fusion_results.md`.
+(the `norm` / `scale` / `conv` arms), `lf_e2e.py` (the serving A/B harness), `docs/2026-07-27/lfm_fusion_results.md`.

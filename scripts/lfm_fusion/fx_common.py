@@ -16,7 +16,7 @@ import torch
 from torch import nn
 
 # --------------------------------------------------------------------------
-# LFM2.5-8B-A1B config constants (from the HF config; see docs/lfm_fusion_results.md)
+# LFM2.5-8B-A1B config constants (from the HF config; see docs/2026-07-27/lfm_fusion_results.md)
 # --------------------------------------------------------------------------
 H = 2048  # hidden_size
 CONV_L = 3  # conv_L_cache -> conv kernel width
