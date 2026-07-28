@@ -41,6 +41,7 @@ if os.environ.get("GEMMA_FUSION_PATCH"):
                 # exec is a circular import.
                 if self._fullname == "sglang.srt.models.olmo2":
                     gemma_fusion_patch.apply_olmo2()
+                    gemma_fusion_patch.apply_olmo2_branch_count()
                 else:
                     gemma_fusion_patch.apply_for(self._fullname)
             except Exception as e:

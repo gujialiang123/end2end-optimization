@@ -37,6 +37,7 @@ MODELS = {
     "olmo2": dict(
         path="/data/hf/gujialiang123/models/OLMo-2-1B-Instruct",
         served="olmo-2-1b-instruct", extra=[],
+        ctx=4096,  # max_position_embeddings; sglang refuses the default 8192
     ),
     "exaone4": dict(
         path="/data/hf/gujialiang123/models/EXAONE-4.0-1.2B",
@@ -201,7 +202,8 @@ def launch_server(model, cfg, gpu, port, log_path):
     argv = [PY, "-m", "sglang.launch_server", "--model-path", m["path"],
             "--served-model-name", m["served"], "--host", "127.0.0.1",
             "--port", str(port), "--tensor-parallel-size", "1",
-            "--context-length", "8192", "--schedule-conservativeness", "1.0",
+            "--context-length", str(m.get("ctx", 8192)),
+            "--schedule-conservativeness", "1.0",
             "--trust-remote-code", "--moe-runner-backend", "auto",
             "--mem-fraction-static", str(cfg["mem"]),
             "--max-running-requests", str(cfg["cap"]),

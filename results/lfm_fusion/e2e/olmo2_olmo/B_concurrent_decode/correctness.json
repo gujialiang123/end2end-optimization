@@ -7,5 +7,16 @@
     "def quicksort(arr):"
   ],
   "outputs": {},
-  "patch_checks": []
+  "patch_checks": [
+    {
+      "arm": "baseline",
+      "patch_check": "clean baseline",
+      "ok": true
+    },
+    {
+      "arm": "olmo2_qknorm",
+      "patch_check": "[gemma_fusion_patch] applied: ['olmo2_qknorm']",
+      "ok": true
+    }
+  ]
 }

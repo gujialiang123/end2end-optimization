@@ -236,10 +236,13 @@ def apply_for(module_name: str) -> list[str]:
 # CUDA kernel. Only the fallback path was left eager. Measured at 7.71 % of
 # decode CUDA kernel time (32 calls, 2.00/layer) on OLMo-2-1B.
 def _patched_olmo2_apply_qk_norm(self, q, k):
-    from sglang.srt.distributed import (
-        get_tensor_model_parallel_rank, tensor_model_parallel_all_gather)
-    from sglang.srt.layers.dp_attention import get_is_capture_mode
-    from sglang.srt.utils import split_tensor_along_last_dim
+    # Pull the helpers out of the olmo2 module's own namespace rather than
+    # importing them by path: get_is_capture_mode moved between
+    # model_executor.cuda_graph_runner and layers.dp_attention across versions.
+    from sglang.srt.models import olmo2 as M
+    tensor_model_parallel_all_gather = M.tensor_model_parallel_all_gather
+    get_is_capture_mode = M.get_is_capture_mode
+    split_tensor_along_last_dim = M.split_tensor_along_last_dim
     from functools import partial
     import torch
 
@@ -278,4 +281,46 @@ def apply_olmo2() -> bool:
 
     M.Olmo2Attention._apply_qk_norm = _patched_olmo2_apply_qk_norm
     print("[gemma_fusion_patch] applied: ['olmo2_qknorm']", flush=True)
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Diagnostic: which branch of Olmo2Attention._apply_qk_norm actually runs?
+#
+# The static scan flagged the `else` branch as an unfused gap, and the operator
+# audit attributed 7.71 % of decode kernel time to it -- but the end-to-end A/B
+# only moved +0.45 %. The gap between those two numbers is the whole question,
+# so count the branches instead of guessing. Enabled with OLMO2_BRANCH_COUNT=1.
+_olmo2_counts = {"fused_capture": 0, "eager_else": 0}
+
+
+def _counting_olmo2_apply_qk_norm(self, q, k):
+    from sglang.srt.models import olmo2 as M
+    import torch
+
+    if self.alt_stream is not None and M.get_is_capture_mode():
+        _olmo2_counts["fused_capture"] += 1
+    else:
+        _olmo2_counts["eager_else"] += 1
+    n = _olmo2_counts["fused_capture"] + _olmo2_counts["eager_else"]
+    if n % 100 == 0:
+        print(f"[olmo2_branch] {_olmo2_counts}", flush=True)
+    return _orig_olmo2_apply_qk_norm(self, q, k)
+
+
+_orig_olmo2_apply_qk_norm = None
+
+
+def apply_olmo2_branch_count() -> bool:
+    import os
+    if os.environ.get("OLMO2_BRANCH_COUNT") != "1":
+        return False
+    global _orig_olmo2_apply_qk_norm
+    from sglang.srt.models import olmo2 as M
+
+    _orig_olmo2_apply_qk_norm = M.Olmo2Attention._apply_qk_norm
+    M.Olmo2Attention._apply_qk_norm = _counting_olmo2_apply_qk_norm
+    import atexit
+    atexit.register(lambda: print(f"[olmo2_branch] FINAL {_olmo2_counts}", flush=True))
+    print("[gemma_fusion_patch] olmo2 branch counter armed", flush=True)
     return True

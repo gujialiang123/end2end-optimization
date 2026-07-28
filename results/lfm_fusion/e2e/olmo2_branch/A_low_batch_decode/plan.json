@@ -1,13 +1,12 @@
 {
   "plan": {
     "model": "olmo2",
-    "regime": "B_concurrent_decode",
-    "workload": "R_concurrent_decode",
+    "regime": "A_low_batch_decode",
+    "workload": "R_short_decode",
     "arms": [
-      "baseline",
       "olmo2_qknorm"
     ],
-    "reps": 6,
+    "reps": 1,
     "gpu": 6,
     "serving_knobs": {
       "cap": 32,

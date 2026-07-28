@@ -56,6 +56,7 @@ MODELS = {
         path="/data/hf/gujialiang123/models/OLMo-2-1B-Instruct",
         served="olmo-2-1b-instruct",
         extra=[],
+        ctx=4096,  # max_position_embeddings; sglang refuses the default 8192
         layers=16, arch="olmo2 dense (AllenAI)",
         maturity="AllenAI", tp=1,
     ),

@@ -97,7 +97,7 @@ def launch_server(model, cfg, gpu, port, log_path):
         "--host", "127.0.0.1",
         "--port", str(port),
         "--tensor-parallel-size", "1",
-        "--context-length", "8192",
+        "--context-length", str(m.get("ctx", 8192)),
         "--schedule-conservativeness", "1.0",
         "--trust-remote-code",
         "--moe-runner-backend", "auto",

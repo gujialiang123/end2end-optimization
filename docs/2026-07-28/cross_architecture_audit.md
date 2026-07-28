@@ -229,9 +229,70 @@ def _patched_gemma3_forward_cuda(self, x):
 
 ## 7. 结论
 
+> **2026-07-28 补充修正（见 §7.1、§7.2）。** 审计从 6 个模型扩到 11 个之后，本节第 1 条的措辞需要收紧；同时发现审计口径本身有一个系统性高估。原文保留在下面，修正紧随其后。
+
 1. **原假设被推翻**。"架构越新空缺越多"不成立：最新的 Qwen3-Next 几乎干净（0.64%），成熟的 Gemma-3 最差（46.32%）。**真正的分界是模型家族**——三个 Qwen 模型横跨 dense/MoE/线性注意力、横跨成熟度全部干净，两个非 Qwen 模型都有空缺。预测因子是"**这个模型文件受到过多少优化关注**"，跟随的是家族在用户群里的地位。这比原假设更有操作性：**去查非主力家族的模型**，而不是查新架构。
 2. **静态 signature 再次奏效，且是最高杠杆的工具**："枚举已有融合原语 → 找没调用的调用点"，**不需要 profiling**，这一条已经找到了本项目最大的三个赢家（LFM2.5 的 `norm`、`qkrope`，和 Gemma-3 的这个）。
 3. **Gemma-3 的 CUDA fall-through 是真正的上游 bug**，值得提 issue/PR：CPU 和 NPU 都有融合路径，CUDA 独缺，而所需 kernel 已经预编译在 `sgl_kernel` 里。
+
+---
+
+### 7.1 修正一：「非 Qwen 就有空缺」不成立，IBM granite 是反例
+
+审计扩到 11 个模型 / 8 个家族之后（低批 decode，空缺占 kernel 时间；
+原始数据 `results/lfm_fusion/processed/cross_architecture_audit_summary.csv`）：
+
+| 模型 | 家族 | 全部空缺 | 其中可融合消除 |
+|---|---|---:|---:|
+| **Gemma-3-1B** | Google | **46.32%** | 37.06% |
+| **OLMo-2-1B** | AllenAI | **27.74%** | 14.71% |
+| EXAONE-4.0-1.2B | LG | 15.66% | 3.54% |
+| Phi-4-mini | Microsoft | 13.87% | 6.43% |
+| **LFM2.5-8B-A1B** | Liquid | 11.31% | 4.06% |
+| OLMoE-1B-7B | AllenAI | 4.70% | 0.43% |
+| Qwen3-Coder-Next | Qwen | 0.64% | 0.24% |
+| Qwen3-0.6B | Qwen | 0.57% | 0.46% |
+| **Granite-3.1** | **IBM** | **0.30%** | 0.23% |
+| Qwen3-30B-A3B | Qwen | 0.23% | 0.18% |
+| Qwen3-32B | Qwen | 0.05% | 0.04% |
+
+**IBM granite 只有 0.30%，和 Qwen 一个量级。** 所以原来"四个 Qwen 干净，非 Qwen 有空缺"的干净二分是**六模型样本下的假象**。
+
+修正后的措辞：预测因子仍然是"**这个模型文件受到过多少优化关注**"，但它**不等价于家族名**。granite 说明非 Qwen 家族也可以很干净，OLMoE（4.70%）说明同一家族内部（vs OLMo-2 的 27.74%）也可以差很远——**关注度是按模型文件计的，不是按家族计的**。
+
+对 agent 的操作含义没变（去查非主力路径），但**不能用家族名当筛选器**，仍然要逐个模型审计。
+
+### 7.2 修正二：审计默认关 CUDA graph，会系统性高估被 capture-mode 守卫的缺口
+
+OLMo-2 的审计报 decode 有 7.71% 的 eager-norm 缺口，但修好之后端到端只有 **+0.45%**。差了一个数量级，于是装了分支计数器：
+
+```
+[olmo2_branch] {'fused_capture': 384, 'eager_else': 16}
+```
+
+`models/olmo2.py:171` 的守卫是 `if self.alt_stream is not None and get_is_capture_mode()`，
+而 `alt_stream` 在 CUDA 上恒非 None ——**所以 CUDA graph 捕获时走的本来就是融合分支**，
+稳态 decode 回放的图里根本没有 eager kernel。
+
+而 `lf_audit.py` 默认加 `--disable-cuda-graph`（为了让 kernel 归因干净）。
+**我把只在关图时才存在的开销当成了真实缺口。** 开图重跑审计确认
+（`results/lfm_fusion/processed/olmo2_audit_cudagraph_effect.csv`）：
+
+| 阶段 | 缺口 | cuda_graph=OFF | cuda_graph=ON |
+|---|---|---:|---:|
+| decode | eager_norm_decomp | 3.88% | **消失** |
+| decode | eager_norm_rsqrt | 2.17% | **消失** |
+| decode | eager_norm_pow | 1.66% | **消失** |
+| | *小计* | *7.71%* | *0* |
+| prefill | eager_norm_decomp | 7.93% | 7.91%（不变） |
+
+三项之和 **正好是我报的 7.71%**，开图后 decode 全部归零，prefill 纹丝不动。
+
+据此做了一个**可证伪预测**：如果缺口只在 prefill，那 prefill 主导的 regime 应该有真实增益。
+24 次重复验证 —— **C 长 prefill：78.5 → 89.9 req/s，+14.51%，p=3.3e-05** ✅ 预测成立。
+
+**结论**：本表的 `% kernel time` 是**上界**；当缺口被 capture-mode 守卫保护时，decode 列会系统性高估，真实收益转移到 prefill。查过全部 11 个模型，**只有 olmo2 和 qwen3next 用了 `get_is_capture_mode` 守卫**，其余模型（含 Gemma-3）的数字不受此影响。
+
 
 ## 8. 复现
 

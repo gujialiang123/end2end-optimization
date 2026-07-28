@@ -22,7 +22,8 @@ Read top-down; each entry says what it is and whether it is still current.
 
 | doc | what it is |
 |---|---|
-| [`2026-07-28/cross_architecture_audit.md`](2026-07-28/cross_architecture_audit.md) | 6 models / 3 families / 0.6 B–80 B. **Refutes** the "architecture maturity" hypothesis — the predictor is model family, not novelty, type or size. |
+| [`2026-07-28/three_kernel_cases_comparison.md`](2026-07-28/three_kernel_cases_comparison.md) | **对照报告：三种干预方式的收益对比。** 重写 kernel（Qwen b=1，+1.17% 且 b≥2 回归）vs 补融合（LFM，+6.6%）vs 接线（Gemma-3，+36.6%）。收益与工作量成反比，并给出机制解释。 |
+| [`2026-07-28/cross_architecture_audit.md`](2026-07-28/cross_architecture_audit.md) | 11 models / 8 families / 0.6 B–80 B. **Refutes** the "architecture maturity" hypothesis. §7.1 further corrects "family" as the predictor (IBM granite at 0.30% is the counter-example); §7.2 documents a systematic over-estimate in the audit itself when a gap sits behind a CUDA-graph capture guard. |
 | [`2026-07-28/three_fusion_cases.md`](2026-07-28/three_fusion_cases.md) | Every case in technical detail — the three that paid off, the four that did **not**, and a precision analysis answering whether any of it is lossy. **Start here for the engineering.** |
 | [`2026-07-28/PR_DRAFT_gemma3_rmsnorm_v2.md`](2026-07-28/PR_DRAFT_gemma3_rmsnorm_v2.md) | The upstream PR and everything backing it → [sgl-project/sglang#32670](https://github.com/sgl-project/sglang/pull/32670) (draft). Rescoped after upstream #32383 landed the 2-D half: the claim is now the high-rank + dtype increment, measured against a main-equivalent baseline. Supersedes [`..._v1_superseded.md`](2026-07-28/PR_DRAFT_gemma3_rmsnorm_v1_superseded.md). |
 

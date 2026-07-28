@@ -1,0 +1,13 @@
+regime,arm,metric,n,mean,ci95,baseline_mean,ratio,gain_pct,welch_t,p_value,verdict
+olmo2_olmo/A_low_batch_decode,baseline,request_throughput,6,2.5521,0.0018,2.5521,1.0,0.0,0.0,1,baseline
+olmo2_olmo/A_low_batch_decode,baseline,output_throughput,6,653.3249,0.4699,653.3249,1.0,0.0,0.0,1,baseline
+olmo2_olmo/A_low_batch_decode,olmo2_qknorm,request_throughput,6,2.5636,0.0032,2.5521,1.0045,0.45,6.167,0.000267,improvement
+olmo2_olmo/A_low_batch_decode,olmo2_qknorm,output_throughput,6,656.2768,0.812,653.3249,1.0045,0.45,6.167,0.000267,improvement
+olmo2_olmo/B_concurrent_decode,baseline,request_throughput,6,53.8253,0.3441,53.8253,1.0,0.0,0.0,1,baseline
+olmo2_olmo/B_concurrent_decode,baseline,output_throughput,6,13779.2747,88.0791,13779.2747,1.0,0.0,0.0,1,baseline
+olmo2_olmo/B_concurrent_decode,olmo2_qknorm,request_throughput,6,54.2008,0.31,53.8253,1.007,0.7,1.589,0.143,no significant difference
+olmo2_olmo/B_concurrent_decode,olmo2_qknorm,output_throughput,6,13875.4015,79.3557,13779.2747,1.007,0.7,1.589,0.143,no significant difference
+olmo2_olmo/C_long_prefill,baseline,request_throughput,24,78.5046,4.1605,78.5046,1.0,0.0,0.0,1,baseline
+olmo2_olmo/C_long_prefill,baseline,output_throughput,24,2512.1481,133.1358,2512.1481,1.0,0.0,0.0,1,baseline
+olmo2_olmo/C_long_prefill,olmo2_qknorm,request_throughput,24,89.899,2.1297,78.5046,1.1451,14.51,4.778,3.27e-05,improvement
+olmo2_olmo/C_long_prefill,olmo2_qknorm,output_throughput,24,2876.7696,68.1489,2512.1481,1.1451,14.51,4.778,3.27e-05,improvement
