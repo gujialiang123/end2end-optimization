@@ -168,3 +168,24 @@ python scripts/regime_kernel/rk_build_config.py \
 | `results/regime_kernel/processed/triton_version_comparison.csv` | 3.5.1 vs 3.6 kernel 级对照 |
 | `results/regime_kernel/processed/triton_version_e2e.csv` | 端到端四格表 |
 | `scripts/regime_kernel/rk_build_config.py` | 新增：从扫描结果按 guarded 策略生成 config |
+
+
+---
+
+## 8. 两个 PR 的当前状态（2026-07-29 06:30）
+
+| PR | 标题 | 状态 |
+|---|---|---|
+| [#32670](https://github.com/sgl-project/sglang/pull/32670) | fix(gemma3): fuse high-rank RMSNorm and guard mixed-dtype weights | ready for review，2 文件 |
+| [#32687](https://github.com/sgl-project/sglang/pull/32687) | [MoE] Add LFM2 MoE tuned config for H200 (Triton 3.5.1) | ready for review，1 文件 |
+
+两个都由 @gujialiang123 在 07-28 22:39 手动转为 ready。
+
+**CI 现状**：所有 check 显示 fail，但**不是代码失败**：
+
+- 转正前：卡在 `Block draft PR`（draft gate，3–7 秒即挂，真正的测试从未运行）
+- 转正后（我重推一次改变了 SHA 来触发）：gate 变成 **`Require run-ci label (optional)`**
+
+`run-ci` 标签**只有维护者能加**（我们试过，403 Must have admin rights）。所以真正的 CPU/GPU 测试要等维护者打标签才会跑。这是仓库对外部贡献者的常规策略，不是 PR 有问题。
+
+**#32687 需要你决定**：鉴于本文的结论（3.6 上收益归零、main 已经 pin 到 3.6），它现在只对 Triton 3.5.1 用户有价值。PR 标题和正文已经如实写明这一点，把判断权交给维护者。如果你觉得不值得占用 review 资源，关掉它是完全合理的。
