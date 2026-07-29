@@ -127,13 +127,23 @@ def legal_config(cfg: dict, M: int, N: int, K: int) -> bool:
 
 
 def build_search_space(M: int, N: int, K: int) -> List[dict]:
+    """Candidate configs to sweep.
+
+    BLOCK_SIZE_K includes 32 and GROUP_SIZE_M includes 8 so that the space
+    contains sglang's own `get_default_config` values -- the baseline we
+    compare against. An earlier version started BK at 64 and omitted GM=8,
+    which meant we were beating a baseline whose neighbourhood we had never
+    measured. That blind spot hid the reason Triton 3.6 changed the result:
+    3.6's gain is concentrated at BK=32 (1.4-1.7x) and is only 0-4% for every
+    BK we had been sweeping. See docs/2026-07-29/triton_36_retune_findings.md.
+    """
     space = []
     for num_stages in (2, 3, 4, 5):
         for bm in (16, 32, 64, 128, 256):
-            for bk in (64, 128, 256):
+            for bk in (32, 64, 128, 256):
                 for bn in (32, 64, 128, 256):
                     for warps in (4, 8):
-                        for gm in (1, 16, 32):
+                        for gm in (1, 8, 16, 32):
                             cfg = dict(BLOCK_SIZE_M=bm, BLOCK_SIZE_N=bn,
                                        BLOCK_SIZE_K=bk, GROUP_SIZE_M=gm,
                                        num_warps=warps, num_stages=num_stages)
