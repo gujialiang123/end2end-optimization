@@ -18,6 +18,10 @@ Reusable *methodology* does not live here at all — it goes to
 
 Read top-down; each entry says what it is and whether it is still current.
 
+| doc | what's in it |
+|---|---|
+| [`architecture_primer.md`](architecture_primer.md) | **推理侧模型架构入门，给 infra 视角写的。** 一层 Transformer 的四件事、Q/K/V 和多头、QK-Norm 为什么存在（含 softmax 饱和的实测数据）、GQA 如何决定 KV cache、prefill/decode 为何瓶颈相反。所有 shape 取自 gemma-3-1b 真实 config，每节标注了我们做过的哪个优化落在这一层。 |
+
 ### 2026-07-29 — the Triton 3.6 re-tune (retracted)
 
 | doc | what's in it |
