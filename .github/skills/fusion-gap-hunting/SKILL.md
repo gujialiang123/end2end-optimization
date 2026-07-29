@@ -285,6 +285,13 @@ If the fix is going upstream, add:
   threshold, and 3.6's untuned path beat 3.5.1's *tuned* path by 5.2%. Nothing
   was measured wrong either time; the ground moved.
 
+  (Caveat added later: the Triton half of that example was retracted -- the 3.6
+  "baseline" turned out to be our own tuned config, loaded via the cross-version
+  config fallback because the experiment imported the PR branch worktree. The
+  #32383 half stands. See docs/2026-07-29/RETRACTION_triton36_baseline_contamination.md.
+  The rule below is still worth following; just note that one of its two
+  motivating cases was a measurement bug, not an expiring opportunity.)
+
   So every recorded opportunity needs the toolchain version stamped on it, and
   anything older than a few days gets re-measured before it is claimed. In
   practice this is cheap -- one microbenchmark of the default path on the new

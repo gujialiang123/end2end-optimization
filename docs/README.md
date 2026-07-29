@@ -18,6 +18,12 @@ Reusable *methodology* does not live here at all — it goes to
 
 Read top-down; each entry says what it is and whether it is still current.
 
+### 2026-07-29 — the Triton 3.6 re-tune (retracted)
+
+| doc | what's in it |
+|---|---|
+| [`2026-07-29/RETRACTION_triton36_baseline_contamination.md`](2026-07-29/RETRACTION_triton36_baseline_contamination.md) | **Read this before the one below.** The 3.6 "default" baseline was my own tuned config, loaded through the cross-version fallback because the experiment imported the PR branch worktree. Zero BK=32 kernels in 8000+ compiled on 3.6 proves the default path never ran, and the numbers decompose exactly into tuning's own gain times a 1.04x version bump. The 3.5.1 measurements and PR #32687 are unaffected. |
+
 ### 2026-07-29 — the Triton 3.6 re-tune
 
 | doc | what's in it |
