@@ -277,6 +277,24 @@ If the fix is going upstream, add:
   Corollary for reporting: if a regime comes back `p = 0.053`, it is **not** a
   result. Print it with the verdict attached and keep it out of the headline.
 
+- **Re-check that the opportunity still exists, not just that your fix still
+  applies.** These are different failures and we hit both within four days.
+  Upstream #32383 landed the half of the Gemma-3 fix we were about to claim --
+  our *fix* was partly redundant. Then a Triton 3.5.1 -> 3.6 bump erased a
+  1.37-1.74x MoE tuning headroom entirely: 0 of 19 buckets still cleared the
+  threshold, and 3.6's untuned path beat 3.5.1's *tuned* path by 5.2%. Nothing
+  was measured wrong either time; the ground moved.
+
+  So every recorded opportunity needs the toolchain version stamped on it, and
+  anything older than a few days gets re-measured before it is claimed. In
+  practice this is cheap -- one microbenchmark of the default path on the new
+  version answers it.
+
+  And it reorders the candidate list: **check whether upgrading a dependency
+  already gets the win before proposing hand-tuning.** Here the upgrade was
+  worth +29.8% end-to-end, free and zero-maintenance, against +23.3% for a
+  hand-tuned config that then expired.
+
 ## ROADMAP
 
 - Automate scan 1a/1b into `impl/scan_fusion_gaps.py` emitting

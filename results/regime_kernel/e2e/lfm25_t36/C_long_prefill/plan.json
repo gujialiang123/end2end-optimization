@@ -1,0 +1,31 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "regime": "C_long_prefill",
+    "workload": "R_long_prefill",
+    "serving_knobs": {
+      "cap": 32,
+      "chunk": -1,
+      "policy": "lpm",
+      "mem": 0.85
+    },
+    "arms": [
+      "default",
+      "cfg35on36"
+    ],
+    "reps": 6,
+    "gpu": 0
+  },
+  "environment": {
+    "git_sha": "592b68a172e5f5a56900eadb228b1cece8b1d9db",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  }
+}

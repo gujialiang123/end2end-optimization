@@ -1,0 +1,89 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "tokens": 2048,
+    "top_k": 4,
+    "M": 2048,
+    "E": 32,
+    "N": 1792,
+    "K": 2048,
+    "routing": "uniform",
+    "with_bias": false,
+    "n_candidates": 1,
+    "warmup": 25,
+    "iters": 100,
+    "repeats": 5,
+    "out": "results/regime_kernel/raw/t36_probe/probe_M2048.json"
+  },
+  "environment": {
+    "git_sha": "592b68a172e5f5a56900eadb228b1cece8b1d9db",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  },
+  "routing_stats": {
+    "total_assignments": 8192.0,
+    "active_experts": 32,
+    "max_expert_load": 284.0,
+    "mean_expert_load": 256.0,
+    "cv_expert_load": 0.05227118730545044,
+    "gini_expert_load": 0.0297088623046875
+  },
+  "default_baseline": {
+    "median_ms": 0.48422399163246155,
+    "mean_ms": 0.4755967974662781,
+    "p95_ms": 0.48601600527763367,
+    "min_ms": 0.43801599740982056,
+    "max_ms": 0.48601600527763367,
+    "std_ms": 0.018803648965188765,
+    "n": 5,
+    "rounds_ms": [
+      0.43801599740982056,
+      0.48601600527763367,
+      0.48422399163246155,
+      0.48550400137901306,
+      0.48422399163246155
+    ]
+  },
+  "results": [
+    {
+      "model": "lfm25",
+      "tokens": 2048,
+      "M": 2048,
+      "routing": "uniform",
+      "config_key": "bm128_bn256_bk64_gm16_w8_s4",
+      "BLOCK_SIZE_M": 128,
+      "BLOCK_SIZE_N": 256,
+      "BLOCK_SIZE_K": 64,
+      "GROUP_SIZE_M": 16,
+      "num_warps": 8,
+      "num_stages": 4,
+      "median_ms": 0.48416000604629517,
+      "mean_ms": 0.47653120160102846,
+      "p95_ms": 0.48895999789237976,
+      "min_ms": 0.4423680007457733,
+      "max_ms": 0.48895999789237976,
+      "std_ms": 0.017260392965613356,
+      "n": 5,
+      "rounds_ms": [
+        0.4423680007457733,
+        0.48416000604629517,
+        0.48585599660873413,
+        0.48895999789237976,
+        0.48131200671195984
+      ],
+      "speedup_vs_default": 1.0001321579340865,
+      "correctness_ok": true,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0
+    }
+  ],
+  "failures": [],
+  "wall_time_s": 6.7
+}

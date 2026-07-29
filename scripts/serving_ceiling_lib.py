@@ -219,10 +219,19 @@ def launch_server(model, cfg, gpu, port, log_path):
         # CUDA_HOME/PATH must follow the interpreter, not stay pinned to the
         # default env, or the override picks up the wrong toolchain.
         envdir = str(Path(py_override).parent.parent)
-    env.update(dict(CUDA_HOME=envdir, HF_HOME=str(REPO / ".hf_cache"),
-                    PATH=f"{envdir}/bin:" + env.get("PATH", ""),
+    # The CUDA toolchain is not always the env root: a torch cu13 wheel ships
+    # nvcc/headers/libcudart under site-packages/nvidia/cu13. Mixing a 12.x nvcc
+    # with a cu13 torch fails to link (-lcudart), so allow it to be set apart.
+    cuda_home = os.environ.get("SGLANG_CUDA_HOME", envdir)
+    env.update(dict(CUDA_HOME=cuda_home, HF_HOME=str(REPO / ".hf_cache"),
+                    PATH=f"{cuda_home}/bin:{envdir}/bin:" + env.get("PATH", ""),
                     CUDA_VISIBLE_DEVICES=str(gpu),
-                    TRITON_CACHE_DIR=f"/tmp/sgl_triton_ceiling_gpu{gpu}"))
+                    TRITON_CACHE_DIR=os.environ.get(
+                        "TRITON_CACHE_DIR", f"/tmp/sgl_triton_ceiling_gpu{gpu}")))
+    if cuda_home != envdir:
+        for var in ("LD_LIBRARY_PATH", "LIBRARY_PATH"):
+            env[var] = f"{cuda_home}/lib" + (
+                os.pathsep + env[var] if env.get(var) else "")
     lf = open(log_path, "w")
     p = subprocess.Popen(argv, env=env, stdout=lf, stderr=subprocess.STDOUT,
                          preexec_fn=os.setsid)

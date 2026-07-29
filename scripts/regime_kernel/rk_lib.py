@@ -212,10 +212,32 @@ def environment() -> dict:
 
 def run_env() -> dict:
     e = dict(os.environ)
-    e.update(CUDA_HOME=ENVDIR, PATH=f"{ENVDIR}/bin:" + e.get("PATH", ""),
+    # RK_ENVDIR lets a run use a different interpreter than the default one --
+    # needed to measure on a second Triton version, since a tuned config is only
+    # valid for the version it was tuned on. RK_SGLANG_SRC puts a matching
+    # source tree ahead of whatever that env has installed.
+    envdir = e.get("RK_ENVDIR", ENVDIR)
+    cuda_home = e.get("RK_CUDA_HOME", envdir)
+    e.update(CUDA_HOME=cuda_home,
+             PATH=f"{cuda_home}/bin:{envdir}/bin:" + e.get("PATH", ""),
              HF_HOME=str(REPO / ".hf_cache"),
-             TRITON_CACHE_DIR="/tmp/regime_kernel_triton_cache")
+             TRITON_CACHE_DIR=e.get("TRITON_CACHE_DIR",
+                                    "/tmp/regime_kernel_triton_cache"))
+    for var, extra in (("LD_LIBRARY_PATH", f"{cuda_home}/lib"),
+                       ("LIBRARY_PATH", f"{cuda_home}/lib")):
+        if cuda_home != envdir:
+            e[var] = extra + (os.pathsep + e[var] if e.get(var) else "")
+    if e.get("RK_SGLANG_SRC"):
+        src = e["RK_SGLANG_SRC"]
+        e["PYTHONPATH"] = src + (os.pathsep + e["PYTHONPATH"]
+                                 if e.get("PYTHONPATH") else "")
     return e
+
+
+def run_python() -> str:
+    """Interpreter for server/bench subprocesses (see run_env)."""
+    envdir = os.environ.get("RK_ENVDIR", ENVDIR)
+    return f"{envdir}/bin/python"
 
 
 def snapshot(outdir: Path, name: str, payload: dict):

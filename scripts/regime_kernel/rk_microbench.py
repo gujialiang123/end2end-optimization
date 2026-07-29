@@ -61,6 +61,28 @@ def init_sglang_context(model_path: str):
     from sglang.srt.server_args import ServerArgs, set_global_server_args_for_scheduler
     sa = ServerArgs(model_path=model_path)
     set_global_server_args_for_scheduler(sa)
+
+    # main additionally reaches for the tensor-parallel group from inside the
+    # MoE path (symmetric-memory allocation check), which a standalone process
+    # never creates. Stand up a 1-rank group so the sweep can run outside a
+    # server. Harmless on versions that do not need it.
+    try:
+        from sglang.srt.distributed import parallel_state as _ps
+
+        if getattr(_ps, "_TP", None) is None:
+            import os
+
+            port = os.environ.get("RK_TP_PORT", "29591")
+            _ps.init_distributed_environment(
+                world_size=1,
+                rank=0,
+                local_rank=0,
+                distributed_init_method=f"tcp://127.0.0.1:{port}",
+                backend="nccl",
+            )
+            _ps.initialize_model_parallel(tensor_model_parallel_size=1)
+    except Exception as e:  # noqa: BLE001 - older layouts do not need this
+        print(f"[rk] tp-group init skipped: {type(e).__name__}: {e}")
     return sa
 
 
@@ -168,8 +190,17 @@ def main():
         return
 
     import torch
-    from sglang.srt.layers.moe.fused_moe_triton import override_config
-    from sglang.srt.layers.moe.fused_moe_triton.fused_moe import fused_moe
+
+    # sglang moved the Triton MoE runner between 0.5.12 and main
+    # (layers.moe.fused_moe_triton -> layers.moe.moe_runner.triton_utils).
+    # Resolve either layout so the same sweep can run on both, which is what
+    # lets us re-tune under a newer torch/Triton without a second harness.
+    try:
+        from sglang.srt.layers.moe.fused_moe_triton import override_config
+        from sglang.srt.layers.moe.fused_moe_triton.fused_moe import fused_moe
+    except ImportError:
+        from sglang.srt.layers.moe.moe_runner.triton_utils import override_config
+        from sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe import fused_moe
 
     init_sglang_context(shape["path"])
     gen = torch.Generator(device="cuda"); gen.manual_seed(L.SEED)

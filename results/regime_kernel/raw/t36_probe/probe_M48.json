@@ -1,0 +1,89 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "tokens": 48,
+    "top_k": 4,
+    "M": 48,
+    "E": 32,
+    "N": 1792,
+    "K": 2048,
+    "routing": "uniform",
+    "with_bias": false,
+    "n_candidates": 1,
+    "warmup": 25,
+    "iters": 100,
+    "repeats": 5,
+    "out": "results/regime_kernel/raw/t36_probe/probe_M48.json"
+  },
+  "environment": {
+    "git_sha": "592b68a172e5f5a56900eadb228b1cece8b1d9db",
+    "git_branch": "main",
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "torch": "2.9.1+cu128",
+    "triton": "3.5.1",
+    "sglang": "0.5.12.post1",
+    "sglang_commit": "17f7a1da1a371e8fac398032682b8f47f74a6ec6",
+    "seed": 20260726
+  },
+  "routing_stats": {
+    "total_assignments": 192.0,
+    "active_experts": 32,
+    "max_expert_load": 15.0,
+    "mean_expert_load": 6.0,
+    "cv_expert_load": 0.47689680258433026,
+    "gini_expert_load": 0.2587890625
+  },
+  "default_baseline": {
+    "median_ms": 0.19750399887561798,
+    "mean_ms": 0.19740799963474273,
+    "p95_ms": 0.20207999646663666,
+    "min_ms": 0.19430400431156158,
+    "max_ms": 0.20207999646663666,
+    "std_ms": 0.002794682391962376,
+    "n": 5,
+    "rounds_ms": [
+      0.194815993309021,
+      0.19430400431156158,
+      0.20207999646663666,
+      0.19750399887561798,
+      0.19833600521087646
+    ]
+  },
+  "results": [
+    {
+      "model": "lfm25",
+      "tokens": 48,
+      "M": 48,
+      "routing": "uniform",
+      "config_key": "bm16_bn32_bk128_gm1_w4_s5",
+      "BLOCK_SIZE_M": 16,
+      "BLOCK_SIZE_N": 32,
+      "BLOCK_SIZE_K": 128,
+      "GROUP_SIZE_M": 1,
+      "num_warps": 4,
+      "num_stages": 5,
+      "median_ms": 0.19468800723552704,
+      "mean_ms": 0.19472640454769136,
+      "p95_ms": 0.1950400024652481,
+      "min_ms": 0.1945600062608719,
+      "max_ms": 0.1950400024652481,
+      "std_ms": 0.00016615217394862583,
+      "n": 5,
+      "rounds_ms": [
+        0.1950400024652481,
+        0.19468800723552704,
+        0.19462400674819946,
+        0.19472000002861023,
+        0.1945600062608719
+      ],
+      "speedup_vs_default": 1.0144641248327344,
+      "correctness_ok": true,
+      "max_abs_err": 0.0,
+      "max_rel_err": 0.0
+    }
+  ],
+  "failures": [],
+  "wall_time_s": 6.6
+}

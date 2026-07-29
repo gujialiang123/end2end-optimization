@@ -18,6 +18,12 @@ Reusable *methodology* does not live here at all — it goes to
 
 Read top-down; each entry says what it is and whether it is still current.
 
+### 2026-07-29 — the Triton 3.6 re-tune
+
+| doc | what's in it |
+|---|---|
+| [`2026-07-29/triton_36_retune_findings.md`](2026-07-29/triton_36_retune_findings.md) | **A negative result worth more than the positive one it replaces.** Re-tuning the LFM2.5 MoE shape on Triton 3.6 found 0/19 buckets worth specialising: the compiler upgrade (+29.8% end-to-end) already took everything hand-tuning bought on 3.5.1 (+23.3%), and 3.6's *default* beats 3.5.1's *tuned*. Includes what it means for PR #32687 and the toolchain fixes needed to measure it. |
+
 ### 2026-07-28 — cross-architecture audit, and the upstream PR
 
 | doc | what it is |
