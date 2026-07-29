@@ -1,3 +1,18 @@
+> # ⚠️ 已撤回（2026-07-29 晚）
+>
+> **本文的主要结论无效。** 在 Triton 3.6 上测的"默认基线"，实际加载的是我自己 tune 的那个
+> config —— 实验用了 `PYTHONPATH=/tmp/sglang_lfm/python`，而那是放着待测 config 的 PR 分支，
+> `get_moe_configs` 通过跨版本回退把它当成了默认路径。
+>
+> 铁证：3.6 的四张卡编译了 8000+ 个 kernel，**没有一个是默认配置的 BK=32**；而 3.5.1 的缓存里有 10 个。
+> 数字也能被精确分解（5/5 吻合）：所谓"3.6 默认快 1.4–1.7×" = tuning 本身的收益 × 同 config 在 3.6 上的 1.04×。
+>
+> **详见 [`RETRACTION_triton36_baseline_contamination.md`](RETRACTION_triton36_baseline_contamination.md)。**
+>
+> 仍然成立的部分：3.5.1 上的全部测量（tuning 值 1.37–1.74× kernel / +23.3% 端到端）、
+> 以及"同一 config 在 3.6 上快 1.04×"（逐一配对得到，与污染无关）。**PR #32687 不受影响。**
+> 正文原样保留，作为出错记录。
+
 # Triton 3.6 重扫：编译器升级吃掉了我们 tuning 的全部收益
 
 **日期**：2026-07-29（通宵跑）· **GPU**：H200 ×4（0/3/6/7）

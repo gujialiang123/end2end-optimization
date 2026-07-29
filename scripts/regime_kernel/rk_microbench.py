@@ -86,6 +86,32 @@ def init_sglang_context(model_path: str):
     return sa
 
 
+def assert_clean_baseline(E: int, N: int, dtype=None) -> None:
+    """Fail unless the un-overridden path really is the heuristic default."""
+    try:
+        from sglang.srt.layers.moe.moe_runner.triton_utils.fused_moe_triton_config import (
+            get_moe_configs,
+        )
+    except ImportError:
+        from sglang.srt.layers.moe.fused_moe_triton.fused_moe_triton_config import (
+            get_moe_configs,
+        )
+    cfg = get_moe_configs(E, N, dtype, 0, 0)
+    if cfg:
+        import triton
+
+        raise SystemExit(
+            f"baseline is NOT the heuristic default: a tuned config for "
+            f"E={E},N={N} is reachable under triton {triton.__version__} "
+            f"(buckets {sorted(cfg)[:6]}...). Every 'speedup over default' "
+            f"here would be measured against an already-tuned baseline. "
+            f"Point PYTHONPATH at a tree that does not contain the config "
+            f"under test, or unset SGLANG_MOE_CONFIG_DIR."
+        )
+    print("[rk] baseline check: no tuned config reachable -> heuristic default",
+          flush=True)
+
+
 def run_once(fused_moe, override_config, x, w1, w2, topk_output, cfg, torch,
              b1=None, b2=None):
     from sglang.srt.layers.moe.moe_runner import MoeRunnerConfig
@@ -208,6 +234,16 @@ def main():
         shape, a.tokens, a.routing, torch, gen, with_bias=a.bias)
     topk_output = make_topk(x, gating, topk)
     routing_stats = L.expert_load_stats(topk_output.topk_ids, E, torch)
+
+    # The baseline must actually be the heuristic default. If a tuned config
+    # file is reachable -- e.g. because PYTHONPATH points at a tree that
+    # contains the very config being evaluated -- get_moe_configs silently
+    # returns it, including through the cross-version fallback, and every
+    # "speedup over default" in the run is then a comparison against an
+    # already-tuned baseline. That happened once (see
+    # docs/2026-07-29/RETRACTION_triton36_baseline_contamination.md) and was
+    # only caught days later, so fail loudly instead.
+    assert_clean_baseline(E, N)
 
     # reference = the DEFAULT path, i.e. exactly what the server does today
     ref = run_once(fused_moe, override_config, x, w1, w2, topk_output, None, torch,
