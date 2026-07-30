@@ -22,6 +22,12 @@ Read top-down; each entry says what it is and whether it is still current.
 |---|---|
 | [`architecture_primer.md`](architecture_primer.md) | **推理侧模型架构入门，给 infra 视角写的。** 一层 Transformer 的四件事、Q/K/V 和多头、QK-Norm 为什么存在（含 softmax 饱和的实测数据）、GQA 如何决定 KV cache、prefill/decode 为何瓶颈相反。所有 shape 取自 gemma-3-1b 真实 config，每节标注了我们做过的哪个优化落在这一层。 |
 
+### 2026-07-30 — how SGLang onboards models and dispatches backends
+
+| doc | what's in it |
+|---|---|
+| [`2026-07-30/sglang_model_onboarding_and_backend_dispatch.md`](2026-07-30/sglang_model_onboarding_and_backend_dispatch.md) | **调研：SGLang 内部到底怎么接模型、怎么选 backend，以及和 torch.compile/FX 体系的接口在哪。** 三个可复核的结论：212 个模型是手写的（通用路径靠类名字符串匹配，不是 FX）；backend 决策是手写 if/elif，看硬件不看图；从 vLLM 移植了 FX pass 基础设施但**融合 pass 没跟过来**——挂载点是空的。附四个实验方案，以及已完成的预实验（post-grad 图上 RMSNorm pattern 干净可匹配，风险已排除）。 |
+
 ### 2026-07-29 — the Triton 3.6 re-tune (retracted)
 
 | doc | what's in it |
