@@ -27,6 +27,7 @@ Read top-down; each entry says what it is and whether it is still current.
 | doc | what's in it |
 |---|---|
 | [`2026-07-30/sglang_model_onboarding_and_backend_dispatch.md`](2026-07-30/sglang_model_onboarding_and_backend_dispatch.md) | **调研：SGLang 内部到底怎么接模型、怎么选 backend，以及和 torch.compile/FX 体系的接口在哪。** 三个可复核的结论：212 个模型是手写的（通用路径靠类名字符串匹配，不是 FX）；backend 决策是手写 if/elif，看硬件不看图；从 vLLM 移植了 FX pass 基础设施但**融合 pass 没跟过来**——挂载点是空的。附四个实验方案，以及已完成的预实验（post-grad 图上 RMSNorm pattern 干净可匹配，风险已排除）。 |
+| [`2026-07-30/fusion_discovery_walkthrough.md`](2026-07-30/fusion_discovery_walkthrough.md) | **融合机会的发现—验证—尝试全流程，结合模型运行流程讲。** 融合机会长在 GEMM 之间的胶水算子上；四个阶段各自要做什么；含一次现场演示：静态扫描找到 2 个候选，阶段 2 全部否掉（一个是死代码，一个没有对应 kernel）。也纠正了把 MoE config 误当 fusion 案例的分类错误。 |
 | [`2026-07-30/fx_vs_profiling_for_fusion_discovery.md`](2026-07-30/fx_vs_profiling_for_fusion_discovery.md) | **给 agent 设计融合发现流程：FX graph 还是 profiling？** 用我们自己的 5 个案例做交叉分类，证明两者失败模式不同且都被我们踩过——FX 只看得到 trace 那刻走的分支（实测复刻了 OLMo-2 的误报），profiling 只对它跑的那个配置成立（CUDA graph 关掉导致高估 10 倍）。结论是四层漏斗，关键在中间那道「这条路径真的执行吗」的闸门。 |
 
 ### 2026-07-29 — the Triton 3.6 re-tune (retracted)

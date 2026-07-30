@@ -1,3 +1,12 @@
+> **⚠️ 一处分类错误已纠正（同日）。** 本文 §1 的对照表把 **LFM2.5 的 MoE config**（+23.3%）
+> 当作 fusion 案例列入，这是错的 —— 它一个 kernel 都没合并，只是给已有 kernel 换了 tile 参数，
+> 属于 **config tuning**，和 fusion 是两条独立的优化线。
+> 因此「FX 结构上看不到它」这个论据**不能用来论证 fusion 场景下 FX 不如 profiling**。
+>
+> 修正后的分工结论、以及结合模型运行流程的完整流程讲解，见
+> [`fusion_discovery_walkthrough.md`](fusion_discovery_walkthrough.md)。
+> 本文其余部分（FX 与 profiling 各自的失败模式、四阶段漏斗）仍然成立。
+
 # FX graph 还是 profiling？—— 给 agent 设计融合机会发现流程
 
 **日期**：2026-07-30
