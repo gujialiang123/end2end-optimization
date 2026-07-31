@@ -1,0 +1,484 @@
+{
+ "n_graphs": 1,
+ "n_chains": 17,
+ "total_bytes_saved": 9651904,
+ "by_signature": {
+  "pow->mean->add->rsqrt->mul->mul->convert_element_type": 5,
+  "mul->add->convert_element_type": 4,
+  "pow->mean->add->rsqrt->mul->mul->convert_element_type->add": 3,
+  "neg->exp->add->div->convert_element_type->mul": 2,
+  "pow->mean->add->rsqrt->mul->mul->convert_element_type->add->convert_element_type": 1,
+  "cos->mul": 1,
+  "sin->mul": 1
+ },
+ "chains": [
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8192
+    ],
+    [
+     1,
+     8,
+     8192
+    ]
+   ],
+   "est_bytes_saved": 2359296,
+   "nodes": [
+    "neg_2",
+    "exp",
+    "add_9",
+    "div",
+    "convert_element_type_20",
+    "mul_12"
+   ]
+  },
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8192
+    ],
+    [
+     1,
+     8,
+     8192
+    ]
+   ],
+   "est_bytes_saved": 2359296,
+   "nodes": [
+    "neg_5",
+    "exp_1",
+    "add_18",
+    "div_1",
+    "convert_element_type_46",
+    "mul_25"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type->add->convert_element_type",
+   "length": 9,
+   "n_pointwise": 8,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 524480,
+   "nodes": [
+    "pow_8",
+    "mean_7",
+    "add_19",
+    "rsqrt_7",
+    "mul_26",
+    "mul_27",
+    "convert_element_type_52",
+    "add_20",
+    "convert_element_type_53"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type->add",
+   "length": 8,
+   "n_pointwise": 7,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 458944,
+   "nodes": [
+    "pow_3",
+    "mean_2",
+    "add_7",
+    "rsqrt_2",
+    "mul_10",
+    "mul_11",
+    "convert_element_type_16",
+    "add_8"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type->add",
+   "length": 8,
+   "n_pointwise": 7,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 458944,
+   "nodes": [
+    "pow_4",
+    "mean_3",
+    "add_10",
+    "rsqrt_3",
+    "mul_13",
+    "mul_14",
+    "convert_element_type_26",
+    "add_11"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type->add",
+   "length": 8,
+   "n_pointwise": 7,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 458944,
+   "nodes": [
+    "pow_7",
+    "mean_6",
+    "add_16",
+    "rsqrt_6",
+    "mul_23",
+    "mul_24",
+    "convert_element_type_42",
+    "add_17"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 393408,
+   "nodes": [
+    "pow_1",
+    "mean",
+    "add_3",
+    "rsqrt",
+    "mul_2",
+    "mul_3",
+    "convert_element_type_4"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 393408,
+   "nodes": [
+    "pow_2",
+    "mean_1",
+    "add_4",
+    "rsqrt_1",
+    "mul_4",
+    "mul_5",
+    "convert_element_type_8"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 393408,
+   "nodes": [
+    "pow_5",
+    "mean_4",
+    "add_12",
+    "rsqrt_4",
+    "mul_15",
+    "mul_16",
+    "convert_element_type_30"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 393408,
+   "nodes": [
+    "pow_6",
+    "mean_5",
+    "add_13",
+    "rsqrt_5",
+    "mul_17",
+    "mul_18",
+    "convert_element_type_34"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->mul->convert_element_type",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 393408,
+   "nodes": [
+    "pow_9",
+    "mean_8",
+    "add_21",
+    "rsqrt_8",
+    "mul_28",
+    "mul_29",
+    "convert_element_type_54"
+   ]
+  },
+  {
+   "signature": "mul->add->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     16,
+     8,
+     128
+    ],
+    [
+     1,
+     16,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 262144,
+   "nodes": [
+    "mul_6",
+    "add_5",
+    "convert_element_type_11"
+   ]
+  },
+  {
+   "signature": "mul->add->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     16,
+     8,
+     128
+    ],
+    [
+     1,
+     16,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 262144,
+   "nodes": [
+    "mul_8",
+    "add_6",
+    "convert_element_type_12"
+   ]
+  },
+  {
+   "signature": "mul->add->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     16,
+     8,
+     128
+    ],
+    [
+     1,
+     16,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 262144,
+   "nodes": [
+    "mul_19",
+    "add_14",
+    "convert_element_type_37"
+   ]
+  },
+  {
+   "signature": "mul->add->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     16,
+     8,
+     128
+    ],
+    [
+     1,
+     16,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 262144,
+   "nodes": [
+    "mul_21",
+    "add_15",
+    "convert_element_type_38"
+   ]
+  },
+  {
+   "signature": "cos->mul",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     128
+    ],
+    [
+     1,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 8192,
+   "nodes": [
+    "cos",
+    "mul"
+   ]
+  },
+  {
+   "signature": "sin->mul",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     128
+    ],
+    [
+     1,
+     8,
+     128
+    ]
+   ],
+   "est_bytes_saved": 8192,
+   "nodes": [
+    "sin",
+    "mul_1"
+   ]
+  }
+ ],
+ "model": "olmo2-1b",
+ "model_path": "/data/hf/gujialiang123/models/OLMo-2-1B-Instruct",
+ "layers_compiled": 2,
+ "layers_real": 16,
+ "tokens": 8,
+ "wall_s": 24.4,
+ "torch": "2.11.0+cu130"
+}

@@ -1,0 +1,479 @@
+{
+ "n_graphs": 1,
+ "n_chains": 18,
+ "total_bytes_saved": 6865984,
+ "by_signature": {
+  "mul->add": 7,
+  "pow->mean->add->rsqrt->mul->convert_element_type->mul": 5,
+  "neg->exp->add->div->convert_element_type->mul": 2,
+  "mul->add->convert_element_type": 1,
+  "cos->mul->convert_element_type": 1,
+  "sin->mul->convert_element_type": 1,
+  "add->convert_element_type": 1
+ },
+ "chains": [
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8192
+    ],
+    [
+     1,
+     8,
+     8192
+    ]
+   ],
+   "est_bytes_saved": 2359296,
+   "nodes": [
+    "neg_2",
+    "exp",
+    "add_8",
+    "div",
+    "convert_element_type_18",
+    "mul_12"
+   ]
+  },
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8192
+    ],
+    [
+     1,
+     8,
+     8192
+    ]
+   ],
+   "est_bytes_saved": 2359296,
+   "nodes": [
+    "neg_5",
+    "exp_1",
+    "add_15",
+    "div_1",
+    "convert_element_type_38",
+    "mul_23"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_1",
+    "mean",
+    "add_3",
+    "rsqrt",
+    "mul_3",
+    "convert_element_type_4",
+    "mul_4"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_2",
+    "mean_1",
+    "add_7",
+    "rsqrt_1",
+    "mul_10",
+    "convert_element_type_14",
+    "mul_11"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_3",
+    "mean_2",
+    "add_10",
+    "rsqrt_2",
+    "mul_14",
+    "convert_element_type_24",
+    "mul_15"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_4",
+    "mean_3",
+    "add_14",
+    "rsqrt_3",
+    "mul_21",
+    "convert_element_type_34",
+    "mul_22"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_5",
+    "mean_4",
+    "add_17",
+    "rsqrt_4",
+    "mul_25",
+    "convert_element_type_44",
+    "mul_26"
+   ]
+  },
+  {
+   "signature": "mul->add->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 131072,
+   "nodes": [
+    "mul_24",
+    "add_16",
+    "convert_element_type_43"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     32,
+     8,
+     64
+    ],
+    [
+     1,
+     32,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "mul_5",
+    "add_4"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "mul_9",
+    "add_6"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "mul_13",
+    "add_9"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     32,
+     8,
+     64
+    ],
+    [
+     1,
+     32,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "mul_16",
+    "add_11"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "mul_20",
+    "add_13"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8,
+     64
+    ],
+    [
+     1,
+     8,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 16384,
+   "nodes": [
+    "mul_7",
+    "add_5"
+   ]
+  },
+  {
+   "signature": "mul->add",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     8,
+     64
+    ],
+    [
+     1,
+     8,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 16384,
+   "nodes": [
+    "mul_18",
+    "add_12"
+   ]
+  },
+  {
+   "signature": "cos->mul->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     64
+    ],
+    [
+     1,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 8192,
+   "nodes": [
+    "cos",
+    "mul_1",
+    "convert_element_type_1"
+   ]
+  },
+  {
+   "signature": "sin->mul->convert_element_type",
+   "length": 3,
+   "n_pointwise": 3,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     64
+    ],
+    [
+     1,
+     8,
+     64
+    ]
+   ],
+   "est_bytes_saved": 8192,
+   "nodes": [
+    "sin",
+    "mul_2",
+    "convert_element_type_2"
+   ]
+  },
+  {
+   "signature": "add->convert_element_type",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     8
+    ],
+    [
+     1,
+     1,
+     8
+    ]
+   ],
+   "est_bytes_saved": 128,
+   "nodes": [
+    "add",
+    "convert_element_type"
+   ]
+  }
+ ],
+ "model": "granite-3.3-2b",
+ "model_path": "/data/hf/gujialiang123/models/granite-3.3-2b-instruct",
+ "layers_compiled": 2,
+ "layers_real": 40,
+ "tokens": 8,
+ "wall_s": 16.9,
+ "torch": "2.11.0+cu130"
+}
