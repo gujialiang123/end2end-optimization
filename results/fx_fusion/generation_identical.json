@@ -1,0 +1,55 @@
+{
+ "model": "/data/hf/models/gemma-3-1b-it",
+ "identical": 6,
+ "total": 8,
+ "rows": [
+  {
+   "prompt": "The capital of France is",
+   "identical": true,
+   "baseline": " Paris.\n\nThe largest city in France is Paris.\n\nThe most popular city in France is Paris.\n\nThe most expensive city in France is Paris.\n\nThe most beautiful city in France is Paris.\n\nThe most charming city in France",
+   "patched": " Paris.\n\nThe largest city in France is Paris.\n\nThe most popular city in France is Paris.\n\nThe most expensive city in France is Paris.\n\nThe most beautiful city in France is Paris.\n\nThe most charming city in France"
+  },
+  {
+   "prompt": "Write a haiku about autumn rain.",
+   "identical": true,
+   "baseline": "\n\nGolden drops fall down,\nWashing the world, cool and clean,\nEarth drinks, sighs content.\n\nHow does this haiku evoke a feeling of autumn rain?\nIt uses imagery of golden drops, a cool, clean",
+   "patched": "\n\nGolden drops fall down,\nWashing the world, cool and clean,\nEarth drinks, sighs content.\n\nHow does this haiku evoke a feeling of autumn rain?\nIt uses imagery of golden drops, a cool, clean"
+  },
+  {
+   "prompt": "Explain in one sentence why the sky is blue.",
+   "identical": true,
+   "baseline": "\n\nThe sky appears blue because of a phenomenon called Rayleigh scattering, where shorter wavelengths of light (like blue and violet) are scattered more by the atmosphere than longer wavelengths (like red and orange).\n",
+   "patched": "\n\nThe sky appears blue because of a phenomenon called Rayleigh scattering, where shorter wavelengths of light (like blue and violet) are scattered more by the atmosphere than longer wavelengths (like red and orange).\n"
+  },
+  {
+   "prompt": "List three prime numbers greater than 50.",
+   "identical": false,
+   "baseline": "\n\nThe prime numbers greater than 50 are 53, 59, 61, 67, 71, 73, 79, 83, 89, 9",
+   "patched": "\n\nA prime number is a natural number greater than 1 that has no positive divisors other than 1 and itself.\n\nThe prime numbers greater than 50 are:\n53, 59, 61, "
+  },
+  {
+   "prompt": "def fibonacci(n):",
+   "identical": true,
+   "baseline": "\n    \"\"\"\n    This function calculates the nth Fibonacci number.\n    \"\"\"\n    if n <= 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        ",
+   "patched": "\n    \"\"\"\n    This function calculates the nth Fibonacci number.\n    \"\"\"\n    if n <= 0:\n        return 0\n    elif n == 1:\n        return 1\n    else:\n        "
+  },
+  {
+   "prompt": "The three laws of thermodynamics are",
+   "identical": false,
+   "baseline": " fundamental to understanding the behavior of the universe.\n\n1.  **First Law (Conservation of Energy):** Energy cannot be created or destroyed, only transformed from one form to another.\n2.  **Second Law (Entropy):**",
+   "patched": " fundamental to understanding the behavior of energy and matter in the universe.\n\n1.  **First Law (Conservation of Energy):** Energy cannot be created or destroyed, only transformed from one form to another.  This is the basis of the"
+  },
+  {
+   "prompt": "Translate to French: 'Where is the library?'",
+   "identical": true,
+   "baseline": "\n\nHere are a few options for translating this, with slightly different nuances:\n\n* **O\u00f9 est la biblioth\u00e8que ?** - This is the most direct and common translation.\n* **O\u00f9 se trouve la biblioth\u00e8que ?** - This",
+   "patched": "\n\nHere are a few options for translating this, with slightly different nuances:\n\n* **O\u00f9 est la biblioth\u00e8que ?** - This is the most direct and common translation.\n* **O\u00f9 se trouve la biblioth\u00e8que ?** - This"
+  },
+  {
+   "prompt": "Q: What is 17 times 23? A:",
+   "identical": true,
+   "baseline": " 391\n\n*   **17 x 23 = 391**\n\nThis is a standard mathematical operation.",
+   "patched": " 391\n\n*   **17 x 23 = 391**\n\nThis is a standard mathematical operation."
+  }
+ ]
+}

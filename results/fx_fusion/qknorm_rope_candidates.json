@@ -1,0 +1,120 @@
+{
+ "src": "/tmp/sglang_fqr",
+ "users": [
+  "deepseek_v4.py",
+  "gemma3_causal.py",
+  "mellum.py",
+  "qwen3_moe.py"
+ ],
+ "candidates": [
+  {
+   "file": "afmoe.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "apertus.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "commandr.py",
+   "rope": "gptj-interleave (kernel has a variant)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "deepseek_janus_pro.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "exaone4.py",
+   "rope": "gptj-interleave (kernel has a variant)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "exaone_moe.py",
+   "rope": "gptj-interleave (kernel has a variant)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "gemma3n_causal.py",
+   "rope": "neox (kernel default)",
+   "norm": "gemma (1+w), inherited",
+   "has_other_fusion": false
+  },
+  {
+   "file": "gemma4_causal.py",
+   "rope": "neox (kernel default)",
+   "norm": "gemma (1+w), inherited",
+   "has_other_fusion": false
+  },
+  {
+   "file": "gemma4_vision.py",
+   "rope": "neox (kernel default)",
+   "norm": "gemma (1+w), inherited",
+   "has_other_fusion": false
+  },
+  {
+   "file": "hunyuan_v3.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "minimax_m3.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": true
+  },
+  {
+   "file": "mllama.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "moss_vl.py",
+   "rope": "mrope (kernel does not cover)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "olmo2.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "olmoe.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "qwen3_5.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "qwen3_next.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  },
+  {
+   "file": "step3p5.py",
+   "rope": "neox (kernel default)",
+   "norm": "plain w",
+   "has_other_fusion": false
+  }
+ ],
+ "n_actionable": 16
+}

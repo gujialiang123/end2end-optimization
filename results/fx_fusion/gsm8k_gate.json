@@ -1,0 +1,24 @@
+{
+ "model": "/data/hf/models/gemma-3-1b-it",
+ "n": 400,
+ "arms": {
+  "baseline": {
+   "correct": 86,
+   "total": 400,
+   "acc": 0.215
+  },
+  "baseline_seed2": {
+   "correct": 86,
+   "total": 400,
+   "acc": 0.215
+  },
+  "fused": {
+   "correct": 88,
+   "total": 400,
+   "acc": 0.22
+  }
+ },
+ "noise_floor_pts": 0.0,
+ "delta_pts": 0.5,
+ "verdict": "IMPROVED beyond noise"
+}
