@@ -1,0 +1,121 @@
+{
+ "src": "/tmp/sglang_fqr_base",
+ "models": [
+  {
+   "name": "olmo2",
+   "path": "/home/t-jialianggu/models/OLMo-2-0425-1B-Instruct",
+   "eligible": false,
+   "reasons": [
+    "q_norm normalises across heads (RMSNorm(self.config.hidden_size)), kernel is per-head -- NOT equivalent"
+   ],
+   "config": {
+    "arch": "Olmo2ForCausalLM",
+    "head_dim": 128,
+    "n_heads": 16,
+    "n_kv": 16,
+    "dtype": "bfloat16",
+    "rope_theta": 500000,
+    "rope_scaling": null,
+    "layers": 16
+   },
+   "profile": null
+  },
+  {
+   "name": "olmoe",
+   "path": "/home/t-jialianggu/models/OLMoE-1B-7B-0924-Instruct",
+   "eligible": false,
+   "reasons": [
+    "q_norm normalises across heads (RMSNorm(hidden_size)), kernel is per-head -- NOT equivalent"
+   ],
+   "config": {
+    "arch": "OlmoeForCausalLM",
+    "head_dim": 128,
+    "n_heads": 16,
+    "n_kv": 16,
+    "dtype": "bfloat16",
+    "rope_theta": 10000.0,
+    "rope_scaling": null,
+    "layers": 16
+   },
+   "profile": null
+  },
+  {
+   "name": "exaone4",
+   "path": "/home/t-jialianggu/models/EXAONE-4.0-1.2B",
+   "eligible": false,
+   "reasons": [
+    "rope_type=llama3 (kernel has default and yarn only)"
+   ],
+   "config": {
+    "arch": "Exaone4ForCausalLM",
+    "head_dim": 64,
+    "n_heads": 32,
+    "n_kv": 8,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000.0,
+    "rope_scaling": {
+     "factor": 16.0,
+     "high_freq_factor": 4.0,
+     "low_freq_factor": 1.0,
+     "original_max_position_embeddings": 8192,
+     "rope_type": "llama3"
+    },
+    "layers": 30
+   },
+   "profile": null
+  },
+  {
+   "name": "gemma3_causal",
+   "path": "/data/hf/models/gemma-3-1b-it",
+   "eligible": true,
+   "reasons": [],
+   "config": {
+    "arch": "Gemma3ForCausalLM",
+    "head_dim": 256,
+    "n_heads": 4,
+    "n_kv": 1,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000,
+    "rope_scaling": null,
+    "layers": 26
+   },
+   "profile": null
+  },
+  {
+   "name": "qwen3",
+   "path": "/data/hf/models/Qwen3-0.6B",
+   "eligible": true,
+   "reasons": [],
+   "config": {
+    "arch": "Qwen3ForCausalLM",
+    "head_dim": 128,
+    "n_heads": 16,
+    "n_kv": 8,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000,
+    "rope_scaling": null,
+    "layers": 28
+   },
+   "profile": null
+  },
+  {
+   "name": "qwen3_moe",
+   "path": "/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
+   "eligible": false,
+   "reasons": [
+    "already calls the fused kernel"
+   ],
+   "config": {
+    "arch": "Qwen3MoeForCausalLM",
+    "head_dim": 128,
+    "n_heads": 32,
+    "n_kv": 4,
+    "dtype": "bfloat16",
+    "rope_theta": 10000000,
+    "rope_scaling": null,
+    "layers": 48
+   },
+   "profile": null
+  }
+ ]
+}

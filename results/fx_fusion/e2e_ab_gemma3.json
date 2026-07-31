@@ -1,0 +1,59 @@
+{
+ "model": "/data/hf/models/gemma-3-1b-it",
+ "gpu": "0",
+ "reps": 5,
+ "regimes": [
+  {
+   "regime": "decode_bs1",
+   "batch_size": 1,
+   "input_len": 128,
+   "output_len": 64,
+   "baseline_decode_ms": 3.01,
+   "fused_decode_ms": 2.17,
+   "decode_speedup": 1.3871,
+   "throughput_gain_pct": 37.267,
+   "welch_p": 0.0,
+   "significant": true,
+   "reps": 5
+  },
+  {
+   "regime": "decode_bs32",
+   "batch_size": 32,
+   "input_len": 128,
+   "output_len": 64,
+   "baseline_decode_ms": 3.31,
+   "fused_decode_ms": 2.38,
+   "decode_speedup": 1.3908,
+   "throughput_gain_pct": 37.217,
+   "welch_p": 0.0,
+   "significant": true,
+   "reps": 5
+  },
+  {
+   "regime": "decode_bs64",
+   "batch_size": 64,
+   "input_len": 512,
+   "output_len": 64,
+   "baseline_decode_ms": 3.72,
+   "fused_decode_ms": 2.79,
+   "decode_speedup": 1.3333,
+   "throughput_gain_pct": 28.798,
+   "welch_p": 0.0,
+   "significant": true,
+   "reps": 5
+  },
+  {
+   "regime": "prefill_heavy",
+   "batch_size": 8,
+   "input_len": 2048,
+   "output_len": 8,
+   "baseline_decode_ms": 3.36,
+   "fused_decode_ms": 2.38,
+   "decode_speedup": 1.4118,
+   "throughput_gain_pct": 25.675,
+   "welch_p": 0.0,
+   "significant": true,
+   "reps": 5
+  }
+ ]
+}

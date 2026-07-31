@@ -30,11 +30,13 @@ REGIMES = [
 ]
 
 
-def bench(tree: str, model: str, gpu: str, cfg: dict) -> dict | None:
+def bench(tree: str, model: str, gpu: str, cfg: dict,
+          extra_env: dict | None = None) -> dict | None:
     import os
     env = dict(os.environ)
     env["PYTHONPATH"] = f"{tree}/python"
     env["CUDA_VISIBLE_DEVICES"] = gpu
+    env.update(extra_env or {})
     cmd = [sys.executable, "-m", "sglang.bench_one_batch",
            "--model-path", model,
            "--batch-size", str(cfg["batch_size"]),
@@ -74,7 +76,11 @@ def welch_p(xs, ys) -> float:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--baseline-tree", required=True)
+    ap.add_argument("--baseline-tree", required=True,
+                    help="unmodified main")
+    ap.add_argument("--ablate", action="store_true",
+                    help="add an arm with the fused norm but a separate rope, "
+                         "which isolates this change from PR #32670's")
     ap.add_argument("--patched-tree", required=True)
     ap.add_argument("--model", default="/data/hf/models/gemma-3-1b-it")
     ap.add_argument("--gpu", default="0")
@@ -87,10 +93,19 @@ def main() -> None:
         print(f"\n=== {name}: bs={cfg['batch_size']} in={cfg['input_len']} "
               f"out={cfg['output_len']} ===")
         arms = {}
-        for arm, tree in (("baseline", a.baseline_tree), ("fused", a.patched_tree)):
+        # The ablation arm lives in the patched tree behind an env var, so it
+        # shares all of this file's layout handling. Two separate trees would
+        # also differ in how the norm output is laid out, and that difference
+        # alone crashed the attention backend when tried.
+        trees = [("baseline", a.baseline_tree, {})]
+        if a.ablate:
+            trees.append(("fused_norm_only", a.patched_tree,
+                          {"SGLANG_GEMMA3_NO_FUSED_ROPE": "1"}))
+        trees.append(("fused", a.patched_tree, {}))
+        for arm, tree, extra in trees:
             vals = []
             for i in range(a.reps):
-                r = bench(tree, a.model, a.gpu, cfg)
+                r = bench(tree, a.model, a.gpu, cfg, extra)
                 if r is None:
                     print(f"  {arm} rep {i} failed")
                     continue
@@ -102,7 +117,7 @@ def main() -> None:
             tp = statistics.median(v["total_tps"] for v in vals)
             print(f"  {arm:9s} decode {dm * 1000:7.3f} ms   total {tp:9.1f} tok/s"
                   f"   (n={len(vals)})")
-        if len(arms) != 2:
+        if "baseline" not in arms or "fused" not in arms:
             continue
 
         b = [v["decode_median_s"] for v in arms["baseline"]]
@@ -115,12 +130,31 @@ def main() -> None:
         sig = "significant" if p < 0.05 else "n.s."
         print(f"  -> decode {speedup:.4f}x   throughput {tp_gain:+.2f}%   "
               f"p={p:.3f} ({sig})")
+        # The increment over a main-equivalent baseline is the number to quote.
+        # Against raw main this change also collects the rank-guard fix, which
+        # is PR #32670's and already in flight upstream.
+        inc = None
+        if "fused_norm_only" in arms:
+            pr = [v["decode_median_s"] for v in arms["fused_norm_only"]]
+            prt = [v["total_tps"] for v in arms["fused_norm_only"]]
+            inc = statistics.median(pr) / statistics.median(f)
+            inc_tp = (statistics.median(ft) / statistics.median(prt) - 1) * 100
+            inc_p = welch_p(pr, f)
+            print(f"  -> vs fused-norm-only:  decode {inc:.4f}x  "
+                  f"throughput {inc_tp:+.2f}%  p={inc_p:.3f} "
+                  f"({'significant' if inc_p < 0.05 else 'n.s.'})   <-- the increment")
+
         rows.append(dict(regime=name, **cfg,
                          baseline_decode_ms=round(statistics.median(b) * 1000, 4),
                          fused_decode_ms=round(statistics.median(f) * 1000, 4),
                          decode_speedup=round(speedup, 4),
                          throughput_gain_pct=round(tp_gain, 3),
                          welch_p=round(p, 5), significant=bool(p < 0.05),
+                         fused_norm_only_decode_ms=(round(statistics.median(pr) * 1000, 4)
+                                            if inc else None),
+                         increment_vs_fused_norm_only=(round(inc, 4) if inc else None),
+                         increment_throughput_pct=(round(inc_tp, 3) if inc else None),
+                         increment_p=(round(inc_p, 5) if inc else None),
                          reps=a.reps))
 
     if a.out:
