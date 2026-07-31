@@ -1,7 +1,7 @@
 ---
 name: fusion-gap-hunting
 description: Find kernels a model runs unfused that the framework already ships a fused implementation for, by combining a static AST scan of the dispatch code with an FX trace sweep or an operator-level profile audit.
-version: 2
+version: 3
 stage: [1, 2]
 inputs:
   - framework_src: path to the serving framework checkout (e.g. /home/.../sglang)
@@ -51,6 +51,20 @@ of the same pattern, none of which required writing a kernel:
 | LFM2.5 | `fused_add_rmsnorm` | llama, qwen2, nearly all | `Lfm2MoeDecoderLayer` | +2.35 % |
 | LFM2.5 | `fused_qk_norm_rope` | Qwen3-MoE | `Lfm2MoeAttention` | +5.42 % |
 | **Gemma-3** | `gemma_rmsnorm` | **`GemmaRMSNorm`, same file, ~100 lines above** | `Gemma3RMSNorm.forward_cuda` | **+112.8 %** |
+
+**Two more (2026-07-31), and the second is the more instructive.**
+
+| model | primitive | how it was missed | measured |
+|---|---|---|---|
+| Gemma-3 | `fused_qk_norm_rope` | model file never names it; 4 others do | +0.5–1.1 % e2e |
+| **OLMo-2** | its own `RMSNorm` fused path | **branch calls `forward_native` explicitly** | **prefill 1.24×** |
+
+OLMo-2 is the shape worth internalising. `_apply_qk_norm` reaches the fused
+kernel under `get_is_capture_mode()` and calls `forward_native` otherwise, so
+graphed decode looks clean and **prefill runs eager every time**. The gap is not
+"nobody wired this up" but "it was wired up for one path". Same family, OLMoE
+calls `self.q_norm(...)` plainly and has no gap — 1 eager-norm call against
+OLMo-2's 97, which the operator audit separated correctly.
 
 **The single most important calibration:** in the same study, hand-writing two
 Triton kernels (with tile sweeps, correctness gates and shape guards) consumed
@@ -255,6 +269,28 @@ is **kernel time**, never end-to-end — keep them separate in every report.
   `from sgl_kernel import` found 63 names; adding `sglang.kernels.*` found 629,
   and the difference is exactly the in-tree Triton kernels the newer model files
   call.
+- *"The config says head_dim is supported" ≠ "the kernel is equivalent."*
+  OLMo-2 and Gemma-3 look identical in source -- `q_norm`, `k_norm`, then rope,
+  all called separately -- and both report a supported `head_dim`. But OLMo-2
+  builds `RMSNorm(config.hidden_size)` and normalises the whole q projection at
+  once, while Gemma-3 builds `Gemma3RMSNorm(head_dim)` and normalises per head.
+  A per-head kernel applied to the first is **silently wrong**, not slow. Check
+  the norm's constructor argument, not the config
+  (`scan_models_pipeline.py:norm_scope`).
+- *A rope the kernel does not implement is also silent.* EXAONE-4 carries
+  `rope_scaling.rope_type = "llama3"`; the kernel has plain and YaRN. Wrong
+  frequencies, no error.
+- *Profiling with `--disable-cuda-graph` can change which branch runs.*
+  OLMo-2's `_apply_qk_norm` selects the fused path on
+  `get_is_capture_mode()`, so disabling graphs -- the standard way to see
+  individual kernels -- forces the eager branch that decode would never take.
+  Its 6.62 % of decode kernel time is real for prefill and does not exist in
+  graphed decode. **Before believing a gap, check whether the branch that
+  produced it is the one production runs.**
+- *Check whether the model already fails without you.* OLMo-2 with fa3 and cuda
+  graphs dies with `cudaErrorIllegalAddress` on unpatched `main`. Reproducing
+  that on the clean tree took two minutes and saved debugging a patch that was
+  not at fault.
 - `NewGELU` carries an explicit `# TODO: Implement the CUDA kernel` — a known
   absence, not an un-called primitive.
 
@@ -284,6 +320,14 @@ That is fine — candidates are cheap, the audit is the arbiter.
 Non-negotiable, in this order. Skipping any of these has produced a wrong
 conclusion in this project before.
 
+0. **Score against a higher-precision reference, never against the other arm.**
+   Two bf16 paths that disagree tell you they disagree, not which is wrong. In
+   the 2026-07-31 run this produced two wrong conclusions in a row: a fused
+   kernel looked 4 % off (it was a max over elements, dominated by whichever
+   sits nearest zero) and then 87 % off at one rope base (same cause). Against
+   fp64 the kernel was at 0.141 % and the path it replaced at 0.14–0.23 %, i.e.
+   *closer* to exact. Use fp64, use **mean** relative error, and print one bf16
+   ULP next to it as the floor a bf16 kernel is entitled to.
 1. **Correctness before performance.** Never time a variant that failed its
    gate.
 2. **Choose a gate the model can actually satisfy.** Token identity is
@@ -294,6 +338,21 @@ conclusion in this project before.
    *provably* cannot alter the result (e.g. skipping a multiply by 1.0). In this
    study that arm moved GSM8K by **0.8 points** — that is the harness noise,
    measured rather than assumed. Any claim smaller than it is not a claim.
+
+   **A floor that cannot move is worse than no floor.** Rerunning the same tree
+   under a different seed is *not* a noise floor when decoding is greedy: it is
+   deterministic and reports 0.00, which makes any difference at all look
+   significant. If both arms answer the same questions, the test is paired — use
+   McNemar over the discordant pairs. The 2026-07-31 fused-rope arm read
+   +0.50 points against a 0.00 "floor" and came out at 21 wins to 19 losses,
+   p = 0.875: ten percent of answers moved and the net effect was a coin flip,
+   which is what a bf16-level perturbation looks like.
+
+   **Token identity is the wrong gate for a fusion that changes rounding.** A
+   kernel holding norm and rotate in fp32 registers cannot match a path that
+   rounds to bf16 in between, and 6/8 identical continuations only restates that.
+   Where the fused and eager paths *are* the same arithmetic — OLMo-2's norm —
+   identity does hold at 8/8, and then it is worth checking.
 4. **Verify the patch actually applied.** Print a marker and assert on it, or a
    silently no-op patch scores as "identical to baseline" and you will believe
    it.
@@ -359,6 +418,24 @@ If the fix is going upstream, add:
 
   Corollary for reporting: if a regime comes back `p = 0.053`, it is **not** a
   result. Print it with the verdict attached and keep it out of the headline.
+
+  **Put the ablation arm in the same tree, behind an env var.** Building a
+  separate worktree carrying only the older fix is the obvious move and it
+  crashed: forcing `.contiguous()` before the reshape changed strides that the
+  eager path happened to preserve, and the attention backend's later `view()`
+  rejected the result. One tree with a switch shares all the layout handling, so
+  the A/B isolates the change instead of also measuring whatever differs between
+  two trees.
+
+  This is not a formality. The 2026-07-31 fused-rope change read
+  **1.34–1.39× against raw main**, and against the ablation arm it was
+  **1.005–1.055×** — about 97 % of the headline belonged to the rank-guard fix
+  already in flight as PR #32670.
+
+  **And a microbenchmark speedup does not extrapolate.** The same change was
+  1.5–2.3× on the attention preamble in isolation. 26 layers saving ~3.5 µs each
+  is ~91 µs against a 2.2 ms decode step, so +0.5–1.1 % end-to-end is the
+  arithmetic working out, not a disappointment. Quote the end-to-end number.
 
 - **Re-check that the opportunity still exists, not just that your fix still
   applies.** These are different failures and we hit both within four days.

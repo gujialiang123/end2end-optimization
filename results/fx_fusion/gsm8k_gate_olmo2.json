@@ -1,0 +1,24 @@
+{
+ "model": "/home/t-jialianggu/models/OLMo-2-0425-1B-Instruct",
+ "n": 400,
+ "arms": {
+  "baseline": {
+   "correct": 262,
+   "total": 400,
+   "acc": 0.655
+  },
+  "baseline_seed2": {
+   "correct": 262,
+   "total": 400,
+   "acc": 0.655
+  },
+  "fused": {
+   "correct": 261,
+   "total": 400,
+   "acc": 0.6525
+  }
+ },
+ "seed_spread_pts": 0.0,
+ "delta_pts": -0.25,
+ "verdict": "see gsm8k_paired_test.py; seed spread is not a noise floor"
+}
