@@ -1,0 +1,86 @@
+{
+ "results": {
+  "[64, 1152]": {
+   "n_graphs": 1,
+   "n_breaks": 0,
+   "ops": [
+    "_get_data_attr",
+    "empty_like",
+    "get_device_capability",
+    "default"
+   ],
+   "eager_markers": [],
+   "looks_expanded": false,
+   "shape": [
+    64,
+    1152
+   ],
+   "rank": 2
+  },
+  "[1, 64, 1152]": {
+   "n_graphs": 1,
+   "n_breaks": 0,
+   "ops": [
+    "float",
+    "pow",
+    "mean",
+    "add",
+    "rsqrt",
+    "mul",
+    "float",
+    "add",
+    "mul",
+    "type_as"
+   ],
+   "eager_markers": [
+    "mean",
+    "pow",
+    "rsqrt"
+   ],
+   "looks_expanded": true,
+   "shape": [
+    1,
+    64,
+    1152
+   ],
+   "rank": 3
+  },
+  "[1, 64, 4, 1152]": {
+   "n_graphs": 1,
+   "n_breaks": 0,
+   "ops": [
+    "float",
+    "pow",
+    "mean",
+    "add",
+    "rsqrt",
+    "mul",
+    "float",
+    "add",
+    "mul",
+    "type_as"
+   ],
+   "eager_markers": [
+    "mean",
+    "pow",
+    "rsqrt"
+   ],
+   "looks_expanded": true,
+   "shape": [
+    1,
+    64,
+    4,
+    1152
+   ],
+   "rank": 4
+  }
+ },
+ "expanded_shapes": [
+  "[1, 64, 1152]",
+  "[1, 64, 4, 1152]"
+ ],
+ "opaque_shapes": [
+  "[64, 1152]"
+ ],
+ "dispatch_gap": true
+}
