@@ -22,6 +22,13 @@ Read top-down; each entry says what it is and whether it is still current.
 |---|---|
 | [`architecture_primer.md`](architecture_primer.md) | **推理侧模型架构入门，给 infra 视角写的。** 一层 Transformer 的四件事、Q/K/V 和多头、QK-Norm 为什么存在（含 softmax 饱和的实测数据）、GQA 如何决定 KV cache、prefill/decode 为何瓶颈相反。所有 shape 取自 gemma-3-1b 真实 config，每节标注了我们做过的哪个优化落在这一层。 |
 
+### 2026-07-31 — portable fusion discovery (final project)
+
+| doc | what's in it |
+|---|---|
+| [`2026-07-31/FINAL_PROJECT_portable_fusion_discovery.md`](2026-07-31/FINAL_PROJECT_portable_fusion_discovery.md) | **Final project 汇报版。** 把融合发现迁移到硬件无关的 FX 路线（可用于 MAIA）。四个结果：扫描器独立重现了我们人工发现的 +36.6% 案例；torch.compile 相对 eager 拿到 11.8×，而手写 kernel 中位仅 0.80×；我们此前手工做的融合 Inductor 已全部自动完成；找到一个编译器也融不掉的新机会（QK-norm 切片，最高 2.00×，21 个模型适用）。 |
+| [`2026-07-31/fx_based_fusion_discovery_results.md`](2026-07-31/fx_based_fusion_discovery_results.md) | 上文的完整实验细节：扫描器设计、5 模型扫描结果、33 配置三方对比、以及一次 Dynamo 静默退回 eager 导致结论反转的方法学记录。 |
+
 ### 2026-07-30 — how SGLang onboards models and dispatches backends
 
 | doc | what's in it |
