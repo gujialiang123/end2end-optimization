@@ -233,6 +233,58 @@ out = (o * torch.rsqrt(o.pow(2).mean(-1,keepdim=True)+1e-6) * wcat.float()).type
 
 ---
 
+### 这个模式有多普遍
+
+不是孤例。sglang 里 **21 个模型文件**都是这个形态（`self.q_norm(q)` 和 `self.k_norm(k)` 分两次调用）：
+
+```
+grep -rln "self.q_norm(" python/sglang/srt/models/*.py | wc -l   ->  21
+```
+
+gemma-3、qwen3、olmo-2 等主流模型都在内。
+
+### 用 sglang 真实融合 kernel 复测
+
+不只是 Inductor 生成的 kernel 有这个现象，**手写 kernel 路径同样存在**：
+
+原始数据：`results/fx_fusion/qknorm_sglang_kernel.csv`
+
+| tokens | 两次 `gemma_rmsnorm` | 一次调用 | 加速 |
+|---:|---:|---:|---:|
+| **1** | 2.90 us | 1.44 us | **2.02×** |
+| 8 | 2.95 us | 1.51 us | **1.96×** |
+| 32 | 3.18 us | 1.71 us | **1.86×** |
+| 128 | 3.79 us | 2.33 us | 1.62× |
+| 512 | 6.29 us | 4.78 us | 1.31× |
+| 2048 | 15.82 us | 14.25 us | 1.11× |
+
+**T=1（最典型的 decode）加速 2.02×。**
+
+### ★ 两条路线在这里分叉，这点对 MAIA 论证最关键
+
+真实模型里 q_norm 和 k_norm 的**权重是不同的参数**，所以不能直接拼起来调一次。
+
+| 路线 | 能否表达这个融合 | 为什么 |
+|---|---|---|
+| **torch.compile / FX** | ✅ **今天就能做** | per-head 权重广播即可，**已验证 7/7 数值等价** |
+| **sglang 手写 kernel** | ❌ **需要新 kernel** | `gemma_rmsnorm(input, weight, ...)` 的 `weight` 是单个 1-D 张量，不支持 per-head |
+
+```python
+# torch.compile 路线：直接可写，无需新 kernel
+wcat = torch.cat([wq.repeat(QH,1), wk.repeat(KH,1)], 0)     # [heads, head_dim]
+o = v.reshape(-1, QH+KH, HD).float()
+out = (o * torch.rsqrt(o.pow(2).mean(-1,keepdim=True)+1e-6) * wcat.float()).type_as(v)
+```
+
+**这正是编译器路线优于手写 kernel 路线的一个具体实例**：
+手写 kernel 的接口是固定的（一个 weight 向量），
+而编译器从图出发，能为任意权重布局现场生成代码。
+
+**对 MAIA 的直接含义**：这类"手写 kernel 接口表达不了、但编译器能表达"的融合，
+在 torch.compile 部署上是**免费的**，不需要为每种权重布局写一个 kernel 变体。
+
+---
+
 ## 7. 这套方法对 MAIA / 非 CUDA 后端的价值
 
 | 步骤 | 是否依赖 CUDA | 能否迁移 |
