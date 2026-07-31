@@ -1,0 +1,136 @@
+diff --git a/python/sglang/kernels/jit/csrc/elementwise/fused_qknorm_rope.cuh b/python/sglang/kernels/jit/csrc/elementwise/fused_qknorm_rope.cuh
+index 1c1f41dccf..cf82294a82 100644
+--- a/python/sglang/kernels/jit/csrc/elementwise/fused_qknorm_rope.cuh
++++ b/python/sglang/kernels/jit/csrc/elementwise/fused_qknorm_rope.cuh
+@@ -75,7 +75,7 @@ __device__ inline float compute_freq(float base, int rotary_dim, int half_dim, f
+ // interleave (GPT-J) pairs (2k,2k+1) share the same freq/theta,
+ //   so sin/cos is computed once per pair and copied to the odd element,
+ //   halving powf + __sincosf calls vs a naive per-element approach.
+-template <int head_dim, bool interleave, bool yarn>
++template <int head_dim, bool interleave, bool yarn, bool add_one = false>
+ __global__ void fusedQKNormRopeKernel(
+     __nv_bfloat16* qkv,  // [num_tokens, (nq+nk+nv)*head_dim], in-place
+     int const num_heads_q,
+@@ -146,7 +146,15 @@ __global__ void fusedQKNormRopeKernel(
+     vec_T wvec;
+     wvec.load((isQ ? q_weight : k_weight) + offsetThread - offsetWarp);
+     for (int i = 0; i < numElemsPerThread; i++) {
+-      elements[i] *= rms_rcp * device::cast<float>(wvec[i]);
++      // Gemma-family norms scale by (1 + w) rather than w. Doing the add here
++      // keeps it in fp32: folding it into a bf16 weight on the host costs ~4%
++      // relative error, because near 1.0 a bf16 ULP is 2^-7 and every weight
++      // lands next to 1.0 after the add.
++      float w = device::cast<float>(wvec[i]);
++      if constexpr (add_one) {
++        w += 1.0f;
++      }
++      elements[i] *= rms_rcp * w;
+     }
+   }
+ 
+@@ -292,6 +300,10 @@ void fused_qk_norm_rope(
+       JIT_HEAD_DIM == 64 || JIT_HEAD_DIM == 128 || JIT_HEAD_DIM == 256, "JIT_HEAD_DIM must be 64, 128, or 256");
+   static_assert(JIT_INTERLEAVE == 0 || JIT_INTERLEAVE == 1, "JIT_INTERLEAVE must be 0 or 1");
+   static_assert(JIT_YARN == 0 || JIT_YARN == 1, "JIT_YARN must be 0 or 1");
++#ifndef JIT_ADD_ONE
++#define JIT_ADD_ONE 0
++#endif
++  static_assert(JIT_ADD_ONE == 0 || JIT_ADD_ONE == 1, "JIT_ADD_ONE must be 0 or 1");
+   RuntimeCheck(head_dim == JIT_HEAD_DIM, "head_dim mismatch with JIT-compiled kernel");
+ 
+   int numElemsPerThread = head_dim / 32;
+@@ -324,7 +336,11 @@ void fused_qk_norm_rope(
+   auto const* kw_ptr = reinterpret_cast<__nv_bfloat16 const*>(k_weight.data_ptr());
+   auto const* pos_ptr = reinterpret_cast<int const*>(position_ids.data_ptr());
+ 
+-  fusedQKNormRopeKernel<JIT_HEAD_DIM, static_cast<bool>(JIT_INTERLEAVE), static_cast<bool>(JIT_YARN)>
++  fusedQKNormRopeKernel<
++      JIT_HEAD_DIM,
++      static_cast<bool>(JIT_INTERLEAVE),
++      static_cast<bool>(JIT_YARN),
++      static_cast<bool>(JIT_ADD_ONE)>
+       <<<gridSize, blockSize, 0, stream>>>(
+           qkv_ptr,
+           num_heads_q,
+diff --git a/python/sglang/kernels/ops/attention/fused_qknorm_rope.py b/python/sglang/kernels/ops/attention/fused_qknorm_rope.py
+index ca35fbd610..e9a7bdeb61 100644
+--- a/python/sglang/kernels/ops/attention/fused_qknorm_rope.py
++++ b/python/sglang/kernels/ops/attention/fused_qknorm_rope.py
+@@ -13,12 +13,15 @@ if TYPE_CHECKING:
+ 
+ 
+ @cache_once
+-def _jit_fused_qknorm_rope_module(head_dim: int, is_neox: bool, yarn: bool) -> Module:
++def _jit_fused_qknorm_rope_module(
++    head_dim: int, is_neox: bool, yarn: bool, add_one: bool = False
++) -> Module:
+     return load_jit(
+         "fused_qknorm_rope",
+         head_dim,
+         int(is_neox),
+         int(yarn),
++        int(add_one),
+         cuda_files=["elementwise/fused_qknorm_rope.cuh"],
+         cuda_wrappers=[("fused_qk_norm_rope", "fused_qk_norm_rope")],
+         extra_cuda_cflags=[
+@@ -26,6 +29,7 @@ def _jit_fused_qknorm_rope_module(head_dim: int, is_neox: bool, yarn: bool) -> M
+             f"-DJIT_HEAD_DIM={head_dim}",
+             f"-DJIT_INTERLEAVE={0 if is_neox else 1}",
+             f"-DJIT_YARN={1 if yarn else 0}",
++            f"-DJIT_ADD_ONE={1 if add_one else 0}",
+         ],
+     )
+ 
+@@ -51,6 +55,7 @@ def fused_qk_norm_rope_out(
+     high: float,
+     attention_factor: float,
+     rotary_dim: int,
++    add_one: bool = False,
+ ) -> None:
+     """
+     Fused QK RMSNorm + RoPE applied in-place on the QKV tensor.
+@@ -76,7 +81,7 @@ def fused_qk_norm_rope_out(
+         rotary_dim:       number of elements per head to apply RoPE to
+     """
+     yarn = factor != 1.0
+-    module = _jit_fused_qknorm_rope_module(head_dim, is_neox, yarn)
++    module = _jit_fused_qknorm_rope_module(head_dim, is_neox, yarn, add_one)
+     module.fused_qk_norm_rope(
+         qkv,
+         q_weight,
+@@ -99,7 +104,11 @@ def fused_qk_norm_rope_out(
+ 
+ @cache_once
+ def can_use_fused_qk_norm_rope(
+-    head_dim: int, is_neox: bool, dtype: torch.dtype, yarn: bool = False
++    head_dim: int,
++    is_neox: bool,
++    dtype: torch.dtype,
++    yarn: bool = False,
++    add_one: bool = False,
+ ) -> bool:
+     """Return True if the JIT fused QK-Norm + RoPE kernel can be used.
+ 
+@@ -120,7 +129,7 @@ def can_use_fused_qk_norm_rope(
+         logger.warning(f"Unsupported dtype={dtype} for JIT fused_qk_norm_rope kernel")
+         return False
+     try:
+-        _jit_fused_qknorm_rope_module(head_dim, is_neox, yarn)
++        _jit_fused_qknorm_rope_module(head_dim, is_neox, yarn, add_one)
+         return True
+     except Exception as e:
+         logger.warning(f"Failed to load JIT fused_qk_norm_rope kernel: {e}")
+@@ -144,6 +153,7 @@ def fused_qk_norm_rope(
+     high: float,
+     attention_factor: float,
+     rotary_dim: Optional[int] = None,
++    add_one: bool = False,
+ ) -> None:
+     """
+     Fused QK RMSNorm + RoPE applied in-place on the QKV tensor.
+@@ -187,4 +197,5 @@ def fused_qk_norm_rope(
+         high,
+         attention_factor,
+         rotary_dim,
++        add_one,
+     )
