@@ -20,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -92,6 +93,123 @@ _NOISE = ("torch", "ops", "sgl", "kernel", "npu", "cpu", "hip", "cuda", "aiter",
           "fwd", "forward", "out", "impl", "2d", "v2")
 
 
+def _callname(node: ast.Call) -> str:
+    f = node.func
+    if isinstance(f, ast.Name):
+        return f.id
+    parts = []
+    while isinstance(f, ast.Attribute):
+        parts.append(f.attr)
+        f = f.value
+    if isinstance(f, ast.Name):
+        parts.append(f.id)
+    return ".".join(reversed(parts))
+
+
+def _terminates(body) -> bool:
+    """True if this block always leaves, so following code is the else-branch."""
+    return bool(body) and isinstance(body[-1], (ast.Return, ast.Raise,
+                                                ast.Continue, ast.Break))
+
+
+def _collect_calls(stmts, cond_stack, acc) -> None:
+    """Record every call together with the `if` conditions guarding it.
+
+    Early returns are propagated: after `if C: ...; return`, the rest of the
+    block really is guarded by `not C`, and that is precisely the region we need
+    to inspect. Without this the scanner cannot tell a shape gap from a chain of
+    guards that each end in a kernel -- see the Ernie4_5 false positive in WHY.
+    """
+    stack = list(cond_stack)
+    for st in stmts:
+        if isinstance(st, ast.If):
+            test = ast.unparse(st.test)
+            _collect_calls(st.body, stack + [test], acc)
+            if st.orelse:
+                _collect_calls(st.orelse, stack + [f"not ({test})"], acc)
+            elif _terminates(st.body):
+                stack = stack + [f"not ({test})"]
+        elif isinstance(st, (ast.For, ast.While, ast.With, ast.Try)):
+            _collect_calls(st.body, stack, acc)
+        else:
+            for n in ast.walk(st):
+                if isinstance(n, ast.Call):
+                    acc.append((_callname(n), list(stack)))
+
+
+# A guard mentioning one of these constrains the *input tensor*, so it can send
+# some inputs down the eager path. `residual is not None` does not qualify --
+# that selects an algorithm, not a subset of shapes.
+_INPUT_PROPS = (".dim(", ".ndim", ".shape", ".size(", ".dtype",
+                ".is_contiguous(", ".stride(", "len(")
+
+
+def scan_guarded_fallthrough(src: Path) -> list[dict]:
+    """1c: forward_cuda that reaches a fused kernel only for *some* inputs.
+
+    Scan 1a catches a `forward_cuda` that hands everything to `forward_native`.
+    The more common and much quieter shape is a body that calls a real kernel on
+    one branch and falls back on another, gated by a property of the input. Then
+    the op is fused in the profile *and* eager in the profile, depending on who
+    calls it, so neither the source nor an aggregate profile reads as broken.
+
+    This is the Gemma-3 case on current main: `gemma_rmsnorm` runs for rank-2
+    input and every higher rank silently takes the eager path.
+    """
+    layers = src / "python" / "sglang" / "srt" / "layers"
+    hits = []
+    for f in sorted(layers.rglob("*.py")):
+        try:
+            tree = ast.parse(f.read_text(errors="ignore"))
+        except SyntaxError:
+            continue
+        for cls in [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]:
+            for fn in [n for n in cls.body
+                       if isinstance(n, ast.FunctionDef)
+                       and n.name.startswith("forward")
+                       and n.name != "forward_native"]:
+                acc: list[tuple[str, list[str]]] = []
+                _collect_calls(fn.body, [], acc)
+
+                kernels = [(n, g) for n, g in acc
+                           if n.split(".")[-1] in _KERNEL_LIKE
+                           or n.startswith(("torch.ops.sgl_kernel.", "torch.ops.sgl_kernels."))]
+                natives = [(n, g) for n, g in acc if n.endswith("forward_native")]
+                if not kernels or not natives:
+                    continue
+
+                # Only guards that can route on the input itself matter here.
+                guards = sorted({g for _, gs in kernels for g in gs
+                                 if any(p in g for p in _INPUT_PROPS)})
+                if not guards:
+                    continue
+
+                # A guard is a gap only if the region where it is FALSE reaches
+                # no kernel of its own. Ernie4_5_VLRotaryEmbedding guards a
+                # kernel on `positions.ndim == 2` and then calls a *different*
+                # kernel for rank 1, so nothing is missing a fused path.
+                gap_guards = []
+                for g in guards:
+                    neg = f"not ({g})"
+                    if any(neg in gs for _, gs in kernels):
+                        continue
+                    if any(neg in gs for _, gs in natives):
+                        gap_guards.append(g)
+                if not gap_guards:
+                    continue
+
+                hits.append(dict(
+                    kind="guarded_fallthrough",
+                    file=str(f.relative_to(src)), line=fn.lineno, cls=cls.name,
+                    backend=fn.name, 
+                    fused_kernels=sorted({n.split(".")[-1] for n, _ in kernels}),
+                    input_guards=gap_guards,
+                    verdict="CANDIDATE - confirm with a rank/dtype sweep "
+                            "(scripts/fx_fusion/fx_dispatch_gap_detector.py)",
+                ))
+    return hits
+
+
 def _norm_tokens(name: str) -> set[str]:
     toks = [t for t in re.split(r"[^a-z0-9]+", name.lower()) if t]
     # rms_norm and rmsnorm must compare equal
@@ -145,14 +263,23 @@ def _kernel_calls(body: str) -> list[str]:
 
 
 def _seed_kernel_names(src: Path) -> None:
-    """Names that look like fused kernels, harvested from the imports."""
+    """Names that look like fused kernels, harvested from the imports.
+
+    Covers both the `sgl_kernel` extension and the in-tree `sglang.kernels`
+    package: restricting this to bare `from sgl_kernel import` saw 63 names
+    where the two together see 629, and the missing ones are exactly the Triton
+    kernels the newer model files call.
+    """
     global _KERNEL_LIKE
-    pat = re.compile(r"from sgl_kernel import \(([^)]*)\)|from sgl_kernel import ([^\n]*)")
+    pat = re.compile(
+        r"from (?:sgl_kernel[\w.]*|sglang\.kernels[\w.]*) import \(([^)]*)\)"
+        r"|from (?:sgl_kernel[\w.]*|sglang\.kernels[\w.]*) import ([^\n]*)")
     names = set()
     for f in (src / "python" / "sglang" / "srt").rglob("*.py"):
         for m in pat.finditer(f.read_text(errors="ignore")):
             blob = m.group(1) or m.group(2) or ""
-            names |= {x.strip().strip(",") for x in blob.replace("\n", " ").split(",")}
+            names |= {x.strip().strip(",").split(" as ")[0].strip()
+                      for x in blob.replace("\n", " ").split(",")}
     _KERNEL_LIKE = {n for n in names if n and n.isidentifier()}
 
 
@@ -194,6 +321,7 @@ def main():
     cuda_syms = cuda_available_symbols(a.python)
 
     hits = scan_fallthrough(src, cuda_syms)
+    hits += scan_guarded_fallthrough(src)
     hits += scan_models(src, "fused_qk_norm_rope",
                         [r"q_norm|q_layernorm", r"rotary_emb"])
 
@@ -206,6 +334,16 @@ def main():
         print(f"      siblings with a fused kernel : {h['sibling_fused'] or '-'}")
         print(f"      available on the CUDA build  : {h['primitive_available_on_cuda'] or '-'}")
         print(f"      -> {h['verdict']}")
+
+    guarded = [h for h in hits if h["kind"] == "guarded_fallthrough"]
+    print(f"\n  {len(guarded)} guarded fall-throughs "
+          f"(a fused kernel is called, but only for some inputs):\n")
+    for h in guarded:
+        print(f"  {h['cls']}.{h['backend']}  {h['file']}:{h['line']}")
+        print(f"      kernel : {', '.join(h['fused_kernels'])}")
+        for g in h["input_guards"]:
+            print(f"      guard  : {g}")
+
     n_model = sum(h["kind"] == "model_missing_primitive" for h in hits)
     print(f"\n  + {n_model} model files never naming fused_qk_norm_rope "
           f"(low precision — many dispatch to it via a helper; audit to confirm)")

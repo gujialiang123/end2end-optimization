@@ -1,7 +1,7 @@
 ---
 name: fusion-gap-hunting
-description: Find kernels a model runs unfused that the framework already ships a fused implementation for, by combining a cheap static scan with an operator-level profile audit.
-version: 1
+description: Find kernels a model runs unfused that the framework already ships a fused implementation for, by combining a static AST scan of the dispatch code with an FX trace sweep or an operator-level profile audit.
+version: 2
 stage: [1, 2]
 inputs:
   - framework_src: path to the serving framework checkout (e.g. /home/.../sglang)
@@ -9,6 +9,7 @@ inputs:
   - gpu: a single free GPU id
 outputs:
   - fusion_gap_candidates.json    # static scan, cheap, high recall / low precision
+  - gap.json                      # FX rank/dtype sweep, no profiler, any backend
   - audit.json                    # measured per-kernel gap counts and time share
   - verdict: confirmed | refuted, with the numbers that decided it
 triggers:
@@ -89,7 +90,8 @@ combination is what works.
 
 ### Step 1 — static scan (seconds, no GPU, high recall / low precision)
 
-Two greps. Neither needs the model to run.
+Three scans. None needs the model to run; `impl/scan_fusion_gaps.py` runs all
+three.
 
 **1a. Backends that fall through to the reference implementation.**
 
@@ -113,7 +115,76 @@ for f in "$SRC"/python/sglang/srt/models/*.py; do
 done
 ```
 
-### Step 2 — operator audit (one profiled run, ~10 min, this is the ground truth)
+**1c. Backends that reach the kernel only for *some* inputs (AST, not grep).**
+
+Scan 1a only catches a body that hands *everything* to `forward_native`. The
+quieter and more common shape is a body that calls a real kernel on one branch
+and falls back on another, gated by a property of the input:
+
+```python
+def forward_cuda(self, x, residual=None):
+    ...
+    if x.dim() == 2:
+        return gemma_rmsnorm(x, self.weight.data, self.eps)   # fused
+    return self.forward_native(x)                             # eager
+```
+
+This is Gemma-3 on current `main`, and it is invisible to both earlier scans:
+the source *does* name the primitive, and an aggregate profile shows the op as
+fused *and* eager depending on the caller. Grep cannot see it either, because
+what matters is which branch each call sits in — so this scan parses the AST,
+records every call with the `if` conditions guarding it, and reports a guard
+only when the region where it is **false** reaches no kernel of its own.
+
+```bash
+python .github/skills/fusion-gap-hunting/impl/scan_fusion_gaps.py \
+    --src "$SRC" --out fusion_gap_candidates.json
+```
+
+Measured on sglang `main` (2026-07-31): 227 `forward*` methods under `layers/`,
+20 where a kernel call and a `forward_native` call coexist, **4** where an
+input-property guard leaves the fall-back path unfused. One is
+`Gemma3RMSNorm.forward_cuda` — **the scan finds the case that took profiling
+plus manual code reading to find originally.** The other three are `forward_cpu`
+/ `forward_npu` / `forward_xpu`, which this hardware cannot confirm.
+
+The scan is backend-agnostic by construction, so **the same scan applies to a
+new backend** (Maia, XPU) with no changes — the pattern it looks for is "this
+dispatch has a kernel that some shapes cannot reach", not anything CUDA.
+
+### Step 2 — confirm the candidate
+
+Two arbiters. Prefer the FX sweep when the target is not CUDA, or when the
+question is only "is it fused"; use the operator audit when you need time share.
+
+**2a. FX rank/dtype sweep (seconds, no profiler, hardware-agnostic).**
+
+```bash
+python scripts/fx_fusion/fx_dispatch_gap_detector.py --out gap.json
+```
+
+Traces the module once per input shape and reports, per shape, whether the graph
+contains a **registered kernel** (an op whose namespace is outside
+`aten`/`prims`) or expanded pointwise math. The verdict is the *asymmetry*:
+
+```
+rank=2 [64, 1152]        FUSED  kernel: ['sgl_kernel.gemma_rmsnorm.default']
+rank=3 [1, 64, 1152]     EAGER  markers: ['mean','pow','rsqrt']
+rank=4 [1, 64, 4, 1152]  EAGER  markers: ['mean','pow','rsqrt']
+→ DISPATCH GAP FOUND
+```
+
+**All shapes expanded means no gap** — the framework simply has no kernel here,
+and there is nothing to miss. Validate this direction with a negative control on
+a tree where `forward_cuda` delegates unconditionally; if that also reports a
+gap, the detector is reporting "saw eager math" rather than "saw a kernel some
+shapes cannot reach", which is the failure this check exists to catch.
+
+Judge fused on the **presence of a registered kernel**, never on the absence of
+`pow`/`mean`/`rsqrt`. Absence is also produced by a graph break, an unrelated
+implementation, or an op outside whatever marker list you wrote.
+
+**2b. Operator audit (one profiled run, ~10 min, gives time share).**
 
 ```bash
 python scripts/lfm_fusion/lf_audit.py --model <key> --regime A_low_batch_decode --gpu <id>
@@ -172,6 +243,18 @@ is **kernel time**, never end-to-end — keep them separate in every report.
   `forward_native` while `forward_hip` calls `gelu_quick`. But `gelu_quick` is
   imported only under `elif _is_hip` and is **not in the CUDA build** of
   `sgl_kernel`. Check the import guard and the actual module contents.
+- *"A shape guard sits in front of a kernel" ≠ "other shapes run eager."*
+  `Ernie4_5_VLRotaryEmbedding.forward_cuda` guards
+  `triton_ernie45_rope_fused_inplace` on `positions.ndim == 2`, then calls a
+  **different** kernel for rank 1, and only reaches `forward_native` when that
+  second kernel is absent from the build. Scan 1c flagged it until the scan
+  learned to propagate early returns and check whether the region where the
+  guard is *false* reaches a kernel of its own. Any guard-based scan needs that
+  check or the whole dispatch-chain idiom reads as a gap.
+- *Seeding kernel names from one import path under-reports.* Harvesting only
+  `from sgl_kernel import` found 63 names; adding `sglang.kernels.*` found 629,
+  and the difference is exactly the in-tree Triton kernels the newer model files
+  call.
 - `NewGELU` carries an explicit `# TODO: Implement the CUDA kernel` — a known
   absence, not an un-called primitive.
 
@@ -304,9 +387,24 @@ If the fix is going upstream, add:
 
 ## ROADMAP
 
-- Automate scan 1a/1b into `impl/scan_fusion_gaps.py` emitting
-  `fusion_gap_candidates.json`, including the per-platform import-guard check
-  that would have rejected `QuickGELU` automatically.
+- ~~Automate scan 1a/1b into `impl/scan_fusion_gaps.py`~~ — done, plus scan 1c
+  (guarded fall-through) and the per-platform import-guard check that rejects
+  `QuickGELU` automatically.
+- **Second gap class, not yet automated: fusion the compiler could do but a
+  graph barrier prevents.** Gemma-3 slices q and k out of one qkv tensor and
+  norms each separately, which Inductor emits as two kernels; two *independent*
+  norms fuse laterally into one, so the slice is the barrier. Merging them is
+  1.94× at 8–32 tokens, 1.15× at 2048, and **0.56× at 4096**, numerically
+  identical throughout. Neither scan here can see it — it is a property of the
+  traced graph, not of the source. The rule to implement: *≥2 chains with the
+  same signature, whose inputs trace back to slices of one producer, that
+  Inductor placed in different kernels.* Note this class is the one where a
+  compiler beats a hand-written kernel: the merge needs a per-head weight, which
+  `sgl_kernel.gemma_rmsnorm`'s 1-D weight cannot express but `torch.compile`
+  writes in three lines.
+- Drive scan 1c's shape sweep from **observed** shapes: hook the real model's
+  forward and record what each module is actually handed, instead of sweeping
+  ranks 1–4 and hoping the interesting one is in there.
 - Extend the audit's `GAP_SIGNATURES` beyond norms (activation decompositions,
   attention epilogues).
 - Sample more non-primary-family models. The family conclusion currently rests
