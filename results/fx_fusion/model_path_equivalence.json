@@ -1,0 +1,71 @@
+{
+ "model": "/data/hf/models/gemma-3-1b-it",
+ "head_dim": 256,
+ "all_ok": true,
+ "results": [
+  {
+   "base": 10000.0,
+   "layers": "sliding/local",
+   "tokens": 1,
+   "model_err_pct": 0.1413,
+   "kernel_err_pct": 0.1413,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 10000.0,
+   "layers": "sliding/local",
+   "tokens": 8,
+   "model_err_pct": 0.196,
+   "kernel_err_pct": 0.1415,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 10000.0,
+   "layers": "sliding/local",
+   "tokens": 64,
+   "model_err_pct": 0.2155,
+   "kernel_err_pct": 0.1412,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 10000.0,
+   "layers": "sliding/local",
+   "tokens": 512,
+   "model_err_pct": 0.2258,
+   "kernel_err_pct": 0.1408,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 1000000.0,
+   "layers": "full/global",
+   "tokens": 1,
+   "model_err_pct": 0.1414,
+   "kernel_err_pct": 0.1414,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 1000000.0,
+   "layers": "full/global",
+   "tokens": 8,
+   "model_err_pct": 0.1746,
+   "kernel_err_pct": 0.1408,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 1000000.0,
+   "layers": "full/global",
+   "tokens": 64,
+   "model_err_pct": 0.192,
+   "kernel_err_pct": 0.1405,
+   "kernel_no_worse": true
+  },
+  {
+   "base": 1000000.0,
+   "layers": "full/global",
+   "tokens": 512,
+   "model_err_pct": 0.2076,
+   "kernel_err_pct": 0.141,
+   "kernel_no_worse": true
+  }
+ ]
+}
