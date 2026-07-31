@@ -20,11 +20,17 @@
 | GSM8K | 21.50% → 22.00%，**McNemar p=0.875，无可检测变化**（21 胜 19 负） |
 | **端到端（诚实数字）** | **+0.5% 到 +1.1%**（对融合-norm 基线，7 次重复） |
 | 端到端（对 main） | +24.8% 到 +37.9%——**不能用，97% 是 PR #32670 的成果** |
+| **附带找到并修掉的第二个缺口** | **OLMo-2 prefill：87.8ms → 70.8ms = 1.24× / +24%，生成 8/8 完全一致** |
 
 **必须先说的一件事**：本工作最初测出的端到端数字是 **1.34–1.39×**（吞吐 +24.8% 到 +37.9%）。
 **这个数字不能用**，因为基线是未修的 main，里面还含着 PR #32670 正在修的 rank 守卫缺口。
 消融实验证实：那个提升的**约 97% 来自 rank 守卫修复**，
 rope 融合本身的增量是 **+0.5% 到 +1.1%**。详见 §6。
+
+**收益最大的其实不是主线**：跨模型扫描时在 OLMo-2 上发现了另一个缺口——
+它的 `_apply_qk_norm` 在非 CUDA-graph-capture 路径上**显式调用 `forward_native`**，
+绕过了自己本来就能命中的融合 kernel。因为 prefill 从不被 graph 捕获，
+**整个 prefill 阶段一直在丢**。修掉后 prefill **1.24×**，且生成 **8/8 完全一致**。详见 §7.4。
 
 ---
 
@@ -377,7 +383,57 @@ skill 里的预测指标（**不是**架构新旧或模型大小，而是**该�
 **但 OLMo-2 那 6.62% 修不了**——它的 norm 语义根本不匹配这个 kernel。
 **「有缺口」和「能用现成 kernel 补」是两件事。**
 
-### 7.4 一个改变全局判读的发现
+### 7.4 第二个可修复的缺口：OLMo-2 的 prefill（本次实际修掉了）
+
+7.2 说 OLMo-2 不能用 `fused_qk_norm_rope`（跨 head 归一化，语义不等价）。
+但 7.3 那 6.62% 是真的，所以问题变成：**它到底为什么是 eager 的？**
+
+读代码（`olmo2.py:165-192`）：
+
+```python
+if self.alt_stream is not None and get_is_capture_mode():
+    q_by_last = q.reshape(-1, q_shape[-1])
+    q_by_last = self.q_norm(q_by_last)        # ← 走融合 kernel
+    ...
+else:
+    q = self.q_norm.forward_native(q)          # ← 显式绕过融合 kernel
+    k = self.k_norm.forward_native(k)
+```
+
+- `q` 来自 `qkv.split(...)`，本来就是 2-D `[tokens, q_size]`
+- `q_norm = RMSNorm(hidden_size)`，宽度正好对上
+- **所以 `self.q_norm(q)` 直接就能命中融合 kernel**，`forward_native` 是白丢
+
+而 `get_is_capture_mode()` 只在 CUDA graph **捕获期**为真。也就是说：
+
+| 阶段 | 走哪条 | 后果 |
+|---|---|---|
+| decode（graph 已捕获后 replay） | 捕获时用的是融合路径 | 已经是快的 |
+| **prefill**（从不被 graph 捕获） | **eager** | **一直在丢** |
+| decode（`--disable-cuda-graph`） | eager | 丢 |
+
+**这解释了为什么 7.3 profile 出 6.62%**——那次跑的是 `--disable-cuda-graph`。
+
+**修法**（`patches/olmo2_fused_qk_norm/`）：else 分支改成走融合 kernel，形状本来就对。
+
+**验证**：
+
+| 闸门 | 结果 |
+|---|---|
+| greedy 生成一致性 | **8/8 完全相同**（不同于 Gemma-3 的 6/8） |
+| decode 各 regime | 1.00×，全部 n.s.——**符合预期**，decode 本来就走融合路径 |
+| **prefill 直接测量** | **87.80ms → 70.79ms = 1.24× / +24%** |
+| prefill-heavy 总吞吐 | **+17.6%，p<0.001** |
+
+**为什么这次是 8/8 而 Gemma-3 是 6/8**：这里融合路径和 eager 路径都是标准 RMSNorm，
+数值上等价；Gemma-3 那次是把 norm+rope 合成一个 kernel，中间少了一次 bf16 舍入，
+**本就不可能 bit-identical**。
+
+> **这个案例是本次扫描最好的产出**：静态扫描把 OLMo-2 标成「不能用那个 kernel」是对的，
+> profiling 把它标成「有 6.62% 缺口」也是对的，**两个结论都对，但要合起来才知道该修什么**。
+> 而且它的收益（prefill +24%）比 Gemma-3 的 rope 融合（+1%）大一个数量级。
+
+### 7.5 一个改变全局判读的发现
 
 ```python
 # server_args.py:1891
@@ -396,17 +452,29 @@ enable_fused_qk_norm_rope: A[bool, "...", NS("exec.kernel")] = False
 
 ---
 
+
 ## 8. 结论与启示
 
-### 8.1 关于这个优化
+### 8.1 关于这两个优化
 
-- 机会真实存在，且**由静态扫描自动发现**，不需要 profiler、不需要人读代码
+**Gemma-3（rope 融合）**
+- 由**静态扫描自动发现**，不需要 profiler、不需要人读代码
 - kernel 改动很小（一个编译期标志），**精度不降反升**
 - 微基准 1.5–2.3×（对 #32670 基线）
 - **端到端只有 +0.5% 到 +1.1%**，其中 bs=64 一档不显著（p=0.073）
-- 对 main 的 1.34–1.39× 里 **约 97% 是 rank 守卫修复的功劳**，那是 PR #32670 的，不是本次的
-- **值不值得提 PR**：+1% 且无精度代价、代码改动小，值得；
-  但标题绝不能写 1.39×
+- 对 main 的 1.34–1.39× 里 **约 97% 是 rank 守卫修复的功劳**，那是 PR #32670 的
+- **值不值得提 PR**：+1% 且无精度代价、代码改动小，值得；但标题绝不能写 1.39×
+
+**OLMo-2（prefill 的 norm 融合）—— 收益大一个数量级**
+- 由**扫描 + profiling 交叉**发现：扫描说「不能用那个 kernel」，profiling 说「有 6.62% 缺口」，
+  两个都对，合起来才定位到真正该改的地方
+- 修法是三行：把 `forward_native` 换成正常调用，形状本来就对
+- **prefill 1.24× / +24%**，decode 不变（本来就走融合路径），**生成 8/8 完全一致**
+- 更值得提 PR
+
+**一个横向观察**：两个缺口都是「框架有 kernel，调用点没接上」，
+但表现形态完全不同——Gemma-3 是**从没接过**，OLMo-2 是**接了一半**
+（只在 graph 捕获路径上接）。后者更隐蔽，因为 decode 的 profile 看起来是干净的。
 
 ### 8.2 关于方法（更重要）
 
@@ -423,6 +491,13 @@ enable_fused_qk_norm_rope: A[bool, "...", NS("exec.kernel")] = False
 6. **微基准的加速比不能外推成端到端。** preamble 的 2.3× 换来端到端 +0.5% 到 +1.1%，
    因为 preamble 只占 decode 步的一小片（26 层 × 3.5us ≈ 91us，对 2.2ms 的 decode 步）。
 7. **不显著就是不显著。** bs=64 那一档 p=0.073，必须带判定写出来并排除在标题数字之外。
+8. **一个缺口在哪个阶段暴露，取决于哪条路径被 CUDA graph 捕获。**
+   OLMo-2 的 decode profile 是干净的，缺口全在 prefill——
+   因为它的融合分支条件是 `get_is_capture_mode()`。
+   只看 decode 的 profile 会完全错过它。
+9. **别用 `--disable-cuda-graph` 的 profile 直接推断线上行为。**
+   它是看清单个 kernel 的标准手段，但对 OLMo-2 这种按 capture-mode 分支的代码，
+   它**改变了走哪条路**。6.62% 是真的，但它在 decode 上不成立。
 
 ---
 
@@ -468,3 +543,20 @@ python scripts/fx_fusion/e2e_ab_gemma3.py \
 sglang 用 multiprocessing spawn 拉起 scheduler，子进程会重新 import 该文件，
 没有守卫会再建一个 Engine 然后死掉，父进程只报
 "scheduler died during initialization"，看不出真正原因。
+
+```bash
+# 7. OLMo-2 的第二个缺口（注意：fa3 + CUDA graph 在这个模型上本身就崩，
+#    与本改动无关，用 triton backend）
+export SGLANG_AB_BACKEND=triton
+python scripts/fx_fusion/verify_generation_identical.py \
+    --baseline-tree /tmp/sglang_fqr_base --patched-tree /tmp/sglang_olmo \
+    --model /home/t-jialianggu/models/OLMo-2-0425-1B-Instruct --gpu 2
+python scripts/fx_fusion/e2e_ab_gemma3.py \
+    --baseline-tree /tmp/sglang_fqr_base --patched-tree /tmp/sglang_olmo \
+    --model /home/t-jialianggu/models/OLMo-2-0425-1B-Instruct \
+    --gpu 1 --reps 7 --out results/fx_fusion/e2e_ab_olmo2.json
+```
+
+**已知的既有问题（非本改动引入）**：OLMo-2 + fa3 + CUDA graph 在未打补丁的 main 上
+就报 `cudaErrorIllegalAddress`。已用未打补丁的树复现确认。
+本文所有 OLMo-2 数据都用 triton backend。

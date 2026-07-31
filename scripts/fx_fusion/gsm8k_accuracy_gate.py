@@ -40,7 +40,7 @@ def main():
     golds = [r["answer"].split("####")[-1].strip().replace(",", "") for r in rows]
 
     llm = sgl.Engine(model_path=model, log_level="error",
-                     attention_backend="fa3", mem_fraction_static=0.6,
+                     attention_backend=os.environ.get("SGLANG_AB_BACKEND", "fa3"), mem_fraction_static=0.6,
                      random_seed=int(seed))
     try:
         outs = llm.generate(prompts, {"temperature": 0.0, "max_new_tokens": 256})

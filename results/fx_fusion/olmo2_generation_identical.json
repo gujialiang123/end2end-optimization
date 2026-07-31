@@ -1,0 +1,55 @@
+{
+ "model": "/home/t-jialianggu/models/OLMo-2-0425-1B-Instruct",
+ "identical": 8,
+ "total": 8,
+ "rows": [
+  {
+   "prompt": "The capital of France is",
+   "identical": true,
+   "baseline": " Paris, and the largest city in France is Lyon. Lyon is known for its rich culinary heritage and is famous for dishes like coq au vin and bouillabaisse. The city is also known for its beautiful medieval architecture, including",
+   "patched": " Paris, and the largest city in France is Lyon. Lyon is known for its rich culinary heritage and is famous for dishes like coq au vin and bouillabaisse. The city is also known for its beautiful medieval architecture, including"
+  },
+  {
+   "prompt": "Write a haiku about autumn rain.",
+   "identical": true,
+   "baseline": " \nRaindrops on the window pane\nAutumn leaves fall gently\nWarmth returns to the home",
+   "patched": " \nRaindrops on the window pane\nAutumn leaves fall gently\nWarmth returns to the home"
+  },
+  {
+   "prompt": "Explain in one sentence why the sky is blue.",
+   "identical": true,
+   "baseline": "",
+   "patched": ""
+  },
+  {
+   "prompt": "List three prime numbers greater than 50.",
+   "identical": true,
+   "baseline": " Find their sum.\n\n**Reasoning:**\n\nThe prime numbers greater than 50 are: 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,",
+   "patched": " Find their sum.\n\n**Reasoning:**\n\nThe prime numbers greater than 50 are: 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,"
+  },
+  {
+   "prompt": "def fibonacci(n):",
+   "identical": true,
+   "baseline": " \n    return fibonacci(n) if n <= 1 else fibonacci(n-1) + fibonacci(n-2)\n\ndef fibonacci(n):\n    if n <= 1:\n        return n\n    else:\n        return fibonacci(n-1)",
+   "patched": " \n    return fibonacci(n) if n <= 1 else fibonacci(n-1) + fibonacci(n-2)\n\ndef fibonacci(n):\n    if n <= 1:\n        return n\n    else:\n        return fibonacci(n-1)"
+  },
+  {
+   "prompt": "The three laws of thermodynamics are",
+   "identical": true,
+   "baseline": ":\n\n1. The first law: Energy can be neither created nor destroyed, only transformed from one form to another.\n2. The second law: In any isolated system, the total entropy (a measure of disorder or randomness) of the system",
+   "patched": ":\n\n1. The first law: Energy can be neither created nor destroyed, only transformed from one form to another.\n2. The second law: In any isolated system, the total entropy (a measure of disorder or randomness) of the system"
+  },
+  {
+   "prompt": "Translate to French: 'Where is the library?'",
+   "identical": true,
+   "baseline": " he asked.",
+   "patched": " he asked."
+  },
+  {
+   "prompt": "Q: What is 17 times 23? A:",
+   "identical": true,
+   "baseline": " 391.",
+   "patched": " 391."
+  }
+ ]
+}

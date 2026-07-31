@@ -42,7 +42,9 @@ def bench(tree: str, model: str, gpu: str, cfg: dict,
            "--batch-size", str(cfg["batch_size"]),
            "--input-len", str(cfg["input_len"]),
            "--output-len", str(cfg["output_len"]),
-           "--attention-backend", "fa3"]
+           "--attention-backend", os.environ.get("SGLANG_AB_BACKEND", "fa3")]
+    if os.environ.get("SGLANG_AB_NO_CUDA_GRAPH") == "1":
+        cmd.append("--disable-cuda-graph")
     r = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=3600)
     text = r.stdout + r.stderr
     # The second block is the measured run; the first is warmup.
@@ -78,6 +80,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline-tree", required=True,
                     help="unmodified main")
+    ap.add_argument("--ablate-env", nargs="*", default=["SGLANG_GEMMA3_NO_FUSED_ROPE=1"],
+                    help="env for the ablation arm, as KEY=VALUE")
     ap.add_argument("--ablate", action="store_true",
                     help="add an arm with the fused norm but a separate rope, "
                          "which isolates this change from PR #32670's")
@@ -100,7 +104,7 @@ def main() -> None:
         trees = [("baseline", a.baseline_tree, {})]
         if a.ablate:
             trees.append(("fused_norm_only", a.patched_tree,
-                          {"SGLANG_GEMMA3_NO_FUSED_ROPE": "1"}))
+                          dict(x.split("=", 1) for x in a.ablate_env)))
         trees.append(("fused", a.patched_tree, {}))
         for arm, tree, extra in trees:
             vals = []

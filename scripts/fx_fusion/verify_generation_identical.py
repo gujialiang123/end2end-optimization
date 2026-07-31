@@ -42,7 +42,7 @@ def main():
     out_path = sys.argv[3]
 
     llm = sgl.Engine(model_path=model, log_level="error",
-                     attention_backend="fa3", mem_fraction_static=0.6)
+                     attention_backend=os.environ.get("SGLANG_AB_BACKEND", "fa3"), mem_fraction_static=0.6)
     try:
         outs = llm.generate(prompts, {"temperature": 0.0, "max_new_tokens": 48})
         json.dump([o["text"] for o in outs], open(out_path, "w"))

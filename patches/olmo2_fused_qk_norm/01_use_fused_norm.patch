@@ -1,0 +1,47 @@
+diff --git a/python/sglang/srt/models/olmo2.py b/python/sglang/srt/models/olmo2.py
+index a743cd75a4..5e989ee842 100644
+--- a/python/sglang/srt/models/olmo2.py
++++ b/python/sglang/srt/models/olmo2.py
+@@ -21,6 +21,8 @@
+ from functools import partial
+ from typing import Iterable, Optional, Tuple
+ 
++import os
++
+ import torch
+ from torch import nn
+ from transformers import PretrainedConfig
+@@ -59,6 +61,12 @@ def get_attention_sliding_window_size(config):
+     return config.sliding_window - 1 if hasattr(config, "sliding_window") else None
+ 
+ 
++def _olmo2_eager_qk_norm() -> bool:
++    """Ablation switch: set SGLANG_OLMO2_EAGER_QK_NORM=1 to restore the eager
++    path, so both arms live in one tree and an A/B isolates this change."""
++    return os.environ.get("SGLANG_OLMO2_EAGER_QK_NORM", "0") == "1"
++
++
+ class Olmo2Attention(nn.Module):
+     """
+     This is the attention block where the output is computed as
+@@ -188,8 +196,18 @@ class Olmo2Attention(nn.Module):
+             q = q_by_last.view(q_shape)
+             k = k_by_last.view(k_shape)
+         else:
+-            q = self.q_norm.forward_native(q)
+-            k = self.k_norm.forward_native(k)
++            # q and k arrive as [tokens, q_size] / [tokens, kv_size], and the
++            # norms are built over exactly those widths, so the fused kernel
++            # applies directly. Calling forward_native here left it on the table
++            # for every path that is not cuda-graph capture -- all of prefill,
++            # and all of decode when graphs are off.
++            if _olmo2_eager_qk_norm():
++                q = self.q_norm.forward_native(q)
++                k = self.k_norm.forward_native(k)
++            else:
++                q_shape, k_shape = q.shape, k.shape
++                q = self.q_norm(q.reshape(-1, q_shape[-1])).view(q_shape)
++                k = self.k_norm(k.reshape(-1, k_shape[-1])).view(k_shape)
+ 
+         if self.tp_size > 1:
+             splitter = partial(split_tensor_along_last_dim, num_partitions=self.tp_size)
