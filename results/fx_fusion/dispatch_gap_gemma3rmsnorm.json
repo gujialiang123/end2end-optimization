@@ -9,7 +9,11 @@
     "get_device_capability",
     "default"
    ],
+   "custom_ops": [
+    "sgl_kernel.gemma_rmsnorm.default"
+   ],
    "eager_markers": [],
+   "fused": true,
    "looks_expanded": false,
    "shape": [
     64,
@@ -32,11 +36,13 @@
     "mul",
     "type_as"
    ],
+   "custom_ops": [],
    "eager_markers": [
     "mean",
     "pow",
     "rsqrt"
    ],
+   "fused": false,
    "looks_expanded": true,
    "shape": [
     1,
@@ -60,11 +66,13 @@
     "mul",
     "type_as"
    ],
+   "custom_ops": [],
    "eager_markers": [
     "mean",
     "pow",
     "rsqrt"
    ],
+   "fused": false,
    "looks_expanded": true,
    "shape": [
     1,

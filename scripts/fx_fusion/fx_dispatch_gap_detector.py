@@ -29,6 +29,23 @@ import torch._dynamo as dyn
 _EAGER_MARKERS = {
     "pow", "mean", "rsqrt", "sqrt", "var", "sigmoid", "tanh", "erf", "exp",
 }
+# Namespaces that are part of PyTorch itself. An op outside these is a kernel
+# somebody registered, i.e. positive evidence that a fused path was taken.
+_STOCK_NAMESPACES = {"aten", "prims", "prim", "profiler", "inductor", "_c10d"}
+
+
+def _custom_ops(gm) -> list[str]:
+    """Names of non-PyTorch registered ops in the graph (fused kernels)."""
+    found = []
+    for n in gm.graph.nodes:
+        t = n.target
+        ns = getattr(t, "namespace", None)
+        if ns is None:
+            overload = getattr(t, "_overloadpacket", None)
+            ns = getattr(overload, "namespace", None)
+        if ns is not None and ns not in _STOCK_NAMESPACES:
+            found.append(str(t))
+    return found
 
 
 def _op_names(gm) -> list[str]:
@@ -46,15 +63,22 @@ def trace_ops(fn: Callable, *args) -> dict[str, Any]:
     dyn.reset()
     e = dyn.explain(fn)(*args)
     ops: list[str] = []
+    custom: list[str] = []
     for g in e.graphs:
         ops.extend(_op_names(g))
+        custom.extend(_custom_ops(g))
     eager_hits = sorted({o for o in ops if o in _EAGER_MARKERS})
+    # Positive evidence (a registered kernel in the graph) outranks the
+    # marker heuristic, which can only ever say "I did not see eager math".
+    fused = bool(custom)
     return dict(
         n_graphs=e.graph_count,
         n_breaks=e.graph_break_count,
         ops=ops,
+        custom_ops=sorted(set(custom)),
         eager_markers=eager_hits,
-        looks_expanded=len(eager_hits) >= 2,
+        fused=fused,
+        looks_expanded=(not fused) and len(eager_hits) >= 2,
     )
 
 
@@ -70,13 +94,14 @@ def compare_shapes(module: torch.nn.Module, shapes: Iterable[tuple],
         results[str(list(shape))] = r
 
     expanded = [k for k, v in results.items() if v["looks_expanded"]]
-    opaque = [k for k, v in results.items() if not v["looks_expanded"]]
+    opaque = [k for k, v in results.items() if v["fused"]]
     return dict(
         results=results,
         expanded_shapes=expanded,
         opaque_shapes=opaque,
-        # The gap exists only if the same module fuses for some shapes and not
-        # for others. All-expanded means there is no fused kernel to miss.
+        # The gap exists only if the same module reaches a registered kernel for
+        # some shapes and expands to eager math for others. All-expanded means
+        # there is no fused kernel to miss.
         dispatch_gap=bool(expanded and opaque),
     )
 
@@ -105,8 +130,15 @@ def main() -> None:
 
     print(f"Gemma3RMSNorm(dim={a.dim}) traced at {len(shapes)} input ranks\n")
     for k, v in rep["results"].items():
-        kind = "EXPANDED (eager)" if v["looks_expanded"] else "opaque (fused)"
+        if v["fused"]:
+            kind = "FUSED  (registered kernel)"
+        elif v["looks_expanded"]:
+            kind = "EAGER  (expanded math)"
+        else:
+            kind = "unclear"
         print(f"  rank={v['rank']} shape={k:<18} {kind}")
+        if v["custom_ops"]:
+            print(f"      kernel: {v['custom_ops']}")
         if v["eager_markers"]:
             print(f"      eager markers: {v['eager_markers']}")
 

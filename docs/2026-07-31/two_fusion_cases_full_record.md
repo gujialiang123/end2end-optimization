@@ -315,7 +315,12 @@ HF 那边没有对照物（全是展开的），也就没有信号。
 > 若**某些 rank 的图含自定义 op（不透明）、另一些 rank 的图是展开链**
 > → 报告为 dispatch gap。
 
-- 判据：图中是否出现 `torch.ops.<ns>.*`，以及是否出现 `pow/mean/rsqrt/var/erf` 等 eager 标记
+- 判据分两级：
+  - **正证据**——图中是否出现**非 PyTorch 命名空间**的注册算子
+    （`namespace` 不属于 `aten/prims/prim/...`），即一个手写 kernel。有则判为 fused，
+    并**报出 kernel 名**
+  - **辅助启发式**——是否出现 ≥2 个 `pow/mean/rsqrt/var/erf` 等 eager 标记。
+    这只能说明「没看见 eager 数学」，是弱证据，仅在无正证据时使用
 - 若**全部** rank 都展开 → 框架根本没有该 kernel，**不算 gap**
 
 实现：`scripts/fx_fusion/fx_dispatch_gap_detector.py`。已跑出一组**正/负对照**：
@@ -324,9 +329,10 @@ HF 那边没有对照物（全是展开的），也就没有信号。
 `results/fx_fusion/dispatch_gap_gemma3rmsnorm.json`
 
 ```
-rank=2 shape=[64, 1152]         opaque (fused)
-rank=3 shape=[1, 64, 1152]      EXPANDED (eager)   markers: ['mean','pow','rsqrt']
-rank=4 shape=[1, 64, 4, 1152]   EXPANDED (eager)   markers: ['mean','pow','rsqrt']
+rank=2 shape=[64, 1152]        FUSED  (registered kernel)
+    kernel: ['sgl_kernel.gemma_rmsnorm.default']
+rank=3 shape=[1, 64, 1152]     EAGER  (expanded math)   markers: ['mean','pow','rsqrt']
+rank=4 shape=[1, 64, 4, 1152]  EAGER  (expanded math)   markers: ['mean','pow','rsqrt']
 
 DISPATCH GAP FOUND
   fused at: ['[64, 1152]']
@@ -337,7 +343,7 @@ DISPATCH GAP FOUND
 `results/fx_fusion/dispatch_gap_negative_control.json`
 
 ```
-rank=2/3/4  全部 EXPANDED (eager)
+rank=2/3/4  全部 EAGER (expanded math)，无任何注册 kernel
 no gap: all shapes trace the same way
 ```
 
