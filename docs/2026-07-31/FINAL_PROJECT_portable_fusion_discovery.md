@@ -121,6 +121,30 @@ out = (o * torch.rsqrt(o.pow(2).mean(-1,keepdim=True)+1e-6) * wcat.float()).type
 
 ---
 
+## 3b. 可迁移性：已在 CPU 上验证，不是论证 ★
+
+「硬件无关」不是设计声明，是**跑出来的**：
+
+```bash
+CUDA_VISIBLE_DEVICES="" python fx_scan_models.py --model qwen3-0.6b --device cpu
+```
+
+```
+===== qwen3-0.6b (2/28 layers, 8 tokens) =====
+graphs=1  chains=19  bytes_saved=3.8MB  wall=32.5s
+  x9    pow->mean->add->rsqrt->mul->convert_element_type->mul
+  x2    neg->exp->add->div->convert_element_type->mul
+  x1    sin->mul->convert_element_type
+```
+
+**完全没有 GPU，输出的候选和签名与 GPU 上一致。**
+（`lfm25-8b-a1b` 同样在 CPU 上扫通。）
+
+意义：**发现环节不需要目标硬件**。
+可以在任何机器上扫，拿到候选列表，再到 MAIA 上验证 —— 这正是迁移路径的关键。
+
+---
+
 ## 4. 方法：四阶段漏斗
 
 ```
