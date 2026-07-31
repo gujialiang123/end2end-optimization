@@ -1,0 +1,236 @@
+{
+ "n_graphs": 1,
+ "n_chains": 8,
+ "total_bytes_saved": 5833664,
+ "by_signature": {
+  "pow->mean->add->rsqrt->mul->convert_element_type->mul": 5,
+  "neg->exp->add->div->convert_element_type->mul": 2,
+  "add->convert_element_type": 1
+ },
+ "chains": [
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     7168
+    ],
+    [
+     1,
+     8,
+     7168
+    ]
+   ],
+   "est_bytes_saved": 2064384,
+   "nodes": [
+    "neg",
+    "exp",
+    "add_6",
+    "div",
+    "convert_element_type_14",
+    "mul_8"
+   ]
+  },
+  {
+   "signature": "neg->exp->add->div->convert_element_type->mul",
+   "length": 6,
+   "n_pointwise": 6,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     7168
+    ],
+    [
+     1,
+     8,
+     7168
+    ]
+   ],
+   "est_bytes_saved": 2064384,
+   "nodes": [
+    "neg_1",
+    "exp_1",
+    "add_11",
+    "div_1",
+    "convert_element_type_30",
+    "mul_15"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_1",
+    "mean",
+    "add_3",
+    "rsqrt",
+    "mul_2",
+    "convert_element_type_4",
+    "mul_3"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_2",
+    "mean_1",
+    "add_5",
+    "rsqrt_1",
+    "mul_6",
+    "convert_element_type_10",
+    "mul_7"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_3",
+    "mean_2",
+    "add_8",
+    "rsqrt_2",
+    "mul_9",
+    "convert_element_type_20",
+    "mul_10"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_4",
+    "mean_3",
+    "add_10",
+    "rsqrt_3",
+    "mul_13",
+    "convert_element_type_26",
+    "mul_14"
+   ]
+  },
+  {
+   "signature": "pow->mean->add->rsqrt->mul->convert_element_type->mul",
+   "length": 7,
+   "n_pointwise": 6,
+   "n_reduction": 1,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 327872,
+   "nodes": [
+    "pow_5",
+    "mean_4",
+    "add_13",
+    "rsqrt_4",
+    "mul_16",
+    "convert_element_type_36",
+    "mul_17"
+   ]
+  },
+  {
+   "signature": "add->convert_element_type",
+   "length": 2,
+   "n_pointwise": 2,
+   "n_reduction": 0,
+   "shapes": [
+    [
+     1,
+     8,
+     2048
+    ],
+    [
+     1,
+     8,
+     2048
+    ]
+   ],
+   "est_bytes_saved": 65536,
+   "nodes": [
+    "add_12",
+    "convert_element_type_35"
+   ]
+  }
+ ],
+ "model": "lfm25-8b-a1b",
+ "model_path": "/data/hf/LFM2.5-8B-A1B",
+ "layers_compiled": 2,
+ "layers_real": 24,
+ "tokens": 8,
+ "wall_s": 41.5,
+ "torch": "2.11.0+cu130"
+}

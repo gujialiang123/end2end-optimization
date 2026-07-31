@@ -21,7 +21,9 @@ from fx_fusion_scanner import scan_module  # noqa: E402
 
 MODELS = {
     "gemma3-1b": "/data/hf/models/gemma-3-1b-it",
-    "qwen3-0.6b": "/data/hf/gujialiang123/models/Qwen3-0.6B",
+    "qwen3-0.6b": "/data/hf/models/Qwen3-0.6B",
+    "qwen3-30b-a3b": "/data/hf/models/Qwen3-30B-A3B-Instruct-2507",
+    "lfm25-8b-a1b": "/data/hf/LFM2.5-8B-A1B",
     "olmo2-1b": "/data/hf/gujialiang123/models/OLMo-2-1B-Instruct",
     "granite-3.3-2b": "/data/hf/gujialiang123/models/granite-3.3-2b-instruct",
     "phi4-mini": "/data/hf/gujialiang123/models/Phi-4-mini-instruct",
