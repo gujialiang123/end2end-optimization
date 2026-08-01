@@ -12,7 +12,9 @@
 
 | 项 | 结论 |
 |---|---|
-| 机会 | Gemma-3 把 q_norm / k_norm / RoPE 当三个算子调用；sglang **自带** `fused_qk_norm_rope` 一次融完 |
+| 原计划 | 验证前一天的「手工合并 q/k norm」方案 |
+| **实际做的** | 侦察时发现 sglang **自带** `fused_qk_norm_rope`（连 RoPE 一起融），**原方案作废**，见 §1.0 |
+| 机会 | Gemma-3 把 q_norm / k_norm / RoPE 当三个算子调用，而这个 kernel 一次融完 |
 | 怎么发现的 | **静态扫描**（scan 1b：模型没调用同僚在用的原语），非 profiling、非人工读代码 |
 | kernel 改动 | 加编译期 `JIT_ADD_ONE` 标志，在 fp32 域做 Gemma 的 `(1+w)` |
 | 微基准 | 对 PR #32670 基线 **1.5–2.3×**，全 token 范围无退化 |
@@ -35,6 +37,28 @@ rope 融合本身的增量是 **+0.5% 到 +1.1%**。详见 §6。
 ---
 
 ## 1. 机会是怎么发现的
+
+### 1.0 先回答原问题：那个「手工合并 q/k norm」的方案怎么样了
+
+出发点本来是验证前一天发现的 **QK-norm 手工合并**——把 `q_norm(q)` 和 `k_norm(k)`
+两次调用合成一次 `[tokens, heads, head_dim]` 的 norm 配 per-head 权重。
+侦察阶段查到 sglang **已经自带** `fused_qk_norm_rope`，
+连 RoPE 一起融，于是转向了它。**这个转向让原方案作废，理由是三条硬的**：
+
+| | 手工合并 q/k norm | `fused_qk_norm_rope` |
+|---|---|---|
+| 融了什么 | 2 个 norm | **2 个 norm + RoPE** |
+| 微基准（小 T） | 1.94× | **2.3×** |
+| **大 T（4096）** | **0.56×，反而更慢** | 全范围加速，无退化 |
+| 落地成本 | `sgl_kernel.gemma_rmsnorm` 的 weight 是 1-D，**表达不了 per-head 权重 → 必须新写 kernel** | 已存在，只需加一个编译期标志 |
+| 端到端验证 | 从未做过 | 见 §6 |
+
+原方案的数据（`results/fx_fusion/qknorm_merge.csv`）仍然有效，
+它证明的是**「slice 阻断了横向融合」**这个机制；
+但作为一个可落地的优化，它被一个已经存在的、更强的 kernel 取代了。
+
+> **结论：原方案不再推进。** 它需要新写 kernel、在大 batch 上会退化，
+> 而 sglang 自带的 kernel 在所有维度上都更好。
 
 ### 1.1 方法：scan 1b（模型没调用同僚在用的原语）
 
