@@ -295,6 +295,28 @@ profiling 里它是 1 次 eager-norm 调用，OLMo-2 是 97 次。**扫描正确
 
 ---
 
+## 6b. 这套方法已接入 agent loop（2026-08-02）
+
+以上 6 个案例的发现方式已经写成规则，接进了 SLO-agent 的 loop
+（分支 `feat/kernel-fusion-gap-mode`）。
+
+**back-test 结果：5/5 重现**（第 3 个已被上游 #32383 修掉，正确报 N/A），
+包括最难的 OLMo-2（grep 看不见、decode profile 干净）。
+
+新增了一种本文档此前没有系统扫过的形态：
+
+> **`fused_add_rmsnorm` 从来不被任何模型文件写出名字**——它靠「调 norm 时传两个参数」触发。
+> 按名字扫返回 137 个候选（无用）；改扫**调用约定**后收敛到 4 个 plain-add 候选，
+> 其中 2 个是已知的 LFM2.5，2 个是全新的：`Exaone4DecoderLayer`、`JetNemotronDecoderLayer`。
+
+**但新候选不等于新机会**：Exaone4 profiling 实测只占 **0.45% of decode kernel time**，
+被闸门正确否决（需 ≥3%）。
+
+自由模式与 loop 模式的完整对比见
+`docs/2026-08-02/free_exploration_vs_agent_loop.md`。
+
+---
+
 ## 7. 下一步
 
 **优先级 1 — OLMo-2 提 PR**：prefill 1.24×、改动 3 行、GSM8K p=1.000 无变化。

@@ -1,0 +1,36 @@
+{
+ "src": "/tmp/sglang_fqr_base",
+ "models": [
+  {
+   "name": "exaone4",
+   "path": "/home/t-jialianggu/models/EXAONE-4.0-1.2B",
+   "eligible": false,
+   "reasons": [
+    "rope_type=llama3 (kernel has default and yarn only)"
+   ],
+   "config": {
+    "arch": "Exaone4ForCausalLM",
+    "head_dim": 64,
+    "n_heads": 32,
+    "n_kv": 8,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000.0,
+    "rope_scaling": {
+     "factor": 16.0,
+     "high_freq_factor": 4.0,
+     "low_freq_factor": 1.0,
+     "original_max_position_embeddings": 8192,
+     "rope_type": "llama3"
+    },
+    "layers": 30
+   },
+   "profile": {
+    "total_kernel_us": 4963.6,
+    "n_kernels": 530,
+    "gap_calls": 1,
+    "gap_us": 22.3,
+    "gap_pct": 0.45
+   }
+  }
+ ]
+}

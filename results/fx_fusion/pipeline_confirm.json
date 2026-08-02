@@ -1,0 +1,51 @@
+{
+ "src": "/tmp/sglang_fqr_base",
+ "models": [
+  {
+   "name": "qwen3",
+   "path": "/data/hf/models/Qwen3-0.6B",
+   "eligible": true,
+   "reasons": [],
+   "config": {
+    "arch": "Qwen3ForCausalLM",
+    "head_dim": 128,
+    "n_heads": 16,
+    "n_kv": 8,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000,
+    "rope_scaling": null,
+    "layers": 28
+   },
+   "profile": {
+    "total_kernel_us": 2846.4,
+    "n_kernels": 384,
+    "gap_calls": 1,
+    "gap_us": 9.1,
+    "gap_pct": 0.32
+   }
+  },
+  {
+   "name": "gemma3_causal",
+   "path": "/data/hf/models/gemma-3-1b-it",
+   "eligible": true,
+   "reasons": [],
+   "config": {
+    "arch": "Gemma3ForCausalLM",
+    "head_dim": 256,
+    "n_heads": 4,
+    "n_kv": 1,
+    "dtype": "bfloat16",
+    "rope_theta": 1000000,
+    "rope_scaling": null,
+    "layers": 26
+   },
+   "profile": {
+    "total_kernel_us": 4900.0,
+    "n_kernels": 923,
+    "gap_calls": 157,
+    "gap_us": 316.2,
+    "gap_pct": 6.45
+   }
+  }
+ ]
+}
