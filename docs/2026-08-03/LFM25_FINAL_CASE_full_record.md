@@ -85,19 +85,65 @@ conda     sglang-dev
 
 ### cookbook 基线配置
 
-```
---mem-fraction-static 0.85
---max-running-requests 32
---chunked-prefill-size -1
---schedule-policy lpm
---schedule-conservativeness 1.0
---max-prefill-tokens 16384
---attention-backend fa3
---moe-runner-backend auto
-CUDA graph: 开启
+**完整启动命令**（`scripts/serving_ceiling_lib.py:202-211` 构造，L2/L3 实验共用）：
+
+```bash
+python -m sglang.launch_server \
+    --model-path /data/hf/LFM2.5-8B-A1B \
+    --served-model-name lfm2.5-8b-a1b \
+    --host 127.0.0.1 --port <PORT> \
+    --tensor-parallel-size 1 \
+    --context-length 8192 \
+    --schedule-conservativeness 1.0 \
+    --trust-remote-code \
+    --moe-runner-backend auto \
+    --mem-fraction-static 0.85 \
+    --max-running-requests 32 \
+    --chunked-prefill-size -1 \
+    --schedule-policy lpm \
+    --max-prefill-tokens 16384
 ```
 
-**L2 和 L3 的实验都把这套配置逐字冻结**（`rk_e2e.py:33-39` 与 `lf_e2e.py:42-48`，两文件配置完全一致）。
+**★ CUDA graph 是开启的。** 这一点从**真实 server log 逐条核实**过，不是从代码推断的
+（`results/lfm_fusion/e2e/lfm25_exp3_cfg_fwd/C_long_prefill/server_baseline.log`）：
+
+```
+disable_cuda_graph        = False
+disable_cuda_graph_padding= False
+cuda_graph_max_bs         = 256
+Capture cuda graph begin. ...
+Capture cuda graph bs [1, 2, 4, 8, 12, 16, 24, 32]
+Capture cuda graph end. Time elapsed: 1.91 s.
+```
+
+捕获的 batch size 到 32 为止，正好等于 `max_running_requests`。
+**所以 decode 路径全程走 graph 重放，baseline 和 all7 两臂都是。**
+
+其余相关的 resolved server args（同一份 log）：
+
+| 参数 | 值 | 含义 |
+|---|---|---|
+| `disable_cuda_graph` | **False** | CUDA graph 开 |
+| `enable_torch_compile` | **False** | 没有用 torch.compile |
+| `enable_piecewise_cuda_graph` | **False** | — |
+| `disable_radix_cache` | **False** | radix cache 开 |
+| `disable_overlap_schedule` | **False** | overlap 调度开 |
+| `enable_fused_qk_norm_rope` | **False** | ★ 上游现在有这个 server flag，**默认关**，见下 |
+| `attention_backend` | `fa3` | |
+| `moe_runner_backend` | `auto` | |
+| `dtype` / `kv_cache_dtype` | `auto` / `auto` | bf16 |
+| `page_size` | 1 | |
+| `speculative_algorithm` | `None` | 无投机解码 |
+| `quantization` | `None` | 无量化 |
+
+> **`enable_fused_qk_norm_rope=False` 值得注意**：上游后来加了这个 server 级开关。
+> 我们的 G4 是在**模型调用点**接上融合 kernel，与这个 flag 是两条路径。
+> baseline 和 all7 两臂这个 flag 都是 False，所以 A/B 是干净的——
+> 但**上游可能已有另一种方式解决 G4**，交付时应主动说明。
+
+**A/B 的干净性**：`LFM_FUSION_PATCH` 未设置时走的是**逐字未改动的 sglang 原路径**，
+同一棵树、同一份 server 参数、同一个 commit（`17f7a1da1a`）。
+server log 会被检查 patch 生效标记，否则静默失效的 patch 会被误记为"与 baseline 相同"。
 
 ---
 
@@ -143,14 +189,24 @@ CUDA graph: 开启
 
 5 重复验证 pass 定量收缩但**定性结论完全一致**：
 
-| regime | 验证后提升 | 分类 |
-|---|---:|:--:|
-| short decode | +0.4% | WIN |
-| medium balanced | +1.8% | REGRESSION |
-| **long prefill** | **+56.9%** | TRADE-OFF |
-| concurrent decode | +1.1% | FLAT |
-| **shared-prefix** | **+93.6%** | TRADE-OFF |
-| tool-agent | +0.3% | WIN |
+| regime | 验证后提升 | 验证 pass 的最优旋钮 | 分类 |
+|---|---:|---|:--:|
+| short decode | +0.4% | — | WIN |
+| medium balanced | +1.8% | — | REGRESSION |
+| **long prefill** | **+56.9%** | **cap8 · chunk2048 · fcfs · mem0.90** | TRADE-OFF |
+| concurrent decode | +1.1% | cap64 · chunk8192 · fcfs · mem0.75 | FLAT |
+| **shared-prefix** | **+93.6%** | — | TRADE-OFF |
+| tool-agent | +0.3% | — | WIN |
+
+> ⚠️ **两个 pass 的最优旋钮不同，别混用。**
+> coverage pass（1 rep，192 配置）的长 prefill 赢家是 `cap24 · chunk2048 · fcfs · mem0.75`（+77.5%）；
+> **验证 pass（5 rep，CI-backed，35 配置）的赢家是 `cap8 · chunk2048 · fcfs · mem0.90`**
+> （12.604 → **19.781 req/s**，+56.94%，ci95 ±0.295）。
+> **要串联进 waterfall 的必须用验证 pass 的那个**——它是有重复、有 CI 的。
+> 逐 regime 的完整数据：`results/2026-07-24_serving_ceiling_validation/analysis/lfm25/ceiling_per_regime.json`
+>
+> 两个 pass 唯一共同的结构性结论是 `chunked_prefill_size=2048` + `fcfs`；
+> `cap` 和 `mem` 在两次之间就翻转了，**这本身又是一条"单次排名不可信"的证据**（与 §3.2 研究 B 的发现一致）。
 
 **研究 B（TPE 收敛，只做 concurrent decode）：**
 
@@ -701,11 +757,74 @@ n=1319, p≈0.35 的二项抽样误差 ±2.6 点。**全部 8 个臂跨度 2.5 �
 
 ---
 
-## 8. ★ 当前最大的结构问题：三层从未串联
+## 8. L2 + L3 串联 —— ★ 实验 3 已完成（2026-08-03）
 
-### 8.1 事实
+> **本节原标题是「当前最大的结构问题：三层从未串联」。实验 3 已经把 L2+L3 那一层补上了，
+> 结论比预期好得多。原分析保留在 §8.4 供对照。**
 
-三个研究**都**把 serving 配置冻结在 **cookbook**：
+### 8.1 实验设计
+
+同一棵树、同一份 serving 参数，**只有 `SGLANG_MOE_CONFIG_DIR` 和 `LFM_FUSION_PATCH` 两个变量**：
+
+```
+2 (config: nocfg / cfg) × 2 (kernel: baseline / all7) × 2 (顺序: fwd / rev) × 8 reps
+```
+
+**顺序做了 counterbalance**（`rk_e2e.py` 是顺序执行 arm，存在位置效应——
+L2 的 decode 那栏就被这个坑过，见 §4.4）。合并后每格 n=16。
+
+config 生效已在 server log 中确认：
+
+```
+Using MoE kernel config from .../lfm25_pr_candidate/configs/triton_3_5_1/
+                             E=32,N=1792,device_name=NVIDIA_H200.json
+```
+
+### 8.2 ★ 结果摘要
+
+**C 长 prefill**（req/s，n=16/格）：
+
+| | baseline | + kernel rewrite (all7) | 增量 |
+|---|---:|---:|---:|
+| **无 tuned config** | 12.119 ± 0.116 | 12.869 ± 0.182 | **+6.18%**（p=4.5e-13） |
+| **有 tuned config** | 14.939 ± 0.123 | **16.392 ± 0.200** | **+9.73%**（p=9.5e-19） |
+
+**A 低批 decode**：
+
+| | baseline | all7 | 增量 |
+|---|---:|---:|---:|
+| 无 tuned config | 1.6863 | 1.7992 | +6.70%（p=2.1e-41） |
+| 有 tuned config | 1.6872 | 1.7944 | +6.35%（p=1.8e-34） |
+
+> **完整分析、六项 vs 七项拆解、`moesum` 边际贡献、以及为什么增量反而变大，
+> 全部在 §9.5 和 `docs/2026-08-03/exp3_kernel_on_tuned_baseline.md`。本节只给摘要。**
+
+### 8.3 三个结论
+
+**① 完整的分层图现在画得出来了（长 prefill）：**
+
+```
+cookbook 基线                    12.12 req/s      ——
++ L2 tuned MoE config            14.94 req/s      +23.3%
++ L3 kernel rewrite              16.39 req/s      +9.73%  ← 叠在 tuned 之上
+                                                  ─────
+总计 vs 基线                                      +35.3%
+```
+
+**★ 这直接回答了 Dey 的问题**：best kernel autotuning 之后，kernel rewrite **仍然贡献 +9.73%，
+t=24.0，8/8 重复不重叠**。
+
+**② 增量不但没缩水，反而变大了（+6.18% → +9.73%）。**
+这**超过**了 §9 正交假设的预测（+6.62%）。机制见 §9.5。
+
+**③ A regime 是完美的阴性对照。**
+L2 的 guarded 策略对 `M ≤ 32` 逐字段保持默认，所以 decode 路径**本来就不该受影响**——
+实测 baseline 1.6863 vs 1.6872（差 0.05%）。
+而 kernel 增量几乎不变（+6.70% → +6.35%）。**两个层次在 decode 上互不干扰，符合设计预期。**
+
+### 8.4 【已解决】原先的问题分析（保留供对照）
+
+在实验 3 之前，三个研究**都**把 serving 配置冻结在 cookbook：
 
 | 研究 | 文件 | serving 配置 |
 |---|---|---|
@@ -714,59 +833,19 @@ n=1319, p≈0.35 的二项抽样误差 ±2.6 点。**全部 8 个臂跨度 2.5 �
 
 而 **L1 找到的长 prefill 赢家是 `cap=24, chunk=2048, fcfs, mem=0.75`** —— 完全不同的配置。
 
-同时（**实验 1 已核实，2026-08-03**）：
-
-```bash
-cd /home/t-jialianggu/work/sglang
-git ls-tree -r 17f7a1da1 --name-only | grep "E=32,N=1792"
-# → 0 个结果
-```
-
-且 `lf_e2e.py` **完全没有** `SGLANG_MOE_CONFIG_DIR`。
-→ **L3 的 kernel A/B 跑的时候，L2 的 tuned MoE config 不存在。**
-
-### 8.2 所以真实结构是三条平行分支，不是一条链
+且实验 1 已核实 `17f7a1da1` 树里**没有** `E=32,N=1792` 的任何 config，
+`lf_e2e.py` 也没有 `SGLANG_MOE_CONFIG_DIR`。所以当时的结构是三条平行分支：
 
 ```
                       ┌── L1 serving tuning ──→ +56.9%  (长 prefill, TRADE-OFF)
-                      │
-  cookbook 基线 ──────┼── L2 kernel config ───→ +22.1% ~ +23.3%  (长 prefill)
-  (12.28 req/s, 长prefill)
-                      └── L3 kernel rewrite ──→ +5.30%  (长 prefill)
+  cookbook 基线 ──────┼── L2 kernel config ───→ +22.1% ~ +23.3%
+  (12.28 req/s)       └── L3 kernel rewrite ──→ +5.30%
 ```
 
-**三条分支各自从同一个根出发，从未叠加过。**
+当时的风险是：原样交出去会讲成
+❌ *"kernel autotuning 给了 +23%，我们手写 Triton kernel 只给了 +5%"*——正好反驳论点。
 
-### 8.3 为什么这是个严重问题
-
-Debadeepta 的原话：
-
-> "Our aim is not to get torch compile working. It is to show that for different regimes
-> we can genetically rewrite kernels to improve **beyond what the best auto tuning config provides**."
-
-如果原样交出去，这张图讲的故事是：
-
-> ❌ **"kernel autotuning 给了 +23%，我们辛苦手写 Triton kernel 只给了 +5%。"**
-
-**这正好反驳了要证明的论点。**
-
-绝对值对比更刺眼：
-
-| | 长 prefill 绝对吞吐 |
-|---|---:|
-| cookbook 基线 | 12.28 req/s |
-| + L2 tuned MoE config | **15.14 req/s** |
-| + L3 kernel rewrite（从基线起算） | **12.93 req/s** |
-
-**12.93 < 15.14。**
-
-必须变成串联：
-
-```
-  12.28 ──L2: +23.34%──→ 15.14 ──L3: +X%──→ ?
-                                    ↑
-                    这个 X 是 Dey 唯一想看的数字，我们从没测过
-```
+**L2+L3 已经串联（§8.2）。L1 仍未串联进去**（见 §10 实验 5，可选）。
 
 > **【2026-08-03 更新】X 已实测：+9.73%（p=9.5e-19）。见 §9.5。**
 > 串联后的完整链条（同一 session、同一棵树、counterbalanced n=16/臂）：
@@ -834,6 +913,11 @@ MoE GEMM                 4779.1 us  ←  73.6%   ← L2 只动这块
    所以不是可靠下界，但足以说明**理论值不能直接报**。
 
 **诚实预期区间：+2% ~ +6.6%，中位数猜 +4~5%。必须实测。**
+
+> 🔴 **本节 9.1–9.4 是实测之前的预测，已被 §9.5 的实测取代。**
+> 实测 X = **+9.73%**，**高于**本节的正交上界 +6.62%。
+> 上面这个"+2%~+6.6%"的区间**是错的，方向偏保守**，保留在此仅供对照。
+> 正确的机制拆解见 §9.5：Amdahl 部分 +2.06 点、`moesum` 与 tuned MoE GEMM 的真实交互 +1.49 点。
 
 ---
 
@@ -903,11 +987,11 @@ regime A 低批 decode 同样做了 2×2：
 **推论：L3 在 regime A/B 上的 +6.57% / +6.21% 不需要重测。**
 「脏基线」问题只影响 prefill，三个 regime 里只有 C 要重做。
 
-### 9.5 如果实测接近 +6.6%，这个 case 就非常强
+### 9.6 这个 case 为什么强
 
 > **kernel rewrite 和 config autotuning 作用在时间轴的不相交区域。**
 > **autotuning 把 73.6% 那块打到极限之后，剩下 26.4% 只有 rewrite 能动。**
-> **而且 autotuning 越成功，rewrite 的相对价值越高。**
+> **而且 autotuning 越成功，rewrite 的相对价值越高**（实测：+6.18% → +9.73%）。
 
 这不只是"还有 X%"，是**机制性解释** —— 两者根本在优化不同的东西，
 所以 autotuning 无论多强都到不了 rewrite 那块地。
