@@ -445,6 +445,88 @@ study, not to the numbers in this document.
 
 ---
 
+## 5.1 How to fill the blank cells
+
+**29 of 48 cells are blank.** They are not 29 separate experiments.
+
+### The unit of work is one harness invocation = 4 cells
+
+`scripts/lfm_fusion/exp3_layered.sh` runs a 2 × 2 × 2 design at a **fixed serving config**:
+`{L2 off, L2 on} × {L3 off, L3 on} × {forward, reverse arm order}`, 8 repetitions each,
+8 server lifetimes. That fills **four cells of one row**.
+
+Run it **twice per regime** — once at the cookbook serving config and once at that regime's
+L1 ceiling — and the **entire row of 8 cells is filled and internally consistent** (same
+tree, same campaign, same protocol, so the absolute values are comparable and the `†`
+marker goes away).
+
+```
+invocation at cookbook serving  →  S0,  L2,     L3,     L2+L3
+invocation at L1-ceiling serving →  L1,  L1+L2,  L1+L3,  L1+L2+L3
+```
+
+### What remains
+
+| Regime | cookbook invocation | L1-ceiling invocation | L1 winner knobs to add | Est. |
+|---|---|---|---|---|
+| **A** low-batch decode | ✅ done (exp3) | ⬜ needed | `cap8 · chunk−1 · fcfs · mem0.85` | ~35 min |
+| **B** concurrent decode | ⬜ needed | ⬜ needed | `cap64 · chunk8192 · fcfs · mem0.75` | ~70 min |
+| **C** long prefill | ✅ done (exp3) | 🔄 in flight (exp5) | `cap8 · chunk2048 · fcfs · mem0.90` ✅ already in harness | — |
+| **D** medium balanced | ⬜ needed | ⬜ needed | `cap8 · chunk2048 · fcfs · mem0.90` | ~65 min |
+| **E** shared prefix | ⬜ needed | ⬜ needed | `cap96 · chunk2048 · lpm · mem0.90` | ~105 min |
+| **F** tool agent | ⬜ needed | ⬜ needed | `cap128 · chunk8192 · lpm · mem0.75` | ~145 min |
+
+**≈ 7 GPU-hours serial.** The invocations are independent, so with six free GPUs this is
+**≈ 2 hours wall clock**.
+
+Timing is dominated by server startup (8 lifetimes × ~3.5 min) for the short workloads and
+by benchmark time for E (~20 s/run) and F (~42 s/run).
+
+### Code changes needed first (small)
+
+`scripts/lfm_fusion/lf_e2e.py` currently defines only `A/B/C` plus `C_long_prefill_tuned`.
+To run the table above it needs:
+
+1. Base entries for `D_medium_balanced`, `E_shared_prefix`, `F_tool_agent`
+   (workload names already exist in `serving_ceiling_lib.WORKLOADS`).
+2. `*_tuned` entries for A, B, D, E, F carrying the L1 winner knobs above.
+
+No harness logic changes — `run_workload` already dispatches on the workload name, and
+`shared_prefix` / `tool_agent` are already wired into the campaign library.
+
+### ⚠️ Sequence this correctly
+
+**Decide gap #5 (the `_down` companion config) *before* running any of the above.** Adding
+it changes what the "L2 on" arm *is*, so every cell measured beforehand would have to be
+re-measured. The order that avoids rework is:
+
+```
+1. sweep the _down config (gap #5, ~1–2 h)          ← changes the L2 arm definition
+2. re-measure regime C at cookbook + L1 ceiling      ← re-anchors the headline result
+3. fan out A, B, D, E, F across the free GPUs        ← ~2 h wall clock
+4. per-component ablation on the tuned baseline      ← gap #2, only for the chosen regime
+5. GSM8K on the delivered stack                      ← gap #6
+```
+
+### What each new row is expected to teach
+
+These are predictions to be tested, not results.
+
+- **D medium balanced** — the only regime whose token counts sit **between** the two
+  Triton kernels' guards (`conv` needs T ≥ 2048, `moesum` wants T ≤ 32 or T ≥ 4096). It is
+  the regime where we expect the *fewest* components to fire, and therefore a useful
+  negative control for the "four different shapes of gain" claim.
+- **E shared prefix** — heavy radix-cache reuse means the actual prefilled token count per
+  request is far below the nominal 2048-token system prompt. Whether `conv` still clears
+  its T ≥ 2048 guard here is an open question, and the answer determines whether shape
+  guards tuned on synthetic workloads survive contact with prefix caching.
+- **F tool agent** — **the only real trace.** Every kernel-layer number in this document is
+  currently from a synthetic workload, and Mason's stated requirement is that the shapes
+  come from real end-to-end runs. This row is what converts the study from "measured on
+  benchmarks we designed" to "measured on traffic we did not design".
+
+---
+
 ## 6. Data provenance
 
 | Content | Path |
