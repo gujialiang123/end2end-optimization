@@ -1,0 +1,386 @@
+# LFM2.5-8B-A1B — Optimization Ablation Matrix
+
+**Model** LFM2.5-8B-A1B · **Hardware** 1×H200 · **Precision** BF16 · **TP** 1
+**SGLang** 0.5.12.post1 @ `17f7a1da1` · torch 2.9.1+cu128 · Triton 3.5.1 · CUDA 12.8
+**Date** 2026-08-03 · **Metric** request throughput (req/s)
+
+Three optimization layers are applied independently and in combination, giving a
+**2³ factorial**. Every cell is a separate serving benchmark against the same
+model and workload; only the layer under test varies.
+
+| | Layer | What it changes | Touches source? |
+|---|---|---|:--:|
+| **L1** | Serving config tuning | 4 server flags: `max_running_requests`, `chunked_prefill_size`, `schedule_policy`, `mem_fraction_static` | No |
+| **L2** | Kernel config tuning | `fused_moe_kernel` tile parameters (`BLOCK_SIZE_M/N/K`, `GROUP_SIZE_M`, `num_warps`, `num_stages`) for `E=32, N=1792` on H200 | No |
+| **L3** | Kernel rewrite / fusion | 7 code changes, **4 of them hand-written Triton kernels** | **Yes** |
+
+---
+
+## 1. The matrix
+
+Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)**.
+⬜ = not measured. Blank cells are left blank rather than interpolated.
+
+| Regime | Workload | **S0** cookbook | **L1** only | **L2** only | **L3** only | **L1+L2** | **L1+L3** | **L2+L3** | **L1+L2+L3** |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| **A** low-batch decode | in=100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 ⚠️<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
+| **B** concurrent decode | in=200, out=256, conc=32 | **21.673** | 22.234 ⚠️<br>(+1.11%) | ⬜ ¹ | 23.018 ⚠️<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
+| **C** long prefill | in=4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 ⚠️<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
+
+**Sample sizes and significance**
+
+| Cell | n | p |
+|---|---:|---|
+| A: L2 only | 16 vs 16 | 0.34 (**not significant** — by design, see §3.2) |
+| A: L3 only | 16 vs 16 | 2.1e-41 |
+| A: L2+L3 (increment over L2) | 16 vs 16 | 1.8e-34 |
+| B: L3 only | 6 vs 6 | 2.4e-08 |
+| C: L2 only | 16 vs 16 | 1.1e-33 |
+| C: L3 only | 16 vs 16 | 4.5e-13 |
+| C: L2+L3 (increment over L2) | 16 vs 16 | 9.5e-19 |
+| L1 (all regimes) | 5 reps × 35 configs validated | CI-backed, see §3.1 |
+
+**Footnotes**
+
+⚠️ **The L1 column comes from a different campaign** (`2026-07-24_serving_ceiling_validation`)
+with its own cookbook baseline (A=1.6814, B=21.990, C=12.604). **Only the ratios are
+comparable across columns, not the absolute values.** An internally consistent L1 column
+for regime C is being measured now (see §5, gap #4).
+
+⚠️ **Regime B's L3 cell is the older n=6 measurement** taken before we adopted arm-order
+counterbalancing. A and C have since been re-measured at n=16. See §5, gap #1.
+
+¹ A separate study measured L2 on regime B at 1.005× (n=8), but without order
+counterbalancing, which we later found produces a 1.7% position effect — larger than half
+the effect being measured. Not carried into this matrix.
+
+² Experiment in flight.
+
+---
+
+## 2. The measured waterfall (regime C, long prefill)
+
+This is the one path through the matrix that is fully measured and internally consistent
+(same campaign, same tree, n=16 per cell, arm order counterbalanced).
+
+| Stage | Configuration | req/s | vs previous | vs cookbook |
+|---|---|---:|---:|---:|
+| **S0** | cookbook: `cap32 / chunk−1 / lpm / mem0.85`, stock MoE config, stock kernels | **12.119 ± 0.116** | — | 1.000× |
+| **S2′** | **+ L2** tuned MoE config | **14.939 ± 0.123** | **+23.26%** (p=1.1e-33) | 1.233× |
+| **S3′** | **+ L3** kernel rewrite | **16.392 ± 0.200** | **+9.73%** (p=9.5e-19) | **1.353×** |
+| *(control)* | L3 **without** L2 | 12.869 ± 0.182 | +6.18% (p=4.5e-13) | 1.062× |
+
+### The headline result
+
+> **After the best available kernel autotuning, kernel rewriting still contributes
+> +9.73 % end-to-end (p = 9.5e-19, 8/8 repetitions non-overlapping in both arm orders).**
+
+### And the increment *grows* rather than shrinks
+
+The same kernel rewrite is worth **+6.18 % on the untuned baseline** and **+9.73 % on the
+tuned one**. Some of that is Amdahl — L2 only touches the fused-MoE GEMM, which is 73.6 %
+of long-prefill kernel time, and L3 touches only the remaining 26.4 %, so shrinking the
+denominator raises the relative gain. But the measured value **exceeds** the orthogonal
+Amdahl bound (+6.62 %), which it should not.
+
+Adding a six-component arm isolates where the excess comes from:
+
+| Source | without L2 | with L2 | contribution to the +3.54 pt difference |
+|---|---:|---:|---:|
+| six components (all avoid the MoE GEMM) | +6.41 % | +8.47 % | **+2.06 pt — Amdahl** |
+| `moesum` marginal (`all7 − six`) | **−0.08 %** (p=0.88, neutral) | **+1.69 %** (p=2.8e-04) | **+1.49 pt — real interaction** |
+| total (`all7`) | +6.18 % | +9.73 % | +3.54 pt |
+
+`moesum` is the one component that changes what `FusedMoE` *returns* (un-combined
+`[T, top_k, H]` partials instead of a reduced tensor), so it shares the
+`intermediate_cache` layout with the very GEMM whose tiling L2 retunes. It is worth
+nothing on the untuned MoE and +1.69 % on the tuned one.
+
+> **How we state this, and how we do not.**
+> We report: *kernel rewriting contributes +9.73 % on top of the best tuned kernel config;
+> this exceeds the increment on the untuned baseline (+6.18 %), and the difference is
+> attributable to a single component with a structural contact point to the MoE GEMM
+> output layout, whose interaction mechanism is not yet confirmed at the profile level.*
+> We do **not** claim the layers are generally super-additive: n = 1 regime, 1 component.
+> **The six-component arm (+8.47 %) excludes this interaction and is the conservative
+> number.**
+>
+> Every other composition we have measured is strongly **sub**-additive (§3.3).
+
+---
+
+## 3. What each layer is
+
+### 3.1 L1 — Serving config tuning (no source changes)
+
+Four server flags. The search is a **full grid enumeration, 8 × 3 × 2 × 4 = 192
+configurations** — not sampling, so there is no sampling bias — followed by a 5-repetition
+validation pass over the top 35.
+
+| Knob | Values |
+|---|---|
+| `max_running_requests` | 8, 16, 24, 32, 48, 64, 96, 128 |
+| `chunked_prefill_size` | −1, 2048, 8192 |
+| `schedule_policy` | lpm, fcfs |
+| `mem_fraction_static` | 0.75, 0.80, 0.85, 0.90 |
+
+Per-regime validated ceiling:
+
+| Regime | Winning knobs | cookbook | ceiling | gain |
+|---|---|---:|---:|---:|
+| A low-batch decode | `cap8 · chunk−1 · fcfs · mem0.85` | 1.6814 ± 0.006 | 1.6878 ± 0.002 | +0.38 % |
+| B concurrent decode | `cap64 · chunk8192 · fcfs · mem0.75` | 21.990 ± 0.081 | 22.234 ± 0.166 | +1.11 % |
+| **C long prefill** | **`cap8 · chunk2048 · fcfs · mem0.90`** | 12.604 ± 0.382 | **19.781 ± 0.295** | **+56.94 %** |
+| *(medium balanced)* | `cap8 · chunk2048 · fcfs · mem0.90` | 7.108 | 7.235 | +1.79 % |
+| *(shared prefix)* | `cap96 · chunk2048 · lpm · mem0.90` | 14.081 | 27.262 | +93.61 % |
+| *(tool agent, real trace)* | `cap128 · chunk8192 · lpm · mem0.75` | 5.264 | 5.280 | +0.31 % |
+
+Three findings worth keeping:
+
+- **Three of six regimes are a genuine plateau** (+0.3 % to +1.1 %). An independent
+  100-trial Optuna study with **no warm start** reaches within 1 % of its final best at
+  configuration 7, and the last 20 configurations improve the best-so-far by **0.0 %**.
+- **Two regimes have a real cliff, and it is a *capacity* cliff.** Both winners change
+  batching and enable chunking. This is a multi-knob effect and must not be attributed to
+  chunked prefill alone. Both are also **trade-offs** — throughput is bought with TTFT/TPOT.
+- **The downside is an order of magnitude larger than the upside.** Worst configuration on
+  concurrent decode is **−64.9 %** against a best of +1.1 %. Serving knobs are a
+  *don't-fall-off-the-cliff* lever, not a speed lever.
+
+### 3.2 L2 — Kernel config tuning (no source changes)
+
+Retunes the tile parameters of the **existing** upstream `fused_moe_kernel`. LFM2.5's MoE
+shape is `E=32, N=1792`; upstream PR #22791 already ships tuned configs for H100 / B200 /
+MI325X but **not H200**, so larger prefill shapes fall back to a two-tier heuristic — the
+server itself logs `Performance might be sub-optimal!`.
+
+- 468–894 candidates swept per token-count bucket, 19 buckets (aligned with upstream's
+  H100/B200 files)
+- **Every candidate is correctness-gated before it is timed** — ~9 000 benchmarked
+  configurations, **0 correctness failures**
+- **Guarded policy**: for `M ≤ 32` the emitted config is field-for-field identical to the
+  default. CUDA-graph-captured decode batches all fall in that range, so **L2 is neutral on
+  decode by construction** — which is exactly what row A of the matrix shows (+0.05 %,
+  p = 0.34).
+
+Getting here required three corrections that are themselves transferable findings:
+we were tuning a kernel variant the server never executes; CUDA-graph capture bakes the
+config in at capture time so decode cannot be retuned afterwards; and **`M` is the token
+count, not `tokens × top_k`** — the profile keys were off by a factor of `top_k`, hiding
+real headroom behind misaligned buckets. Only a live trace exposed that.
+
+### 3.3 L3 — Kernel rewrite / fusion (source changes)
+
+Seven changes in two classes.
+
+#### Call-site fixes — the fused primitive already shipped, the model does not call it
+
+| Component | The defect | The fix |
+|---|---|---|
+| **`norm`** | The decoder layer takes a `residual` argument and **overwrites it on the first line**, so `RMSNorm` never receives it and never dispatches to `fused_add_rmsnorm`; both adds run as their own elementwise kernels | Switch to the deferred-residual convention every other SGLang model uses. The residual is carried as a debt and settled by the next layer's norm kernel. **−2 kernels per layer × 24 layers = 48** |
+| **`qkrope`** | `sgl_kernel.fused_qk_norm_rope` merges both head-wise RMSNorms and RoPE into one in-place CUDA kernel and **Qwen3-MoE already calls it**; LFM2.5 runs all three separately — 1.65 % of decode and 3.61 % of prefill kernel time | Call the fused kernel on the packed QKV, guarded on bf16, `head_dim == 64`, unscaled RoPE |
+| **`scale`** | `config.json` ships `routed_scaling_factor: 1.0`, but the multiply is unconditional — **22 kernels per forward read and rewrite the entire `[T, 2048]` activation to multiply by one** | Skip when the factor is exactly 1.0. **Bit-exact** |
+| **`idx`** | `req_pool_indices.to(int32)` is recomputed in **each of the 18 conv layers** for a 12-byte tensor — pure launch overhead, ~1.3 % of low-batch decode kernel time | Cache per forward, keyed on source-tensor identity so a stale cache cannot be returned |
+
+#### Hand-written Triton kernels
+
+| Component | The defect | The fix | Isolated |
+|---|---|---|---|
+| **`conv`** (2 kernels) | `causal_conv1d_fn` requires `[dim, seqlen]` with unit last stride, so **the layout change cannot be avoided, only absorbed**. Both the materialised transpose and the transposed read in `C_gate * conv_out` are uncoalesced: 18 layers move 8.79 GB in 10.3 ms = **0.83 TB/s against 4.8 TB/s of HBM — 17 % of peak** | One tiled kernel per side folding chunk + gating multiply + transpose into a single pass, with the transpose held in registers/shared memory via `tl.trans` | **5.93× / 4.33×** at T=16000, **0.98 → 3.46 TB/s (17 % → 72 % of peak)**, bit-exact at every shape. Guarded below T=2048 |
+| **`moesum`** (1 kernel) | The MoE top-k reduction writes `[T, H]` to HBM and the **next layer's** `fused_add_rmsnorm` reads it straight back. Both are row-wise — a wasted round trip | `FusedMoE` returns its four weighted expert outputs; one kernel does reduction + residual add + RMSNorm | **2.46×** at T=1, **2.68×** at T=8, 1.30× at T=16000 — but **0.72–0.74×** at T=128..1024. Guarded to `T ≤ 32 or T ≥ 4096` |
+| **`gate`** (1 kernel) | On decode, `B_gate * x` reads **strided rows** of `proj`. The access is coalesced, but the strided rows stop `TensorIterator` from vectorising — the trace shows the scalar `elementwise_kernel` instead of `vectorized_elementwise_kernel<8>` | A Triton kernel reading `proj` directly | Bit-exact |
+
+> `conv` and `moesum` have **opposite** shape dependence: `conv` needs large T to amortise
+> Triton's ~30 µs launch floor, `moesum` *saves* launch overhead plus a round trip and so
+> wins at small T. Together they cover the whole range.
+
+#### Per-component attribution (on the cookbook baseline, n=6, each against its own paired baseline)
+
+| Component | Class | A low-batch decode | B concurrent decode | C long prefill |
+|---|---|---:|---:|---:|
+| `norm` | wiring | +2.35 % | +2.89 % | +1.42 % |
+| `scale` | wiring | +1.40 % | +1.02 % | +0.73 % **n.s.** |
+| `norm+scale` | wiring | +4.20 % | +3.68 % | +1.60 % |
+| `conv` | **Triton ×2** | +0.13 % **n.s.** | −0.03 % **n.s.** | **+2.33 %** |
+| `norm+scale+conv` | mixed | +3.89 % | +3.65 % | +3.47 % |
+| `qkrope` | wiring | +0.93 % | **+5.42 %** | +1.99 % |
+| `gate+idx` | Triton ×1 + cache | −0.00 % **n.s.** | +0.65 % **n.s.** | +0.40 % **n.s.** |
+| `moesum` | **Triton ×1** | **+4.55 %** | +3.08 % | ⬜ never measured alone |
+| **six components** | | +4.60 % | +6.01 % | +5.81 % |
+| **all seven** | | **+6.57 %** | **+6.21 %** | **+5.30 %** |
+
+**Four different shapes of gain.** `norm+scale` removes a fixed number of kernels per
+forward regardless of how much work that forward does, so it dominates on decode and is
+diluted on long prefill. `conv` removes traffic that grows with token count and needs
+T ≥ 2048, so decode never reaches it. `qkrope` removes work in the 6 attention layers, so
+concurrent decode benefits most. `moesum` removes launch overhead plus a round trip, so
+low-batch decode benefits most. **Measuring one regime would have shown none of this.**
+
+**`gate+idx` is an honest negative** — the mechanism is real and measurable at kernel level
+(1–2 %) but does not survive to end-to-end in any regime.
+
+> ⚠️ **This whole table is measured on the untuned baseline, and we now know that matters.**
+> `moesum` moves from −0.08 % (p=0.88, neutral) to +1.69 % (p=2.8e-04) between the untuned
+> and tuned baselines — it changes sign and significance. **The attribution of the other six
+> components on the tuned baseline is therefore unverified.** See §5, gap #2.
+
+#### Combined gains are strongly sub-additive
+
+| Regime | Sum of components measured individually | Measured together | Realization |
+|---|---:|---:|---:|
+| C long prefill | 5.86 % | 5.30 % | 0.90 |
+| A low-batch decode | 9.37 % | 6.57 % | 0.70 |
+| B concurrent decode | 12.80 % | 6.21 % | **0.49** |
+
+On concurrent decode, `qkrope` alone is worth +5.42 %; adding a group worth +3.65 % on its
+own buys **0.12 points**. The components are removing overlapping per-forward overhead, and
+**the realization rate tracks how saturated the regime is** — long prefill has the most work
+per forward to hide overhead behind and loses the least.
+
+> **Never report the sum of individually measured components. Any combination that will
+> actually be deployed must be measured as a combination.**
+
+---
+
+## 4. Experimental configuration
+
+### 4.1 Cookbook baseline — full launch command
+
+```bash
+python -m sglang.launch_server \
+    --model-path /data/hf/LFM2.5-8B-A1B \
+    --served-model-name lfm2.5-8b-a1b \
+    --host 127.0.0.1 --port <PORT> \
+    --tensor-parallel-size 1 \
+    --context-length 8192 \
+    --schedule-conservativeness 1.0 \
+    --trust-remote-code \
+    --moe-runner-backend auto \
+    --mem-fraction-static 0.85 \
+    --max-running-requests 32 \
+    --chunked-prefill-size -1 \
+    --schedule-policy lpm \
+    --max-prefill-tokens 16384
+```
+
+Resolved server args, **transcribed from a real server log** rather than inferred:
+
+| Argument | Value | |
+|---|---|---|
+| `disable_cuda_graph` | **False** | **CUDA graph is ON in every arm** |
+| `cuda_graph_max_bs` | 256 | captured `bs [1,2,4,8,12,16,24,32]` — equals `max_running_requests`, so the whole decode path is graph replay |
+| `enable_torch_compile` | False | |
+| `enable_piecewise_cuda_graph` | False | |
+| `disable_radix_cache` | False | radix cache on |
+| `disable_overlap_schedule` | False | overlap scheduling on |
+| `enable_fused_qk_norm_rope` | **False** | upstream has since added a server-level switch for this fusion, defaulting off; our `qkrope` change wires it at the model call site, a different path |
+| `attention_backend` | `fa3` | |
+| `moe_runner_backend` | `auto` | |
+| `dtype` / `kv_cache_dtype` | `auto` / `auto` | BF16 |
+| `quantization` / `speculative_algorithm` | `None` / `None` | |
+| `page_size` | 1 | |
+
+### 4.2 A/B methodology
+
+- **L3 toggled by** the `LFM_FUSION_PATCH` environment variable. Unset means the
+  **byte-for-byte unmodified SGLang path** — same tree, same commit, same server args. The
+  baseline is a real baseline, not a rebuild.
+- **L2 toggled by** `SGLANG_MOE_CONFIG_DIR`. Pickup is verified in the server log.
+- **Arm order is counterbalanced.** The harness runs arms sequentially, which produces a
+  measurable position effect: on regime C the baseline reads 12.020 in forward order and
+  12.219 in reverse — **1.7 %, larger than half the effect under test**. Every cell in §2
+  pools `{forward, reverse}` × 8 repetitions from 2 independent server lifetimes, n=16.
+- **Effect verification.** The server log is checked for the patch marker and the config-load
+  line; otherwise a silently-inactive patch would be recorded as "identical to baseline".
+- **Statistics.** Welch t with an **exact Student-t tail**. (A normal approximation is
+  anti-conservative at n=6; switching to the exact tail changed no conclusion but did change
+  individual p-values.)
+
+### 4.3 Correctness
+
+**Token-identity is structurally unusable for this model.** LFM2.5 routes top-4-of-32 and
+expert selection is a discrete `argmax`, so a bf16-level perturbation can flip which expert
+is chosen and change the output discontinuously. Any change that is not bit-identical trips
+this gate.
+
+Validated instead on **full GSM8K, 1319 questions, greedy decoding**:
+
+| Arm | Runs | Mean |
+|---|---|---:|
+| baseline | 0.348 / 0.349 / 0.344 | 0.3470 |
+| **`scale` (provably bit-exact)** | 0.338 / 0.339 / 0.340 | **0.3390** |
+| `norm` | 0.362 / 0.368 / 0.361 | 0.3637 |
+| `conv` (bit-exact) | 0.342 / 0.350 | 0.3460 |
+| `qkrope` | 0.352 / 0.346 | 0.3490 |
+| `moesum` (bit-exact) | 0.343 / 0.347 | 0.3450 |
+| all seven | 0.371 / 0.364 / 0.370 | 0.3683 |
+
+The `scale` arm is **mathematically identical to baseline** and still reads **0.8 points
+lower**. That is not a defect — it measures the harness noise floor for free
+(`--parallel 32` varies batch composition between server instances, and batch-dependent
+reductions change greedy output). All 8 arms span 2.5 points, inside that floor and inside
+the ±2.6-point binomial error at n=1319, p≈0.35.
+
+> **Claim: no quality regression detected.** Not "quality improved" — the experiment cannot
+> resolve a difference that small, and the bit-exact arm is the proof of that.
+
+### 4.4 Known defects in the experimental record
+
+These are disclosed rather than left for a reviewer to find.
+
+1. **The 7/27 end-to-end runs all ran with `--skip-correctness`.** Their `correctness.json`
+   files contain `outputs: []`. The correctness evidence is the separately-run GSM8K
+   campaign above — which was measured on the **cookbook** baseline, **without** the tuned
+   MoE config. The delivered combination (L2+L3) has not been quality-tested.
+2. **The SGLang working tree carries one uncommitted patch** (a flashinfer_cutlass autotune
+   allowlist change, 2026-06-11). Both arms share it, so the A/B is unaffected, but strictly
+   the baseline is "`17f7a1da1` + that patch".
+3. **L2 has not reached its own ceiling.** The server log states
+   `Config file not found ... E=32,N=1792,device_name=NVIDIA_H200_down.json` — the down
+   projection still runs the default heuristic.
+4. **Two measurements of the same quantity disagree.** L3 alone on regime C reads **+5.30 %**
+   in the 7/27 report (n=6) and **+6.18 %** in the current campaign (n=16, counterbalanced,
+   after fixing a leaked-server bug that had a previous batch benchmarking a stale process).
+   The current number is the more reliable one.
+
+---
+
+## 5. Open cells
+
+| # | Missing | Which cells | Est. | Why it matters |
+|---|---|---|---|---|
+| **1** | Regime **B** with the tuned config (L2, L2+L3) | row B | ~30 min | B is one of the three headline regimes and the only one without a clean baseline |
+| **2** | **Per-component** L3 attribution on the tuned baseline | §3.3 table | ~2–3 h / regime | ★ `moesum` already changed sign between baselines; the other six are unverified |
+| **3** | `moesum` measured alone on regime C | §3.3 table | ~30 min | never measured in isolation there |
+| **4** | **L1 stacking** (L1, L1+L2, L1+L3, L1+L2+L3) | 4 columns | in flight | running now for regime C |
+| **5** | Add the `_down.json` companion config, then re-measure L2 and the L3 increment | column L2, L2+L3 | ~1–2 h | ⚠️ **may shrink the +9.73 %** — but without it "beyond the best autotuning" is not defensible |
+| **6** | GSM8K on the delivered stack (L2+L3) | §4.3 | ~2 h | current quality evidence does not cover the tuned config |
+| **7** | Profile-level evidence for the `moesum` × config interaction | §2 | ~1 h | the super-additivity currently has a plausible mechanism and no measurement |
+| **8** | NCU on the final stack (remaining headroom) | new section | ~1 h | closes the "what is left" question |
+
+### Not needed
+
+**Hardening the L1 autotuning ceiling.** That space is already **enumerated exhaustively**
+(192 of 192 configurations, plus a 5-repetition validation pass over the top 35). The
+"25-trial TPE search may simply have failed" objection applies only to a superseded earlier
+study, not to the numbers in this document.
+
+---
+
+## 6. Data provenance
+
+| Content | Path |
+|---|---|
+| L1 per-regime ceiling | `results/2026-07-24_serving_ceiling_validation/analysis/lfm25/ceiling_per_regime.json` |
+| L1 full grid (192 configs) | `results/2026-07-24_serving_ceiling/` |
+| L1 convergence study (100 trials, no warm start) | `results/2026-07-22_lfm25_plateau_100/` |
+| L2 | `results/regime_kernel/` |
+| L3 per-component (paired baselines) | `results/lfm_fusion/processed/fusion_ab*.csv` |
+| L2 × L3 factorial | `results/lfm_fusion/e2e/exp3_layered_*_summary.json` |
+| `moesum` marginal | `results/lfm_fusion/e2e/exp3_moesum_marginal_C_long_prefill.json` |
+| L1 stacking (in flight) | `results/lfm_fusion/e2e/lfm25_exp3_l1_C_*/` |
+| Kernel time breakdown (nsys) | `results/lfm_fusion/nsys/FINDINGS.md` |
+| NCU | `results/2026-07-10_v9_ncu_realworkload/` |
+| GSM8K | `results/lfm_fusion/correctness/accuracy_*.json` |
+| Hand-written Triton kernels | `scripts/lfm_fusion/lf_triton_shortconv.py`, `lf_triton_moesum.py` |
+| Source-level port of all 7 changes | `gujialiang123/sglang` PR #1 |
