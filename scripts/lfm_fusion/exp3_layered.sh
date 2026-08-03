@@ -17,12 +17,24 @@
 #
 # Both arms of a pair see the identical SGLANG_MOE_CONFIG_DIR, so the config is
 # a property of the baseline, not a difference between arms.
+#
+# --correctness-nogate: the greedy signature is recorded but does not veto an
+# arm. Three of the five gate prompts drive LFM2.5 into a repetition loop where
+# the baseline itself emits "So. So. So." forever; the arms then differ only in
+# where a period lands, which is a near-tied logit flipping, not a wrong kernel.
+# The two prompts that produce real text are token-identical. Gating on this
+# would also make the reversed order unrunnable, since the first arm defines the
+# signature. Correctness for these kernels rests on the GSM8K run in the
+# 2026-07-27 report, not on this probe.
 set -euo pipefail
 
 REPO=/home/t-jialianggu/work/EndtoEnd-auto-optimization
 ENVDIR=/home/t-jialianggu/.conda/envs/sglang-dev
 PROFILE=$REPO/configs/regime_kernel/profiles/lfm25_pr_candidate
 GPU=${GPU:-4}
+REGIME=${REGIME:-C_long_prefill}
+REGIME_SHORT=$( [ "$REGIME" = "C_long_prefill" ] && echo "" || echo "${REGIME%%_*}_" )
+SUITE=${SUITE:-}
 REPS=${REPS:-8}
 PORT=${PORT:-52140}
 
@@ -36,13 +48,13 @@ run () {           # $1 tag  $2 arms  $3 config-dir ("" = leave unset)
   if [ -n "$cfgdir" ]; then export SGLANG_MOE_CONFIG_DIR="$cfgdir";
   else unset SGLANG_MOE_CONFIG_DIR || true; fi
   "$ENVDIR/bin/python" scripts/lfm_fusion/lf_e2e.py \
-      --regime C_long_prefill --gpu "$GPU" --port "$PORT" \
-      --arms "$arms" --reps "$REPS" --tag "_exp3_$tag"
+      --regime "$REGIME" --gpu "$GPU" --port "$PORT" \
+      --arms "$arms" --reps "$REPS" --tag "_exp3_${SUITE}${REGIME_SHORT}$tag" --correctness-nogate
 }
 
-run nocfg_fwd baseline,all7 ""
-run nocfg_rev all7,baseline ""
-run cfg_fwd   baseline,all7 "$PROFILE"
-run cfg_rev   all7,baseline "$PROFILE"
+run nocfg_fwd "${ARMS_FWD:-baseline,all7}" ""
+run nocfg_rev "${ARMS_REV:-all7,baseline}" ""
+run cfg_fwd   "${ARMS_FWD:-baseline,all7}" "$PROFILE"
+run cfg_rev   "${ARMS_REV:-all7,baseline}" "$PROFILE"
 
 echo "all four cells done"

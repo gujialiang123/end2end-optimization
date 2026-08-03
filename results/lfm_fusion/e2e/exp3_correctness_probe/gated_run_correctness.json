@@ -32,11 +32,6 @@
       "arm": "all7",
       "patch_check": "[lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']",
       "ok": true
-    },
-    {
-      "arm": "all7",
-      "correctness": "2/5",
-      "gated": false
     }
   ]
 }

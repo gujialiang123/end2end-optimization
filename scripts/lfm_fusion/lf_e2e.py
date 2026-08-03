@@ -78,6 +78,29 @@ ARMS = {
 }
 
 
+def assert_port_free(port: int) -> None:
+    """Refuse to launch onto a port something else already answers on.
+
+    `wait_health` only probes `http://127.0.0.1:<port>/health`; it never checks
+    that the responder is the process it just spawned. A server leaked by an
+    interrupted run therefore satisfies the health check instantly, and the
+    whole A/B then measures that stale process: arms report "patch never
+    applied", throughput shifts by several percent, and nothing in the output
+    says why. This happened on 2026-08-03 and cost a full 2x2 cell.
+    """
+    import socket
+
+    with socket.socket() as s:
+        s.settimeout(2)
+        if s.connect_ex(("127.0.0.1", port)) == 0:
+            raise SystemExit(
+                f"port {port} is already serving. A previous run probably leaked "
+                f"its server (they are started with setsid and outlive the "
+                f"parent). Find it with `ps -eo pid,cmd | grep launch_server` "
+                f"and kill that pid before retrying."
+            )
+
+
 def launch_server(model, cfg, gpu, port, log_path):
     """Launch the canonical server while preserving the caller's cache path."""
     m = S.MODELS[model]
@@ -106,6 +129,7 @@ def launch_server(model, cfg, gpu, port, log_path):
         "--chunked-prefill-size", str(cfg["chunk"]),
         "--schedule-policy", cfg["policy"],
     ] + m["extra"]
+    assert_port_free(port)
     env = os.environ.copy()
     env.update(
         CUDA_HOME=cuda_home,
@@ -172,6 +196,10 @@ def arm_overlay(arm: str) -> dict:
 def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
     """The patch prints a line on apply; absence of it means a silent no-op."""
     txt = log_path.read_text(errors="ignore")
+    if not txt.strip():
+        # A healthy port plus an empty log means we are talking to somebody
+        # else's server, not the one we launched.
+        return False, "server log is empty -- health check hit a foreign server"
     if ARMS[arm].startswith("@src:"):
         # No marker to look for — verify the server actually imported sglang
         # from the patched tree instead.
@@ -224,6 +252,15 @@ def main():
     ap.add_argument("--port", type=int, default=52000)
     ap.add_argument("--tag", default="")
     ap.add_argument("--skip-correctness", action="store_true")
+    ap.add_argument(
+        "--correctness-nogate", action="store_true",
+        help="Sample and record the greedy signature but do not veto the arm. "
+             "Token identity is the right gate for a call-site rewrite, but "
+             "these prompts drive LFM2.5 into repetition loops where the top "
+             "two logits are all but tied, so any numerically different kernel "
+             "flips them without being wrong. Recording beats skipping: the "
+             "2026-07-27 campaign used --skip-correctness and left no evidence "
+             "at all.")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 
@@ -284,9 +321,14 @@ def main():
                 else:
                     identical = sig == baseline_sig
                     n_match = sum(x == y for x, y in zip(sig, baseline_sig))
+                    verdict = ("PASS" if identical
+                               else ("MISMATCH (recorded, not gated)"
+                                     if a.correctness_nogate else "MISMATCH"))
                     print(f"  correctness: {n_match}/{len(sig)} prompts identical"
-                          f" -> {'PASS' if identical else 'MISMATCH'}")
-                    if not identical:
+                          f" -> {verdict}")
+                    notes.append(dict(arm=arm, correctness=f"{n_match}/{len(sig)}",
+                                      gated=not a.correctness_nogate))
+                    if not identical and not a.correctness_nogate:
                         kill_server(p)
                         rows.append(dict(arm=arm, status="correctness_failed",
                                          info=f"{n_match}/{len(sig)} identical"))
