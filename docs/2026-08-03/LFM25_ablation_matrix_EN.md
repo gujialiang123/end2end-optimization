@@ -21,14 +21,18 @@ model and workload; only the layer under test varies.
 Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)**.
 ⬜ = not measured. Blank cells are left blank rather than interpolated.
 
+**Cell markers**: † = measured in a *different campaign* with its own cookbook baseline, so
+only the ratio transfers, not the absolute value. ‡ = older n=6 measurement taken before
+arm-order counterbalancing was adopted.
+
 | Regime | Workload | **S0** cookbook | **L1** only | **L2** only | **L3** only | **L1+L2** | **L1+L3** | **L2+L3** | **L1+L2+L3** |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 ⚠️<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
-| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.673** | 22.234 ⚠️<br>(+1.11%) | ⬜ ¹ | 23.018 ⚠️<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
-| **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 ⚠️<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
-| **D** medium balanced | synthetic · in≈800, out=256, conc=8 | 7.108 ⚠️ | 7.235 ⚠️<br>(+1.79%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | 14.081 ⚠️ | 27.262 ⚠️<br>**(+93.61%)** ³ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | 5.264 ⚠️ | 5.280 ⚠️<br>(+0.31%) ⁴ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 †<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
+| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.673** | 22.234 †<br>(+1.11%) | ⬜ ¹ | 23.018 ‡<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
+| **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 †<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
+| **D** medium balanced | synthetic · in≈800, out=256, conc=8 | 7.108 † | 7.235 †<br>(+1.79%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | 14.081 † | 27.262 †<br>**(+93.61%)** | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | 5.264 † | 5.280 †<br>(+0.31%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 > **★ The kernel layers cover only A, B and C.** L1 was run over all six regimes
 > (192 configurations × 6 workloads × 2 models); L2 and L3 were only ever run on the three
@@ -55,12 +59,12 @@ Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)
 
 **Footnotes**
 
-⚠️ **The L1 column comes from a different campaign** (`2026-07-24_serving_ceiling_validation`)
-with its own cookbook baseline (A=1.6814, B=21.990, C=12.604). **Only the ratios are
-comparable across columns, not the absolute values.** An internally consistent L1 column
-for regime C is being measured now (see §5, gap #4).
+† **The L1 column comes from a different campaign** (`2026-07-24_serving_ceiling_validation`)
+with its own cookbook baseline (A=1.6814, B=21.990, C=12.604, D=7.108, E=14.081, F=5.264).
+**Only the ratios are comparable across columns, not the absolute values.** An internally
+consistent L1 column for regime C is being measured now (see §5, gap #4).
 
-⚠️ **Regime B's L3 cell is the older n=6 measurement** taken before we adopted arm-order
+‡ **Regime B's L3 cell is the older n=6 measurement** taken before we adopted arm-order
 counterbalancing. A and C have since been re-measured at n=16. See §5, gap #1.
 
 ¹ A separate study measured L2 on regime B at 1.005× (n=8), but without order
@@ -69,13 +73,47 @@ the effect being measured. Not carried into this matrix.
 
 ² Experiment in flight.
 
-³ Reported as a **trade-off**, not a clean win: the throughput winner also moves TTFT p95
-and TPOT p95.
+### 1.1 The L1 ceilings are not throughput-for-latency trades
 
-⁴ **The honest negative of the L1 study.** On the only real trace in the suite, the
-throughput winner gains +0.31 % — inside the noise band — while degrading **TPOT p95 by
-221 %**. Optimizing a single objective on an agentic workload produces a configuration that
-is strictly worse for the user.
+A reasonable objection to stacking on top of L1 is that its large wins might be bought by
+destroying latency. **On the validated (n=5) ceilings they are not.** Sign convention:
+**positive = better** (higher throughput, lower latency).
+
+| Regime | req/s | TTFT p95 | TPOT p95 | Verdict |
+|---|---:|---:|---:|---|
+| A low-batch decode | +0.4 % | +11.8 % | −0.0 % | flat |
+| B concurrent decode | +1.1 % | +1.2 % | +1.4 % | flat |
+| **C long prefill** | **+56.9 %** | **208.5 → 94.0 ms (+54.9 %)** | 3.56 → 3.89 ms (−9.3 %) | **favourable** |
+| D medium balanced | +1.8 % | −14.2 % | −3.0 % | mild regression |
+| **E shared prefix** | **+93.6 %** | **7450 → 389 ms (+94.8 %)** | 7.66 → 8.03 ms (−4.8 %) | **strongly favourable** |
+| F tool agent | +0.3 % | 530.7 → 310.7 ms (+41.4 %) | 24.5 → 18.2 ms (+25.8 %) | everything improves |
+
+On regime C, throughput rises 57 % **and TTFT p95 more than halves**; the only cost is 9 %
+on TPOT p95. On shared prefix, TTFT p95 drops from 7.4 s to 0.39 s. On the real trace,
+every one of the three metrics improves.
+
+> **Correction.** An earlier version of this document reported the tool-agent ceiling as
+> costing **−221 % TPOT p95**. That number is real but belongs to a **different
+> configuration** (`cap48·chunk2048·lpm·mem0.80`) selected from the **n=1 coverage pass**,
+> and that configuration **did not survive validation** — the n=5 winner is
+> `cap128·chunk8192·lpm·mem0.75`, which improves TPOT by 25.8 %. Taking a maximum over 192
+> single-shot measurements is largely a maximum over noise, which is exactly why the
+> validation pass exists. **The finding that single-objective optimization *can* produce a
+> config that is strictly worse for the user still stands** — it is just a statement about
+> the search, not about the validated ceiling.
+
+**Consequence for the baseline choice.** Because the validated L1 ceilings are not bad
+trades, "cookbook" is *not* automatically the right base to stack on. For regimes C and E
+the cookbook is demonstrably **not** the best serving configuration, and Debadeepta's
+framing — *beyond what the best auto tuning config provides* — points at the L1 ceiling,
+not at the cookbook. The deliverable should therefore report **both**:
+
+- **cookbook → L2 → L3** — what a default deployment gains (fully measured today, §2)
+- **L1 ceiling → L2 → L3** — what remains after serving config is already optimal
+  (in flight, §5 gap #4)
+
+and print TTFT p95 / TPOT p95 next to every bar, so no reader has to wonder whether the
+throughput was bought with latency.
 
 ---
 
@@ -163,10 +201,17 @@ Three findings worth keeping:
   configuration 7, and the last 20 configurations improve the best-so-far by **0.0 %**.
 - **Two regimes have a real cliff, and it is a *capacity* cliff.** Both winners change
   batching and enable chunking. This is a multi-knob effect and must not be attributed to
-  chunked prefill alone. Both are also **trade-offs** — throughput is bought with TTFT/TPOT.
+  chunked prefill alone. Unlike the n=1 coverage pass suggested, the *validated* winners
+  are **not** throughput-for-latency trades — see §1.1.
 - **The downside is an order of magnitude larger than the upside.** Worst configuration on
   concurrent decode is **−64.9 %** against a best of +1.1 %. Serving knobs are a
   *don't-fall-off-the-cliff* lever, not a speed lever.
+- **Single-shot rankings are not stable.** The n=1 coverage pass and the n=5 validation
+  pass disagree on the winning knobs for every cliff regime (long prefill:
+  `cap24·mem0.75` vs `cap8·mem0.90`; tool agent: `cap48·chunk2048·mem0.80` vs
+  `cap128·chunk8192·mem0.75`). Only `chunked_prefill_size=2048`+`fcfs` survives both on
+  long prefill. Any config picked from a single measurement should be re-validated before
+  it is believed.
 
 ### 3.2 L2 — Kernel config tuning (no source changes)
 
@@ -356,9 +401,20 @@ These are disclosed rather than left for a reviewer to find.
 2. **The SGLang working tree carries one uncommitted patch** (a flashinfer_cutlass autotune
    allowlist change, 2026-06-11). Both arms share it, so the A/B is unaffected, but strictly
    the baseline is "`17f7a1da1` + that patch".
-3. **L2 has not reached its own ceiling.** The server log states
-   `Config file not found ... E=32,N=1792,device_name=NVIDIA_H200_down.json` — the down
-   projection still runs the default heuristic.
+3. **L2 has not reached its own ceiling.** A MoE layer runs **two** grouped GEMMs — the
+   up projection (`w13`) and the down projection (`w2`) — and SGLang tunes them with
+   **two separate config files**, `E=32,N=1792,device_name=NVIDIA_H200.json` and the same
+   name with a `_down` suffix
+   (`fused_moe_triton_config.py:33` builds the filename from a `down_moe` flag). We only
+   produced the first one. When the `_down` file is missing, SGLang falls back to reusing
+   the up-projection config for the down GEMM and logs
+   `Using MoE kernel config with down_moe=False. Performance might be sub-optimal!`
+   — which is exactly what our server logs show. **So roughly half the MoE GEMM work is
+   still running on a config that was not tuned for it.**
+   Tuning it is constrained rather than free: the runtime asserts
+   `config["BLOCK_SIZE_M"] == down_config["BLOCK_SIZE_M"]`
+   (`fused_moe_triton_config.py:265`), so the down config must be swept **subject to**
+   the up config's `BLOCK_SIZE_M`, not independently.
 4. **Two measurements of the same quantity disagree.** L3 alone on regime C reads **+5.30 %**
    in the 7/27 report (n=6) and **+6.18 %** in the current campaign (n=16, counterbalanced,
    after fixing a leaked-server bug that had a previous batch benchmarking a stale process).
@@ -375,7 +431,7 @@ These are disclosed rather than left for a reviewer to find.
 | **2** | **Per-component** L3 attribution on the tuned baseline | §3.3 table | ~2–3 h / regime | ★ `moesum` already changed sign between baselines; the other six are unverified |
 | **3** | `moesum` measured alone on regime C | §3.3 table | ~30 min | never measured in isolation there |
 | **4** | **L1 stacking** (L1, L1+L2, L1+L3, L1+L2+L3) | 4 columns | in flight | running now for regime C |
-| **5** | Add the `_down.json` companion config, then re-measure L2 and the L3 increment | column L2, L2+L3 | ~1–2 h | ⚠️ **may shrink the +9.73 %** — but without it "beyond the best autotuning" is not defensible |
+| **5** | Sweep the `_down` companion config (subject to the up config's `BLOCK_SIZE_M`), then re-measure L2 and the L3 increment | column L2, L2+L3 | ~1–2 h | ⚠️ **may shrink the +9.73 %** — but without it "beyond the best autotuning" is not defensible |
 | **6** | GSM8K on the delivered stack (L2+L3) | §4.3 | ~2 h | current quality evidence does not cover the tuned config |
 | **7** | Profile-level evidence for the `moesum` × config interaction | §2 | ~1 h | the super-additivity currently has a plausible mechanism and no measurement |
 | **8** | NCU on the final stack (remaining headroom) | new section | ~1 h | closes the "what is left" question |
