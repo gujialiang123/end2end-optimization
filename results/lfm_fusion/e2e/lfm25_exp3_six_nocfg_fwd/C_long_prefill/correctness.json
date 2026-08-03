@@ -1,0 +1,42 @@
+{
+  "prompts": [
+    "Explain in one paragraph why memory bandwidth limits decoding speed.",
+    "List the first ten prime numbers, separated by commas.",
+    "Write a haiku about a GPU kernel.",
+    "The capital of France is",
+    "def quicksort(arr):"
+  ],
+  "outputs": {
+    "baseline": [
+      " So So So So So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So.",
+      " The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime",
+      " Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel. Kernel Kernel. Kernel Kernel. Kernel Kernel. Kernel Kernel. Kernel Kernel. Kernel Kernel",
+      " France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is",
+      "):):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):)):}}, etc, etc,"
+    ],
+    "all": [
+      " So So So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So. So.",
+      " The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime numbers, separated by commas. The first ten prime",
+      " Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel. Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel Kernel. Kernel Kernel",
+      " France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is France is",
+      "):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):):"
+    ]
+  },
+  "patch_checks": [
+    {
+      "arm": "baseline",
+      "patch_check": "clean baseline",
+      "ok": true
+    },
+    {
+      "arm": "all",
+      "patch_check": "[lfm_fusion_patch] applied: ['norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']",
+      "ok": true
+    },
+    {
+      "arm": "all",
+      "correctness": "2/5",
+      "gated": false
+    }
+  ]
+}

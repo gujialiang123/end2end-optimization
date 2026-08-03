@@ -149,7 +149,8 @@ def main() -> None:
             "full_stack": welch(nocfg["baseline"], cfg[other]),
         },
     }
-    dest = E2E / f"exp3_layered_{PREFIX}{REGIME}_summary.json"
+    name = f"{a.suite}{REGIME}" if a.suite else REGIME
+    dest = E2E / f"exp3_layered_{name}_summary.json"
     dest.write_text(json.dumps(out, indent=2))
     print(f"\nwrote {dest}")
 
