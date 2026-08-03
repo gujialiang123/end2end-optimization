@@ -180,14 +180,14 @@
 | 要求 | 满足它的结果 | 状态 |
 |---|---|---|
 | **D1** 不同 regime 需要不同 specialization | B（四项收益形状完全不同）、G（次可加性随饱和度变化） | ✅ 强 |
-| **D2** best autotuning 不是终点 | **A + B 组合**（同一基线） | ⚠️ **需补实验 2** |
+| **D2** best autotuning 不是终点 | **A + B 组合**（同一基线），Bar 3→Bar 4 已实测 | ⚠️ **ceiling 那一半仍需实验 2** |
 | **D3** kernel 改动能继续提升 | B、D、F | ✅ 强 |
 | **M1** Categorize regimes | A/B/C 三 regime 贯穿所有实验 | ✅ |
 | **M2** config tuning 收益与 plateau | A（LFM2.5 零收益）+ Qwen 对照（4.75~8.86×） | ⚠️ 需补实验 2 |
 | **M3** kernel autotuning 是否覆盖真实 shapes | **C**（H200 缺 config，+23.3%） | ✅ 完美扣题 |
 | **M4** NCU 显示 headroom 的 kernel | 数据在 `results/2026-07-08_v5_ncu/` 等，**但没串进叙事** | ⚠️ 需补实验 4 |
 | **M5** rewrite 或与 elementwise 融合 | B（2 个手写 Triton）、D、F | ✅ 强 |
-| **M6** kernel editing 在 autotuning 之上的额外增益 | **A + C + B 三层** | ⚠️ **需补实验 3** |
+| **M6** kernel editing 在 autotuning 之上的额外增益 | **A + C + B 三层**，2026-08-03 在同一 session 内实测三层 | ✅ **+9.73%, p=9.5e-19** |
 | 真实 workload shapes | 全部实验用真实 serving harness | ✅ |
 | Agent workflow demo | H | ✅ |
 | 诚实的 limitations | E（消融纠正）、G、R01-R05 否决案例 | ✅ 强 |
@@ -202,8 +202,19 @@
 Bar 1  sglang 裸默认
 Bar 2  cookbook 默认            ← 25 trial Optuna 无法超越 = ceiling（结果 A）
 Bar 3  + tuned MoE kernel config  +23.3%（结果 C）← kernel autotuning
-Bar 4  + kernel rewrite/fusion    +X%（结果 B 重测）← 论点在这一格
+Bar 4  + kernel rewrite/fusion    +9.73%（已实测，见下）← 论点在这一格
 ```
+
+**Bar 4 已于 2026-08-03 实测完成**，见 `docs/2026-08-03/exp3_kernel_on_tuned_baseline.md`。
+regime C 长 prefill，counterbalanced n=16/臂：
+
+| Bar | req/s | 相对 Bar 2 |
+|---|---:|---:|
+| 2 cookbook 默认 | 12.119 | 1.000× |
+| 3 + tuned MoE config | 14.939 | 1.233× |
+| 4 + kernel rewrite（七项） | **16.392** | **1.352×** |
+
+**Bar 3 → Bar 4 = +9.73%，p = 9.5e-19。**
 
 **这张图直接回答**：kernel rewrite 在 best autotuning 之上还贡献了多少？
 
@@ -226,14 +237,34 @@ Bar 4  + kernel rewrite/fusion    +X%（结果 B 重测）← 论点在这一格
 | # | 实验 | 补的是 | 耗时 |
 |---|---|---|---|
 | **2 ★** | **裁剪空间网格穷举**取代坏掉的 TPE | D2 / M2 的可信度 | 2–4h |
-| **3** | 结果 B 在装了 tuned config 的基线上重测 | M6 的干净基线 | 3–4h |
+| ~~3~~ | ~~结果 B 在装了 tuned config 的基线上重测~~ | M6 的干净基线 | ✅ **2026-08-03 完成** |
 | 4 | NCU headroom 串进叙事 | M4 | 1h |
 
 **实验 2 最关键**。现在的 ceiling 建立在一次自己承认失败的搜索上。
 
-**实验 3 的预期**：按次可加性（0.90/0.70/0.49），+6% 可能缩到 **+2~4%**。
-这不是坏消息——**基线干净的 +2% 比基线脏的 +6% 强**，我们已经因为基线脏栽过两次
-（#32383、#32670）。
+### ⚠️ 撤回：实验 3 的预期是错的（2026-08-03）
+
+原文这样写：
+
+> **实验 3 的预期**：按次可加性（0.90/0.70/0.49），+6% 可能缩到 **+2~4%**。
+
+**实测方向相反。** regime C 上 kernel 增量从脏基线的 **+6.18%** 变成干净基线的
+**+9.73%**（p=9.5e-19），兑现率 **1.14 = 超可加**。
+
+拆解（`docs/2026-08-03/exp3_kernel_on_tuned_baseline.md` §6）：
+
+- **+2.06 点是 Amdahl**：六个 MoE 之外的改动省下的绝对时间近乎常数
+  （4.98 → 5.25 ms/req），而请求总时间被 config 压掉 19%；
+- **+1.49 点是真实交互**：`moesum` 是唯一伸进 `FusedMoE` 的一项，在未调优的 MoE 上
+  **−0.08%（p=0.88，中性）**，在调优后的 MoE 上 **+1.69%（p=2.8e-04）**。
+
+**「基线干净的 +2% 比基线脏的 +6% 强」这句判断本身仍然成立**，只是这次不需要做这个
+取舍——干净基线上的数反而更大。
+
+**另一个附带结论**：tuned MoE config 在 decode 上**精确中性**（regime A：+0.05%,
+p=0.34），因为 guarded 策略把 `M ≤ 32` 的桶逐字段写成了默认启发式，而 CUDA graph
+捕获的 decode batch 全落在那一段。**所以 7/27 在 regime A/B 上的 +6.57% / +6.21%
+不需要重测**，脏基线问题只影响 prefill。
 
 ---
 

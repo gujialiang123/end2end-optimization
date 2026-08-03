@@ -11,6 +11,14 @@ Mentor 要的交付物是「**证明 best autotuning 是上限，kernel rewrite 
 **LFM2.5 上两半证据都已经有了，而且用的是同一个基线**——但从没画成一张图，
 且 ceiling 那一半的可信度有硬伤。**实验 1 已完成**（结论见 §3），剩 2 个实验。
 
+> **【2026-08-03 更新】实验 3 也已完成**，见
+> `docs/2026-08-03/exp3_kernel_on_tuned_baseline.md`。
+> 结果与本文档 §4「实验 3」的预期**相反**：kernel 增量没有缩到 +2~4%，而是
+> 从 +6.18% 涨到 **+9.73%**（p=9.5e-19，counterbalanced n=16/臂）。
+> 另外确认 tuned MoE config 在 decode 上精确中性（+0.05%, p=0.34），
+> **所以 regime A/B 的 +6.57% / +6.21% 不需要重测**。
+> **现在只剩实验 2（硬化 ceiling）和实验 4（NCU，可选）。**
+
 ---
 
 ## 1. Mentor 的交付要求（Copilot 整理，用户确认过）
@@ -174,6 +182,11 @@ flashinfer 的 JIT 被 conda env libcuda 链接问题挡住），去掉这一维
 
 ### 实验 3：Bar 4 在 Bar 3 之上重测
 
+> **✅ 2026-08-03 已完成。结果见 `docs/2026-08-03/exp3_kernel_on_tuned_baseline.md`。**
+> 下面这段的预期（「增量很可能从 +6% 缩到 +2~4%」，见 §3 末）**已被实测推翻**：
+> 实际是 **+6.18% → +9.73%**，超可加。原因拆成 Amdahl(+2.06 点) 与
+> `moesum` × MoE config 的真实交互(+1.49 点)。以下保留原文作为记录。
+
 装上 PR #32687 的 config（`patches/` 里有，或见
 `docs/2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md`），重跑 `lf_e2e.py` 的
 `baseline` vs `all7` 两臂。
@@ -283,6 +296,9 @@ export CUDA_HOME=$CU13 PATH=$CU13/bin:$ENV/bin:$PATH LD_LIBRARY_PATH=$CU13/lib
 | 噪声基线 | greedy 换 seed 恒为 0，要用配对 McNemar |
 | 数值验证 | 对 fp64，不能 bf16 比 bf16；看**平均**不看最大 |
 | 基线 | 必须含所有在飞的上游修复，否则报别人的功劳（已栽两次） |
+| **泄漏 server**（8/3 新增） | server 用 `setsid` 起，**Ctrl-C / 杀脚本杀不掉它**。`wait_health` 只探端口不认进程，于是下一次跑会静默地测那台旧 server。已在 `lf_e2e.py` 加 `assert_port_free`；仍要养成 `ps -eo pid,cmd \| grep launch_server` 的习惯 |
+| **运行中改脚本**（8/3 新增） | bash 按字节偏移增量读脚本，运行期间编辑会让它中途 `unexpected EOF` 挂掉 |
+| **`--skip-correctness`**（8/3 新增） | 7/27 那批 LFM e2e **全部**跳过了正确性闸门，`correctness.json` 里 outputs 全空。改用 `--correctness-nogate`：记录但不否决 |
 
 ---
 
