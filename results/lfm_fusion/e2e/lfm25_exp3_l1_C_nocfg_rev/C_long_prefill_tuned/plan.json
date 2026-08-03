@@ -1,0 +1,28 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "regime": "C_long_prefill_tuned",
+    "workload": "R_long_prefill",
+    "arms": [
+      "all7",
+      "baseline"
+    ],
+    "reps": 30,
+    "gpu": 4,
+    "warmup": 12,
+    "serving_knobs": {
+      "cap": 8,
+      "chunk": 2048,
+      "policy": "fcfs",
+      "mem": 0.9
+    }
+  },
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1a",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

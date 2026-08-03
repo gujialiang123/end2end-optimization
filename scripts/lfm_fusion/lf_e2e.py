@@ -46,6 +46,16 @@ REGIME_SERVING = {
                                 cap=32, chunk=-1, policy="lpm", mem=0.85),
     "C_long_prefill": dict(workload="R_long_prefill",
                            cap=32, chunk=-1, policy="lpm", mem=0.85),
+    # The cookbook knobs above are *not* the serving ceiling on long prefill.
+    # The 2026-07-24 campaign swept all 192 serving configs and re-measured the
+    # top 35 at n=5: chunked prefill is the dominant knob there, and the
+    # cookbook disables it. cap8/chunk2048/fcfs/mem0.9 reaches 19.78 +/- 0.30
+    # req/s against the cookbook's 12.60, i.e. +56.9 %, while also cutting TTFT
+    # p95 from 208 ms to 94 ms; only TPOT p95 regresses, by 9 %. Any claim that
+    # a kernel rewrite improves on "the best autotuning config" has to be made
+    # against this, not against the cookbook.
+    "C_long_prefill_tuned": dict(workload="R_long_prefill",
+                                 cap=8, chunk=2048, policy="fcfs", mem=0.9),
 }
 
 # arm name -> value of LFM_FUSION_PATCH ("" means leave it unset)
@@ -248,6 +258,13 @@ def main():
     ap.add_argument("--regime", required=True, choices=list(REGIME_SERVING))
     ap.add_argument("--arms", default="baseline,norm+scale")
     ap.add_argument("--reps", type=int, default=5)
+    ap.add_argument(
+        "--warmup", type=int, default=None,
+        help="Override the per-workload warm-up count. The table in "
+             "serving_ceiling_lib was calibrated on the cookbook knobs; a "
+             "different serving config is a different steady state. On "
+             "cap8/chunk2048/fcfs/mem0.9 the first two scored repetitions still "
+             "climb from ~20 to ~23 req/s under the table's four warm-ups.")
     ap.add_argument("--gpu", type=int, required=True)
     ap.add_argument("--port", type=int, default=52000)
     ap.add_argument("--tag", default="")
@@ -278,7 +295,7 @@ def main():
     outdir = OUT / f"{a.model}{a.tag}" / a.regime
     outdir.mkdir(parents=True, exist_ok=True)
     plan = dict(model=a.model, regime=a.regime, workload=wl, arms=arms,
-                reps=a.reps, gpu=a.gpu,
+                reps=a.reps, gpu=a.gpu, warmup=a.warmup,
                 serving_knobs={k: spec[k] for k in ("cap", "chunk", "policy", "mem")})
     print(json.dumps(plan, indent=2))
     if a.dry_run:
@@ -335,7 +352,8 @@ def main():
                         continue
 
             resolved = S.parse_resolved(log)
-            for w in range(S.WARMUP_RUNS.get(wl, 1)):
+            n_warm = a.warmup if a.warmup is not None else S.WARMUP_RUNS.get(wl, 1)
+            for w in range(n_warm):
                 S.run_workload(a.model, wl, a.port, outdir / f"{arm}_warm{w}.jsonl")
             for rep in range(a.reps):
                 tmp = outdir / f"{arm}_rep{rep}.jsonl"
