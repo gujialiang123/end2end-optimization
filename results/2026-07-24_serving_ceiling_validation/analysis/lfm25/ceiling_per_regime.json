@@ -1,0 +1,127 @@
+{
+  "R_concurrent_decode": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 21.98955177756656,
+      "ci95": 0.08062575532229392,
+      "ttft_p95_ms": 136.5026107802987,
+      "tpot_p95_ms": 5.135910708110268
+    },
+    "ceiling": {
+      "hash": "cap64_chunk8192_polfcfs_mem0.75",
+      "req_per_s": 22.233472680172113,
+      "ci95": 0.16646011290292204,
+      "ttft_p95_ms": 134.8176030581817,
+      "tpot_p95_ms": 5.0631007281880755
+    },
+    "gain_over_cookbook": 0.01109258183490569
+  },
+  "R_long_prefill": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 12.6044848438531,
+      "ci95": 0.38184646242884246,
+      "ttft_p95_ms": 208.50754480808973,
+      "tpot_p95_ms": 3.5571069473160373
+    },
+    "ceiling": {
+      "hash": "cap8_chunk2048_polfcfs_mem0.9",
+      "req_per_s": 19.781017708590234,
+      "ci95": 0.29515736063154824,
+      "ttft_p95_ms": 93.99607060011476,
+      "tpot_p95_ms": 3.8873955865781156
+    },
+    "gain_over_cookbook": 0.5693634411593547,
+    "by_chunked_prefill_size": {
+      "2048": {
+        "n": 6,
+        "best": 19.781017708590234,
+        "worst": 17.55071741048254
+      },
+      "8192": {
+        "n": 16,
+        "best": 15.455899439496765,
+        "worst": 13.548872487398217
+      },
+      "-1": {
+        "n": 13,
+        "best": 13.041530161930012,
+        "worst": 12.169225791729085
+      }
+    }
+  },
+  "R_medium_balanced": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 7.107628701745201,
+      "ci95": 0.01136126936488183,
+      "ttft_p95_ms": 97.58616478648037,
+      "tpot_p95_ms": 4.147961048007597
+    },
+    "ceiling": {
+      "hash": "cap8_chunk2048_polfcfs_mem0.9",
+      "req_per_s": 7.234871329863107,
+      "ci95": 0.11809475939055136,
+      "ttft_p95_ms": 111.47576041985303,
+      "tpot_p95_ms": 4.274377223177284
+    },
+    "gain_over_cookbook": 0.017902261563925492
+  },
+  "R_short_decode": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 1.681435290623152,
+      "ci95": 0.00557133439813661,
+      "ttft_p95_ms": 30.896233618259423,
+      "tpot_p95_ms": 2.2286259537893875
+    },
+    "ceiling": {
+      "hash": "cap8_chunk-1_polfcfs_mem0.85",
+      "req_per_s": 1.687836988772402,
+      "ci95": 0.002226702750911843,
+      "ttft_p95_ms": 27.241828776896,
+      "tpot_p95_ms": 2.2292159862129886
+    },
+    "gain_over_cookbook": 0.0038072819007370917
+  },
+  "shared_prefix": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 14.08048095310482,
+      "ci95": 0.20590036324993716,
+      "ttft_p95_ms": 7449.867688077502,
+      "tpot_p95_ms": 7.657345421064425
+    },
+    "ceiling": {
+      "hash": "cap96_chunk2048_pollpm_mem0.9",
+      "req_per_s": 27.2618635938365,
+      "ci95": 0.10001407307225496,
+      "ttft_p95_ms": 388.9434609655291,
+      "tpot_p95_ms": 8.025867974823889
+    },
+    "gain_over_cookbook": 0.9361457669402349
+  },
+  "tool_agent": {
+    "n_configs_validated": 35,
+    "cookbook": {
+      "hash": "cap32_chunk-1_pollpm_mem0.85",
+      "req_per_s": 5.2642012138579855,
+      "ci95": 0.009466336524664911,
+      "ttft_p95_ms": 530.6558697065338,
+      "tpot_p95_ms": 24.482135972882702
+    },
+    "ceiling": {
+      "hash": "cap128_chunk8192_pollpm_mem0.75",
+      "req_per_s": 5.280320842649,
+      "ci95": 0.0008659453440162346,
+      "ttft_p95_ms": 310.741579295136,
+      "tpot_p95_ms": 18.16593289996186
+    },
+    "gain_over_cookbook": 0.0030621224638183175
+  }
+}
