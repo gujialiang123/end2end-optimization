@@ -18,11 +18,21 @@
 | 层 | 改的是什么 | 主收益 regime | 提升 | 统计 | 状态 |
 |---|---|---|---|---|---|
 | **L0** 基线 | sglang cookbook 默认 | — | — | — | 参照点 |
-| **L1** serving config tuning | 4 个 serving 旋钮 | 长 prefill / shared-prefix | **+56.9% / +93.6%** | 5 rep 验证 | ✅ 有结果，但 TRADE-OFF |
-| **L1** serving config tuning | 同上 | 并发 decode / 短 decode / tool-agent | **+0.3% ~ +1.1%** | 100 trial 无热启动 | ✅ **plateau（零收益）** |
+| **L1a** serving config tuning<br>**（断崖 regime，2/6）** | 4 个 serving 旋钮 | 长 prefill / shared-prefix | **+56.9% / +93.6%** | 192 全网格 + 5 rep 验证 | ✅ 有结果。**延迟同时改善**（TTFT p95 −54.9% / −94.8%），TPOT 退 4~9% |
+| **L1b** serving config tuning<br>**（plateau regime，4/6）** | 同上 | 短 decode / 并发 decode / medium / tool-agent | **+0.3% ~ +1.8%** | 同上 + 100 trial 无热启动收敛研究 | ✅ **plateau（实质零收益）** |
 | **L2** kernel config tuning | fused-MoE Triton kernel 的 tile 参数 | 长 prefill | **+22.1% ~ +23.3%** | 8/8 分布不重叠, p=1.3e-10 | ✅ 有结果 |
 | **L3** kernel rewrite/fusion | 7 处代码（含 4 个手写 Triton kernel） | 三个 regime 全部 | **+5.30% ~ +6.57%** | p=4.6e-14 / 2.4e-08 / 1.2e-05 | ✅ 有结果 |
 | **L2+L3 串联** | L2 在下、L3 叠在其上 | 长 prefill | **+9.73%**（L3 在 L2 之上）<br>整栈 **+35.25%** | counterbalanced n=16/臂, p=9.5e-19 | ✅ **2026-08-03 补测，见 §9.5** |
+
+> **L1 为什么占两行**：它**不是两个实验**，是**同一个实验（192 全网格 × 6 regime）产出的两种相反结论**。
+> 4/6 regime 上 serving 旋钮已经到顶（+0.3~1.8%），2/6 上还有巨大空间（+56.9% / +93.6%）。
+> **把它们平均成一个数字会同时抹掉两个结论**，所以分开列。
+>
+> ⚠️ **2026-08-03 修正**：本表原先给 L1a 标了「TRADE-OFF」。**那是错的，已撤回。**
+> 该标签引用的 −221% TPOT 来自 **n=1 coverage pass 的另一个配置**，
+> 而那个配置**没通过 n=5 验证**。验证后的 ceiling 上，长 prefill 的 TTFT p95 从 208.5ms
+> **降到 94.0ms**、shared-prefix 从 **7450ms 降到 389ms**、tool-agent 三项指标全部改善。
+> 详见 `LFM25_ablation_matrix_EN.md` §1.1。
 
 ---
 

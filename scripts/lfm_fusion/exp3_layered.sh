@@ -36,6 +36,13 @@ REGIME=${REGIME:-C_long_prefill}
 REGIME_SHORT=$( [ "$REGIME" = "C_long_prefill" ] && echo "" || echo "${REGIME%%_*}_" )
 SUITE=${SUITE:-}
 REPS=${REPS:-8}
+# Warm-up is deliberately not defaulted. serving_ceiling_lib.WARMUP_RUNS was
+# calibrated against the cookbook knobs, and a different serving config is a
+# different steady state: on cap8/chunk2048/fcfs/mem0.9 the first two scored
+# repetitions were still climbing from 20 to 23 req/s under its four warm-ups,
+# which read as "the kernel gain vanished". Set WARMUP when the regime is not
+# one of the three cookbook ones.
+WARMUP=${WARMUP:-}
 PORT=${PORT:-52140}
 
 export CUDA_HOME=$ENVDIR
@@ -49,7 +56,8 @@ run () {           # $1 tag  $2 arms  $3 config-dir ("" = leave unset)
   else unset SGLANG_MOE_CONFIG_DIR || true; fi
   "$ENVDIR/bin/python" scripts/lfm_fusion/lf_e2e.py \
       --regime "$REGIME" --gpu "$GPU" --port "$PORT" \
-      --arms "$arms" --reps "$REPS" --tag "_exp3_${SUITE}${REGIME_SHORT}$tag" --correctness-nogate
+      --arms "$arms" --reps "$REPS" ${WARMUP:+--warmup "$WARMUP"} \
+      --tag "_exp3_${SUITE}${REGIME_SHORT}$tag" --correctness-nogate
 }
 
 run nocfg_fwd "${ARMS_FWD:-baseline,all7}" ""

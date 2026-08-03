@@ -196,13 +196,13 @@ nocfg_fwd baseline:[20.90, 20.04, 21.64, 22.87, 22.17, 22.43, 22.81, 23.32]
 - 命令（约 40 分钟/2 格）：
 
 ```bash
-SUITE=l1_ REGIME=C_long_prefill_tuned GPU=4 REPS=30 PORT=52145 \
-    ARMS_FWD=baseline,all7 ARMS_REV=all7,baseline \
-    bash scripts/lfm_fusion/exp3_layered.sh     # 注意：需给 lf_e2e.py 传 --warmup 12
+SUITE=l1_ REGIME=C_long_prefill_tuned GPU=4 REPS=30 WARMUP=12 PORT=52145 \
+    bash scripts/lfm_fusion/exp3_layered.sh
 ```
 
-> ⚠️ `exp3_layered.sh` 目前没有把 `--warmup` 透传出去，重跑前要先加上，
-> 否则又会得到 5.3 之前那种欠 warmup 的数据。
+> `WARMUP` 已支持透传（默认不设，保持三个 cookbook regime 用标定好的表）。
+> **非 cookbook 的 serving 配置必须显式设 `WARMUP`**，否则会得到 §5.2 那种欠 warmup 的数据。
+> 上面这条命令会把四格都跑一遍；只补 config 两格的话，把 `run nocfg_*` 两行注释掉。
 
 ---
 
