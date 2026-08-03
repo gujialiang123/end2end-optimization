@@ -23,9 +23,22 @@ Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)
 
 | Regime | Workload | **S0** cookbook | **L1** only | **L2** only | **L3** only | **L1+L2** | **L1+L3** | **L2+L3** | **L1+L2+L3** |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **A** low-batch decode | in=100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 ⚠️<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
-| **B** concurrent decode | in=200, out=256, conc=32 | **21.673** | 22.234 ⚠️<br>(+1.11%) | ⬜ ¹ | 23.018 ⚠️<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
-| **C** long prefill | in=4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 ⚠️<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
+| **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 ⚠️<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
+| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.673** | 22.234 ⚠️<br>(+1.11%) | ⬜ ¹ | 23.018 ⚠️<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
+| **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 ⚠️<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
+| **D** medium balanced | synthetic · in≈800, out=256, conc=8 | 7.108 ⚠️ | 7.235 ⚠️<br>(+1.79%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | 14.081 ⚠️ | 27.262 ⚠️<br>**(+93.61%)** ³ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | 5.264 ⚠️ | 5.280 ⚠️<br>(+0.31%) ⁴ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+> **★ The kernel layers cover only A, B and C.** L1 was run over all six regimes
+> (192 configurations × 6 workloads × 2 models); L2 and L3 were only ever run on the three
+> synthetic ones. **In particular, the only workload in the suite that is a real trace —
+> F, tool agent — has no kernel-layer measurement at all.** See §5, gap #0.
+>
+> Partial coverage does exist at the profiling level: the NCU hardware-counter study
+> (`results/2026-07-10_v9_ncu_realworkload/`) was run on an agentic workload (in≈2700),
+> under the tuned config, and is the source of the "occupancy is 12–25 % even after
+> tuning" observation in §5. But no end-to-end kernel A/B was ever run there.
 
 **Sample sizes and significance**
 
@@ -55,6 +68,14 @@ counterbalancing, which we later found produces a 1.7% position effect — large
 the effect being measured. Not carried into this matrix.
 
 ² Experiment in flight.
+
+³ Reported as a **trade-off**, not a clean win: the throughput winner also moves TTFT p95
+and TPOT p95.
+
+⁴ **The honest negative of the L1 study.** On the only real trace in the suite, the
+throughput winner gains +0.31 % — inside the noise band — while degrading **TPOT p95 by
+221 %**. Optimizing a single objective on an agentic workload produces a configuration that
+is strictly worse for the user.
 
 ---
 
@@ -349,6 +370,7 @@ These are disclosed rather than left for a reviewer to find.
 
 | # | Missing | Which cells | Est. | Why it matters |
 |---|---|---|---|---|
+| **0** | **L2 and L3 on regimes D, E, F** — in particular **F, the only real trace** | 3 whole rows, 18 cells | ~2 h / regime | ★★ Mason's ask is explicitly that the shapes come from real end-to-end runs. Right now every kernel-layer number in this document is from a synthetic workload. E also has the largest L1 cliff (+93.6 %) and exercises the radix cache heavily, so its prefill/decode mix is different from anything we have measured |
 | **1** | Regime **B** with the tuned config (L2, L2+L3) | row B | ~30 min | B is one of the three headline regimes and the only one without a clean baseline |
 | **2** | **Per-component** L3 attribution on the tuned baseline | §3.3 table | ~2–3 h / regime | ★ `moesum` already changed sign between baselines; the other six are unverified |
 | **3** | `moesum` measured alone on regime C | §3.3 table | ~30 min | never measured in isolation there |
