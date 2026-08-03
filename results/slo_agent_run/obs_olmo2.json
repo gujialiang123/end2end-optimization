@@ -1,0 +1,29 @@
+{
+ "campaign_id": "kernel_fusion_gap",
+ "model": "OLMo-2-0425-1B-Instruct",
+ "scan_sha256": "",
+ "regime": {
+  "serving": "prefill",
+  "note": "The fused branch is selected by get_is_capture_mode(), so graphed decode already takes it and only prefill runs eager."
+ },
+ "measurements": {
+  "semantic_equivalence": true,
+  "eager_calls_per_layer": 6.06,
+  "gap_pct_of_kernel_time": 6.62,
+  "gap_stage": "prefill"
+ },
+ "artifacts": [
+  {
+   "kind": "operator_audit",
+   "path": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/fx_fusion/model_pipeline_profiled.json",
+   "sha256": "0a25bce82d76fcf138e44e9f06af7491a963f6019f0d22e38a3c4bd82edaf2e0"
+  }
+ ],
+ "wiki_query_terms": [
+  "sglang-32670",
+  "sglang-32383",
+  "rmsnorm",
+  "olmo"
+ ],
+ "notes": "Gap found by the scan stage as path_guarded/grep-invisible. 97 eager-norm calls over 16 layers, profiled decode with cuda graphs disabled."
+}

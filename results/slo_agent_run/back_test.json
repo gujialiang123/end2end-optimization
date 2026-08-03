@@ -1,0 +1,78 @@
+{
+ "checkout": "/tmp/sglang_fqr_base",
+ "counts": {
+  "never_wired_candidates": 40,
+  "rank_guarded": 4,
+  "path_guarded": 1
+ },
+ "never_wired_candidates": 40,
+ "cases": [
+  {
+   "id": 1,
+   "model": "LFM2.5",
+   "primitive": "fused_add_rmsnorm",
+   "site": "Lfm2MoeDecoderLayer",
+   "shape": "never_wired",
+   "found_by": "static scan 1a",
+   "gain": "+2.35% decode",
+   "rediscovered": true,
+   "detail": "lfm2_moe.py is in the never-wired candidate list"
+  },
+  {
+   "id": 2,
+   "model": "LFM2.5",
+   "primitive": "fused_qk_norm_rope",
+   "site": "Lfm2MoeAttention",
+   "shape": "never_wired",
+   "found_by": "static scan 1b",
+   "gain": "+5.42% concurrent decode",
+   "rediscovered": true,
+   "detail": "lfm2_moe.py is in the never-wired candidate list"
+  },
+  {
+   "id": 3,
+   "model": "Gemma-3",
+   "primitive": "gemma_rmsnorm",
+   "site": "Gemma3RMSNorm.forward_cuda",
+   "shape": "never_wired_at_the_time",
+   "found_by": "profiling + reading code",
+   "gain": "2.13x, +36.6% as the honest increment",
+   "rediscovered": null,
+   "detail": "upstream #32383 wired the 2-D and residual halves, so this shape no longer exists on main",
+   "hits": 0
+  },
+  {
+   "id": 4,
+   "model": "Gemma-3",
+   "primitive": "gemma_rmsnorm",
+   "site": "Gemma3RMSNorm.forward_cuda rank guard",
+   "shape": "rank_guarded",
+   "found_by": "profiling + reading code",
+   "gain": "included in case 3",
+   "rediscovered": true,
+   "detail": "Gemma3RMSNorm reported as rank_guarded on `x.dim() == 2`"
+  },
+  {
+   "id": 5,
+   "model": "Gemma-3",
+   "primitive": "fused_qk_norm_rope",
+   "site": "gemma3_causal.py",
+   "shape": "never_wired",
+   "found_by": "static scan 1b (automatic)",
+   "gain": "+0.5% to +1.1%",
+   "rediscovered": true,
+   "detail": "gemma3_causal.py is in the never-wired candidate list"
+  },
+  {
+   "id": 6,
+   "model": "OLMo-2",
+   "primitive": "its own fused RMSNorm path",
+   "site": "Olmo2Attention._apply_qk_norm",
+   "shape": "path_guarded",
+   "found_by": "scan + profiling crossed",
+   "gain": "prefill 1.24x / +24%",
+   "rediscovered": true,
+   "detail": "Olmo2Attention reported as path_guarded on `get_is_capture_mode`"
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+{
+ "campaign_id": "kernel_fusion_gap",
+ "model": "Qwen3-0.6B",
+ "scan_sha256": "67342b5f3b4b37f00b1185795e80b00d29dcb27c8b111a1097ab6da281240c27",
+ "regime": {
+  "serving": "prefill"
+ },
+ "measurements": {
+  "semantic_equivalence": true,
+  "eager_calls_per_layer": 0.036,
+  "gap_pct_of_kernel_time": 0.32,
+  "gap_stage": "prefill"
+ },
+ "artifacts": [
+  {
+   "kind": "operator_audit",
+   "path": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/fx_fusion/model_pipeline_profiled.json",
+   "sha256": "0a25bce82d76fcf138e44e9f06af7491a963f6019f0d22e38a3c4bd82edaf2e0"
+  }
+ ],
+ "wiki_query_terms": [
+  "sglang-32670",
+  "rmsnorm"
+ ],
+ "notes": "Negative control. Qwen is the framework's primary user base; 1 eager-norm call against OLMo-2's 97."
+}

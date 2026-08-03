@@ -1,0 +1,26 @@
+{
+ "campaign_id": "kernel_fusion_gap",
+ "model": "OLMo-2-0425-1B-Instruct",
+ "scan_sha256": "67342b5f3b4b37f00b1185795e80b00d29dcb27c8b111a1097ab6da281240c27",
+ "regime": {
+  "serving": "prefill"
+ },
+ "measurements": {
+  "semantic_equivalence": false,
+  "eager_calls_per_layer": 6.06,
+  "gap_pct_of_kernel_time": 6.62,
+  "gap_stage": "prefill"
+ },
+ "artifacts": [
+  {
+   "kind": "eligibility_scan",
+   "path": "/home/t-jialianggu/work/EndtoEnd-auto-optimization/results/fx_fusion/model_pipeline_static.json",
+   "sha256": "1566ee82842cb796c57f3106d87037b9d0b44e4e2147b3a6da8d33073cee3326"
+  }
+ ],
+ "wiki_query_terms": [
+  "sglang-32670",
+  "rmsnorm"
+ ],
+ "notes": "OLMo-2 substituting the per-head fused_qk_norm_rope. Same 6.62% gap, but q_norm is RMSNorm(hidden_size) -- normalising across all heads where the kernel reduces within each. Wrong numbers, not slow ones."
+}
