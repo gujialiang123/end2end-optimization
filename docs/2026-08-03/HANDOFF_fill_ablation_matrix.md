@@ -1,8 +1,77 @@
 # 交接：补全 LFM2.5 消融矩阵的空格
 
-**写于**：2026-08-03 23:45
+**写于**：2026-08-03 23:45 · **更新**：2026-08-04 00:45
 **接手方**：另一个 agent，**GPU 3 和 4**
 **目标文档**：`docs/2026-08-03/LFM25_ablation_matrix_EN.md`（英文，给 mentor 看的主表）
+
+---
+
+## ★★ 00:45 更新：进度比本文档原先记载的多，而且出了两个反直觉的结果
+
+上一轮已经跑完了 **regime C 的 L1 全部 4 格** 和 **regime B 的全部 4 格**，
+F 和 A_tuned 正在跑。**下面三条必须先读，它们改变了后续该怎么跑。**
+
+### ① ★ L2 在 L1 的 serving 配置下是**回归**，不是增益
+
+regime C，L1 ceiling 配置（`cap8/chunk2048/fcfs/mem0.9`），n=60/臂：
+
+| | req/s | vs cookbook(12.119) |
+|---|---:|---:|
+| L1 | 21.530 | +77.7% |
+| **L1 + L2** | **20.413** | **+68.4%** ← 比只有 L1 还低 |
+| L1 + L3 | 22.879 | +88.8% |
+| L1 + L2 + L3 | 21.717 | +79.2% |
+
+**L2 叠在 L1 之上 = −5.19%。** 而同一个 L2 在 cookbook 配置下是 **+23.26%**。
+
+已核实 config 确实加载了（`cfg` 格的 server log 有
+`Using MoE kernel config from .../E=32,N=1792,device_name=NVIDIA_H200.json`，
+`nocfg` 格没有）。**不是实验失误。**
+
+**机制（推测，待验证）**：L1 的赢家开了 `chunked_prefill_size=2048`，
+这**改变了每次 forward 的 token 数 M 的分布**。而 tuned MoE config 的桶是在
+cookbook 配置（`chunk=-1`，4000 token 整块进）下扫出来的。
+**换了 serving 配置 = 换了 M 分布 = 选中的桶不对了。**
+
+> **这条结论本身就是交付材料**，而且和我们已有的
+> 「regime→backend 规则跨模型不可迁移」是同一类：
+> **kernel config tuning 依赖于它被 tune 时的 serving 配置，不能跨 serving 配置迁移。**
+> 需要验证：跑一次 NCU 或看 M 分布直方图，确认桶确实错位了。
+
+**直接后果**：regime C 上**最优组合是 `L1 + L3`（22.879，+88.8%），不是全三层。**
+「三层叠加」这个叙事在这个 regime 上是错的，要改成「L1 和 L3 叠加，L2 要看 serving 配置」。
+
+### ② regime B 全 4 格完成，替换掉旧的 n=6 数字
+
+| | req/s | 增量 |
+|---|---:|---:|
+| S0 cookbook | 21.661 | — |
+| + L2 | 22.026 | **+1.68%** |
+| + L3 | 23.118 | **+6.72%** (t=25.8) |
+| + L2 + L3 | 23.537 | **+8.66%** vs S0 |
+
+n=16/臂，counterbalanced。**旧的 +6.21%（n=6）作废，用 +6.72%。**
+L2 在 B 上有小幅正收益（+1.68%），和 L2+L3 的复合 +8.66% 一致（1.0168×1.0686=1.0866）。
+
+### ③ ⚠️ regime F（真实 trace）上 kernel 改动**几乎不提升吞吐**
+
+只有 fwd 一半，但信号很清楚（n=8/臂）：
+
+| 指标 | baseline | +L3 | 变化 |
+|---|---:|---:|---:|
+| request throughput | 5.265 | 5.286 | **+0.38%** (t=4.6) |
+| **TTFT p95** | 537.0 ms | 495.9 ms | **−7.66%** (t=−16.8) ✅ |
+| TTFT mean | 323.2 ms | 298.6 ms | **−7.63%** (t=−14.7) ✅ |
+| TPOT p95 | 23.44 ms | 27.52 ms | +17.4% (t=0.9 **不显著**) |
+| TPOT mean | 7.19 ms | 7.04 ms | −2.05% (t=−0.6 n.s.) |
+
+**吞吐几乎不动，但 TTFT 显著降低 7.6%。**
+
+这符合预期：真实 agentic trace 的吞吐由**请求之间的依赖关系**决定（有 think time），
+不是服务器能力，**吞吐本来就是天花板**。**在这个 regime 上必须报延迟，不能只报吞吐。**
+
+> ⚠️ **主表现在只记 request throughput 一个指标，对 F 是错的口径。**
+> 填 F 那一行时必须同时填 TTFT p95。
 
 ---
 
@@ -51,17 +120,19 @@ done
 
 | Regime | workload | S0 | L1 | L2 | L3 | L1+L2 | L1+L3 | L2+L3 | L1+L2+L3 |
 |---|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **A** low-batch decode | `R_short_decode` | ✅ | † | ✅ | ✅ | ⬜ | ⬜ | ✅ | ⬜ |
-| **B** concurrent decode | `R_concurrent_decode` | ✅ | † | ⬜ | ‡ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **C** long prefill | `R_long_prefill` | ✅ | ✅ | ✅ | ✅ | ⬜ | ✅ | ✅ | ⬜ |
+| **A** low-batch decode | `R_short_decode` | ✅ | 🔄 | ✅ | ✅ | ⬜ | 🔄 | ✅ | ⬜ |
+| **B** concurrent decode | `R_concurrent_decode` | ✅ | † | ✅ | ✅ | ⬜ | ⬜ | ✅ | ⬜ |
+| **C** long prefill | `R_long_prefill` | ✅ | ✅ | ✅ | ✅ | **✅** | **✅** | ✅ | **✅** |
 | **D** medium balanced | `R_medium_balanced` | † | † | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **E** shared prefix | `shared_prefix` | † | † | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **F** tool agent（**唯一真实 trace**） | `tool_agent` | † | † | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **F** tool agent（**唯一真实 trace**） | `tool_agent` | ✅ | † | ⬜ | 🔄 | ⬜ | ⬜ | ⬜ | ⬜ |
 
 - ✅ = 已测且内部一致
+- 🔄 = 正在跑（00:45 时 GPU 3 在跑 A_tuned，GPU 4 在跑 F）
 - † = 数字有，但来自**另一个 campaign**（07-24 serving ceiling），有自己的 cookbook 基线，**只有 ratio 可比**
-- ‡ = counterbalance 之前的 n=6 旧测量
 - ⬜ = 空
+
+**★ regime C 整行已满**（8/8），是唯一完整的一行。**结论见开头 ①：最优不是全三层。**
 
 **已确认的核心结果**（regime C 长 prefill，serving = cookbook）：
 
@@ -179,20 +250,24 @@ assert config["BLOCK_SIZE_M"] == down_config["BLOCK_SIZE_M"]
 现成的候选：`configs/regime_kernel/profiles/lfm25_bias_guarded_tma/` 下已有一个 `_down.json`，
 值得先测一下能不能直接用。
 
-### 建议顺序
+### 建议顺序（00:45 修订）
 
 ```
-0. 确认 GPU 3/4 空闲
-1. 决定 _down config（要么扫，要么显式记录"本次交付不含它"）
-2. regime C 补 cfg 两格（L1+L2, L1+L2+L3）   ← 最高价值，见 §6
-3. regime B 两次调用                          ← 头条三个 regime 里唯一没干净基线的
-4. regime F（真实 trace）两次调用             ← Mason 的核心要求
-5. regime A 的 tuned 一次、D、E
+1. 让 GPU 3/4 上正在跑的 A_tuned 和 F 跑完                    ← 别打断
+2. F 的 cfg 两格（L2 / L2+L3 在真实 trace 上）★★ 最高价值
+3. F 和 A_tuned 的 L1 版本                                     ← 补全两行
+4. D 和 E 各两次调用
+5. 验证 ①（L2 在 L1 配置下回归）的机制 —— 看 M 分布或 NCU
+6. 决定 _down config（原先排第 1，现在降级，理由见下）
 ```
 
----
+> **`_down` 为什么降级**：发现 ① 说明 **L2 本身就依赖 serving 配置**，
+> 在 L1 配置下甚至是负的。在搞清楚这件事之前扫 `_down` 是在优化一个
+> **还不知道该在什么配置下用**的东西。**先弄明白 ①，再决定要不要投入 1-2h 扫 `_down`。**
 
-## 6. ★ 最高优先级：regime C 缺的那 2 格
+## 6. 【已完成】regime C 的 L1 四格（保留供参考）
+
+> **00:45 更新：这两格已经跑完了**，结果见开头 ①。本节保留是因为里面的噪声分析仍然适用。
 
 exp5 只跑完 4 格里的 2 格就被 GPU 争用打断，**缺的正好是 `cfg` 那两格**。
 
@@ -212,33 +287,51 @@ WARMUP=12 REPS=30 GPU=3 PORT=52141 REGIME=C_long_prefill_tuned SUITE=l1_ \
     bash /tmp/exp3_cfg_only.sh
 ```
 
-### ⚠️ 但这批数据有个严重问题，必须一并处理
+### ⚠️ 关于噪声：根因已查明，是**测量窗口太短**
 
-已有的那 2 格，**两个臂顺序给出的答案差一倍多**：
+原先这里写的是「加 server lifetime」。**那个诊断不完整，已修正。**
 
-| 顺序 | baseline | all7 | L3 增量 |
-|---|---:|---:|---:|
-| fwd | 22.462 | 23.358 | **+3.99%** (t=3.5) |
-| rev | 20.599 | 22.400 | **+8.75%** (t=6.9) |
+`R_long_prefill` 是 `in=4000, out=32, conc=4, **n=4**` —— **总共 4 个请求**。
+实测每次测量窗口：
 
-**而且 baseline 自己在两个 server lifetime 之间差 9.0%**（22.462 vs 20.599）。
+| regime | 窗口 | 评价 |
+|---|---:|---|
+| F tool agent | **37.98 s** | ✅ 极稳 |
+| A low-batch decode | 4.75 s | ✅ |
+| A low-batch decode **_tuned** | 4.77 s | ✅ |
+| B concurrent decode | 1.47 s | ✅ 尚可 |
+| C long prefill | **0.307 s** | ⚠️ |
+| C long prefill **_tuned** | **0.196 s** | ⚠️⚠️ 最差 |
 
-对比：cookbook 那个 regime 的 baseline stddev 只有 0.116（约 1%）。
-**`cap8/chunk2048/fcfs/mem0.9` 这个配置本身的 server-lifetime 方差比要测的效应还大。**
+**所谓「两个顺序差一倍」的 9%，绝对值是 16 毫秒**（fwd baseline 0.1785s vs
+rev 0.1947s）。在 180 毫秒的窗口里，一次 Python GC、一次调度 tick、一次 allocator
+抖动就是这个量级。
 
-几何平均 +6.34%，但这个数字的置信度**远低于** cookbook 上的 +6.18%。
+看尾部更清楚：两组的**最快值几乎相同**（0.1715 vs 0.1765，差 5ms），
+**差异全在最慢值**（0.1969 vs 0.2319，差 35ms）—— 典型的偶发抖动，不是系统性差异。
 
-**处理建议**（按代价排序）：
-1. **加更多 server lifetime**：现在每个顺序只有 1 个 lifetime。跑 3-4 个 lifetime 再池化，
-   把 lifetime 当随机效应。
-2. **交错**：不要一个臂跑完 30 次再换，改成 `baseline, all7, baseline, all7, ...` 每次
-   重启 server。代价是 server 启动次数翻倍。
-3. **至少**：报数时把两个顺序**分别列出**，不要只报几何平均——读者有权看到它们不一致。
+`serving_ceiling_lib.py` 里本来就标注过：
+```python
+"R_long_prefill": 4,   # ~0.3 s/run, drift 36.5 % -> needs the most
+"tool_agent": 0,       # ~42 s/run, drift 0.7 % -> already steady state
+```
 
-**这个方差问题在 D/E/F 上很可能也存在**（它们的 L1 赢家同样是非 cookbook 配置）。
-每次跑完先看 fwd/rev 一致性，不一致就加 lifetime。
+**→ 问题只出在 `R_long_prefill`，其余 5 个 workload 的窗口都够长。**
+而 L1 的赢家把它进一步加速，**窗口从 0.31s 砍到 0.20s，噪声反而更大**。
 
----
+**处理方式**（按有效性排序）：
+
+1. **★ 加长窗口** —— 把 `R_long_prefill` 的 `--num-prompts` 从 4 提到 40
+   （`serving_ceiling_lib.py:96-101`）。窗口从 0.2s 变 2s，噪声降一个数量级。
+   **⚠️ 但这会改变 workload 定义**：启动瞬态被摊薄，绝对吞吐会升高，
+   **无法与已测的格子直接比较**。要用就得**整行重测**，别混用。
+2. **加 server lifetime** —— 每个顺序跑 3-4 个 lifetime 再池化，把 lifetime
+   当随机效应。**不改 workload 定义，与已有数据可比。** 代价是时间 ×3。
+3. **至少**：报数时把两个顺序**分别列出**，不要只报几何平均。
+
+**建议**：C 那一行已经有 n=60 的数据了，效应（+6.3%）远大于顺序间的不一致，
+**不必重跑**；但报数时要写「两个顺序分别为 +3.99% / +8.75%」。
+**D/E/F 不受影响**（窗口分别约 3s / 20s / 38s）。
 
 ## 7. 需要改的代码
 
