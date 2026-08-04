@@ -1,0 +1,28 @@
+{
+  "plan": {
+    "model": "lfm25",
+    "regime": "A_low_batch_decode_tuned",
+    "workload": "R_short_decode",
+    "arms": [
+      "all7",
+      "baseline"
+    ],
+    "reps": 12,
+    "gpu": 3,
+    "warmup": 6,
+    "serving_knobs": {
+      "cap": 8,
+      "chunk": -1,
+      "policy": "fcfs",
+      "mem": 0.85
+    }
+  },
+  "environment": {
+    "host": "aifx-clou00000M",
+    "gpu": "NVIDIA H200",
+    "driver": "580.105.08",
+    "versions": "2.9.1+cu128 3.5.1 0.5.12.post1",
+    "sglang_commit": "17f7a1da1a",
+    "python": "/home/t-jialianggu/.conda/envs/sglang-dev/bin/python"
+  }
+}

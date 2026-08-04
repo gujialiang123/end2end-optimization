@@ -23,16 +23,41 @@ Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)
 
 **Cell markers**: † = measured in a *different campaign* with its own cookbook baseline, so
 only the ratio transfers, not the absolute value. ‡ = older n=6 measurement taken before
-arm-order counterbalancing was adopted.
+arm-order counterbalancing was adopted. § = throughput is the wrong yardstick for this
+regime; see the latency table below the matrix.
 
 | Regime | Workload | **S0** cookbook | **L1** only | **L2** only | **L3** only | **L1+L2** | **L1+L3** | **L2+L3** | **L1+L2+L3** |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | 1.6878 †<br>(+0.38%) | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | ⬜ | ⬜ | **1.7944**<br>**(+6.41%)** | ⬜ |
-| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.673** | 22.234 †<br>(+1.11%) | ⬜ ¹ | 23.018 ‡<br>**(+6.21%)** | ⬜ | ⬜ | ⬜ | ⬜ |
-| **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | 19.781 †<br>**(+56.94%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | ⬜ ² | ⬜ ² | **16.392**<br>±0.200<br>**(+35.26%)** | ⬜ ² |
+| **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | **1.6767**<br>±0.0025<br>(−0.57%) ³ | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | 🔄 | **1.8018**<br>±0.0018<br>**(+6.85%)** | **1.7944**<br>**(+6.41%)** | 🔄 |
+| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.661**<br>±0.17 | 22.234 †<br>(+1.11%) | **22.026**<br>±0.18<br>**(+1.68%)** | **23.118**<br>±0.16<br>**(+6.72%)** | ⬜ | ⬜ | **23.537**<br>±0.18<br>**(+8.66%)** | ⬜ |
+| **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | **21.530**<br>±1.37<br>**(+77.7%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | **20.413**<br>±1.9<br>(+68.4%) ² | **22.879**<br>±1.07<br>**(+88.8%)** | **16.392**<br>±0.200<br>**(+35.26%)** | **21.717**<br>±0.5<br>(+79.2%) ² |
 | **D** medium balanced | synthetic · in≈800, out=256, conc=8 | 7.108 † | 7.235 †<br>(+1.79%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | 14.081 † | 27.262 †<br>**(+93.61%)** | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | 5.264 † | 5.280 †<br>(+0.31%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | **5.2646**<br>±0.0085 § | 5.280 †<br>(+0.31%) | 🔄 | **5.2857**<br>±0.0084<br>(+0.40%) § | ⬜ | ⬜ | 🔄 | ⬜ |
+
+🔄 = in flight. ¹ ² ³ see the footnotes below.
+
+### Regime F, the only real trace, measured on latency
+
+Throughput on an agentic trace is set by the client's think time between turns, not by the
+server: both arms retire the same 200 requests in nearly the same wall clock. The same runs,
+pooled across both arm orders, n=16 per arm:
+
+| metric | S0 cookbook | + **L3** | change | p |
+|---|---:|---:|---:|---|
+| TTFT p50 | 321.2 ms | 295.8 ms | **−7.91%** | 1.8e-12 |
+| TTFT p95 | 537.2 ms | 496.8 ms | **−7.53%** | 5.2e-18 |
+| TPOT p50 | 3.294 ms | 3.147 ms | **−4.47%** | 1.2e-13 |
+| TPOT p95 | 23.56 ms | 26.13 ms | +10.91% | 0.40 **n.s.** |
+| E2E p50 | 511.8 ms | 470.9 ms | **−7.98%** | 3.1e-06 |
+| E2E p95 | 2104.1 ms | 1972.6 ms | **−6.25%** | 2.0e-24 |
+| E2E mean | 901.7 ms | 847.2 ms | **−6.04%** | 9.5e-22 |
+| request throughput | 5.2646 | 5.2857 | +0.40% | 3.4e-08 |
+
+**The kernel work is worth 6–8% of latency on the one workload we did not design.** Reporting
+only throughput would have recorded this regime as a null result. TPOT p95 is the single
+metric moving the wrong way and it is not significant; a few turns with long tool gaps
+dominate that tail.
 
 > **★ The kernel layers cover only A, B and C.** L1 was run over all six regimes
 > (192 configurations × 6 workloads × 2 models); L2 and L3 were only ever run on the three
@@ -69,9 +94,40 @@ counterbalancing. A and C have since been re-measured at n=16. See §5, gap #1.
 
 ¹ A separate study measured L2 on regime B at 1.005× (n=8), but without order
 counterbalancing, which we later found produces a 1.7% position effect — larger than half
-the effect being measured. Not carried into this matrix.
+the effect being measured. Now superseded by the counterbalanced n=16 measurement in the
+matrix (+1.68%, p=8.5e-07).
 
-² Experiment in flight.
+² **Do not quote these two cells as an L2 effect.** They are sound as a baseline for the
+L3 comparison beside them, but the L2 step itself — L1 → L1+L2, reading −5.19% — is a
+*between-server-lifetime* comparison on the shortest measurement window in the matrix.
+`R_long_prefill` under the L1 config runs for **0.196 s** per repetition; the two no-config
+lifetimes differ by 1.86 req/s while the two config lifetimes differ by 0.17, so the 1.12
+gap between the pooled means is smaller than one lifetime's own spread, and the p-value
+assumes an independence the repetitions inside a lifetime do not have.
+
+The mechanism behind it is nonetheless real and was confirmed without timing anything.
+sglang logs `#new-token` for every prefill batch and picks the config bucket by nearest
+neighbour, so `scripts/analyze_moe_bucket_usage.py` reads the bucket histogram straight off
+the server logs:
+
+| serving config | prefill batches | buckets selected |
+|---|---:|---|
+| cookbook (`chunk=-1`) | 36 | **4096** (24), **8192** (12) |
+| L1 ceiling (`chunk=2048`) | 171 | 512 (38), **1024 (117)**, 1536 (6), 2048 (10) |
+
+**The two distributions do not overlap.** The config was swept where M ≥ 4000; under L1
+those buckets are never selected at all, and 68% of forwards land in the 1024 bucket, whose
+`BLOCK_SIZE_M=128` gives eight blocks of work to 132 SMs. So **a tuned kernel config is
+tied to the serving config it was tuned under** — the same shape of claim as our earlier
+"regime→backend rules do not transfer across models".
+
+³ **The L1 "ceiling" on regime A does not survive re-measurement.** `cap8/chunk−1/fcfs/
+mem0.85` won the 2026-07-24 sweep at +0.38% over the cookbook; measured here in the same
+harness as everything else in this row, at n=24 with order counterbalancing, it is
+**−0.57%**. Both orders agree (1.6788 and 1.6745 vs the cookbook's 1.6863). The reading is
+that serving autotuning on this regime buys **nothing at all** — the best of 192
+configurations cannot beat the cookbook across an independent re-measurement — which is a
+stronger form of "autotuning has run out" than a small positive number would have been.
 
 ### 1.1 The L1 ceilings are not throughput-for-latency trades
 
