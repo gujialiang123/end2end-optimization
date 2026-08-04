@@ -96,10 +96,55 @@ C (in≈4000)  +23.26%
 > 注意这**不是**说 07-24 的数据错了 —— 那次的 +0.38% 本身就在噪声量级内。
 > 两次测量都对，只是这个 regime 上根本没有可复现的 serving 增益。
 
-### 3.2 ★ 真实 trace 上吞吐是错的口径
+### 3.2 ★ 真实 trace 上吞吐是错的口径 —— 而且五个 regime 的吞吐本来就是延迟
 
-F（mooncake toolagent，唯一非我们设计的流量）三层的吞吐总跨度只有 **0.6%**。
-但同一批运行的 TTFT p50 阶梯是：
+**（2026-08-04 补充，用户提问后做的分析，结论比原先强得多）**
+
+先证实机制。`bench_serving` 的 `--request-rate` 默认 `inf`：
+
+- **5 个 synthetic workload**：所有请求 t=0 全部发出，只受 `--max-concurrency` 闸门限制。
+  **闭环、打满** —— 一个请求完成立刻补下一个，吞吐 = 服务器能力。
+- **tool_agent（mooncake）**：`get_mooncake_request_over_time()` 按 trace 原始时间戳
+  `await asyncio.sleep()` 到点才发。**开环、到达率驱动** ——
+  吞吐 = trace 的到达率，**与服务器快慢无关**。
+
+用 Little's Law（在飞请求数 N = 吞吐 × 延迟）量化，不需要新测量：
+
+| Regime | 并发上限 | 吞吐 | E2E mean | **在飞 N** | **利用率** |
+|---|---:|---:|---:|---:|---:|
+| A 低批 decode | 1 | 1.686 | 591.5 ms | 1.00 | **100%** |
+| C 长 prefill | 4 | 12.119 | 321.4 ms | 3.90 | **97%** |
+| D 中等均衡 | 8 | 6.900 | 1153.9 ms | 7.96 | **100%** |
+| B 并发 decode | 32 | 21.661 | 1463.5 ms | 31.70 | **99%** |
+| E shared prefix | 64 | 14.220 | 3923.5 ms | 55.79 | **87%** |
+| **F tool agent** | 64 | 5.265 | 901.7 ms | **4.75** | **7%** |
+
+**F 只用掉 64 个并发槽里的 4.75 个 —— 服务器 93% 的时间在空等 trace 发下一个请求。**
+把它变快退不掉更多请求，因为**根本没有请求在排队**。
+
+反过来说：**前五个 regime 的「吞吐提升」本来就是延迟提升。**
+N 被钉死时 `吞吐 = N / 延迟`，所以延迟降 6% **就是** 吞吐升 6%：
+
+| Regime | E2E mean | TTFT p50 | TPOT p50 | 吞吐（**由延迟预测**） | 吞吐（**实测**） |
+|---|---:|---:|---:|---:|---:|
+| A 低批 decode | −6.29% | −5.73% | −6.32% | +6.71% | **+6.70%** |
+| C 长 prefill | −6.27% | −6.19% | −6.45% | +6.69% | **+6.18%** |
+| D 中等均衡 | −7.67% | −5.80% | −7.84% | +8.30% | **+8.29%** |
+| B 并发 decode | −6.42% | −7.61% | −6.26% | +6.87% | **+6.72%** |
+| E shared prefix | −6.62% | −7.43% | −7.19% | +7.09% | **+7.24%** |
+| **F tool agent** | **−6.04%** | **−7.91%** | −4.47% | +6.43% | **+0.40%** ← N 可动 |
+
+**五个 regime 上预测值与实测值差不到半个点。** F 差了 6 个点，
+因为它是唯一 N 可以自由变动的 workload —— 那 6% 变成了**空闲时间**，没变成吞吐。
+
+> **★ 结论：kernel rewrite 在全部六个 workload 上都把端到端延迟砍掉 6.0–7.7%，
+> 真实 trace 也不例外。根本不存在「弱 regime」。**
+> 只存在**一个吞吐指标看不见结果的 regime**，而它恰好是唯一一个到达模式不是我们自己设计的。
+> 而且在生产环境里，**挂 SLO 的是延迟，不是吞吐**。
+
+脚本：`scripts/lfm_fusion/exp3_littles_law.py`
+
+### 3.2.1 F 上四层的 TTFT 阶梯
 
 ```
 S0 cookbook   321.2 ms
@@ -108,13 +153,7 @@ S0 cookbook   321.2 ms
 + L1 + L2     138.4 ms   (−57%)
 ```
 
-**按吞吐排，三层无法区分；按 TTFT 排，顺序是 L1 > L2 > L3，且每层都是大效应。**
-
-原因：agentic trace 自带 think time，客户端在两轮之间等待，
-**服务器再快也退不完更多请求** —— 吞吐的天花板不在服务器。
-
-> ⚠️ 如果只报吞吐，这一整行会被记成 null result。
-> **凡是自带节奏的真实负载，必须报延迟。**
+按吞吐排三层无法区分（总跨度 0.6%）；按 TTFT 排，顺序是 L1 > L2 > L3，且每层都是大效应。
 
 ### 3.3 ★ regime D 推翻了自己的事前预测
 
@@ -257,6 +296,7 @@ WARMUP=1  REPS=8  GPU=4 PORT=52166 REGIME=F_tool_agent_tuned        bash scripts
 # 分析
 $PY scripts/lfm_fusion/exp3_analyze.py --regime <REGIME> [--suite l1_]
 cd scripts/lfm_fusion && $PY exp3_latency.py --regime F_tool_agent --level {nocfg,cfg}   # F 必看
+$PY scripts/lfm_fusion/exp3_littles_law.py                      # §3.2 闭环 vs 开环
 $PY scripts/analyze_moe_bucket_usage.py <server.log> ...        # §4.2
 $PY scripts/check_moe_down_config.py <up.json> <down.json>      # §4.1
 ```
@@ -269,6 +309,7 @@ $PY scripts/check_moe_down_config.py <up.json> <down.json>      # §4.1
 | 运行日志 | `logs/2026-08-04/m_*.log` |
 | bucket 直方图 | `logs/2026-08-04/moe_bucket_usage.txt` |
 | F 延迟表 | `logs/2026-08-04/F_latency{,_cfg}.txt` |
+| 闭环/开环分析 | `logs/2026-08-04/littles_law.txt` |
 
 > `logs/` 被 `.gitignore` 排除，只在本机；所有关键数字都在 `results/` 的 JSON 里。
 
@@ -290,3 +331,11 @@ $PY scripts/check_moe_down_config.py <up.json> <down.json>      # §4.1
 > 同一个 kernel 改动，在 6 个 workload 上给出 +1.84% 到 +8.29% 的吞吐、
 > 以及在真实 trace 上「吞吐 +0.4% 但 TTFT −7.9%」。
 > **单个 regime、单个指标的数字不构成结论 —— 结论在矩阵里，不在格子里。**
+
+补一句更准确的（§3.2）：
+
+> **那六个吞吐数字里有五个其实是延迟数字。** 闭环打满时 `吞吐 = N / 延迟`，
+> 两者是同一个测量的两种写法；只有当 N 能自由变动（真实到达模式）时它们才分家，
+> 而那时候**吞吐是失效的那一个**。
+> 换句话说：这个 kernel 改动在六个 workload 上的真实效果是**一致的 6.0–7.7% 延迟下降**，
+> 之前看到的「regime 之间差异很大」有一部分是指标的假象。
