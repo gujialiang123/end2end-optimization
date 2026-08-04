@@ -33,7 +33,7 @@ regime; see the latency table below the matrix.
 | **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | **21.530**<br>±1.37<br>**(+77.7%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | **20.413**<br>±1.9<br>(+68.4%) ² | **22.879**<br>±1.07<br>**(+88.8%)** | **16.392**<br>±0.200<br>**(+35.26%)** | **21.717**<br>±0.5<br>(+79.2%) ² |
 | **D** medium balanced | synthetic · in≈800, out=256, conc=8 | 7.108 † | 7.235 †<br>(+1.79%) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | 14.081 † | 27.262 †<br>**(+93.61%)** | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | **5.2646**<br>±0.0085 § | 5.280 †<br>(+0.31%) | 🔄 | **5.2857**<br>±0.0084<br>(+0.40%) § | ⬜ | ⬜ | 🔄 | ⬜ |
+| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | **5.2646**<br>±0.0085 § | 5.280 †<br>(+0.31%) | **5.2724**<br>±0.0080<br>(+0.15%) § | **5.2857**<br>±0.0084<br>(+0.40%) § | ⬜ | ⬜ | **5.2952**<br>±0.0053<br>(+0.58%) § | ⬜ |
 
 🔄 = in flight. ¹ ² ³ see the footnotes below.
 
@@ -54,10 +54,28 @@ pooled across both arm orders, n=16 per arm:
 | E2E mean | 901.7 ms | 847.2 ms | **−6.04%** | 9.5e-22 |
 | request throughput | 5.2646 | 5.2857 | +0.40% | 3.4e-08 |
 
-**The kernel work is worth 6–8% of latency on the one workload we did not design.** Reporting
+And with the tuned MoE config underneath, i.e. **L2 → L2+L3**:
+
+| metric | **L2** | + **L3** | change | p |
+|---|---:|---:|---:|---|
+| TTFT p50 | 225.3 ms | 203.4 ms | **−9.73%** | 4.4e-10 |
+| TTFT p95 | 380.3 ms | 345.9 ms | **−9.03%** | 1.7e-09 |
+| TPOT p50 | 3.254 ms | 3.085 ms | **−5.17%** | 2.3e-16 |
+| TPOT p95 | 30.56 ms | 30.09 ms | −1.55% | 0.71 **n.s.** |
+| E2E p95 | 1978.8 ms | 1856.3 ms | **−6.19%** | 6.8e-17 |
+| E2E mean | 797.9 ms | 745.8 ms | **−6.53%** | 3.4e-18 |
+| request throughput | 5.2724 | 5.2952 | +0.43% | 1.2e-08 |
+
+**The kernel work is worth 6–10% of latency on the one workload we did not design.** Reporting
 only throughput would have recorded this regime as a null result. TPOT p95 is the single
-metric moving the wrong way and it is not significant; a few turns with long tool gaps
-dominate that tail.
+metric moving the wrong way and it is not significant in either baseline; a few turns with
+long tool gaps dominate that tail.
+
+Two further points come out of the second table. The kernel gain is **larger** on the tuned
+baseline (−9.03% vs −7.53% on TTFT p95), the same direction regime C showed on throughput.
+And **L2 is far from neutral here even though it barely moves throughput**: it takes TTFT p95
+from 537 ms to 380 ms, −29%, while request throughput goes from 5.2646 to 5.2724, +0.15%. On
+a self-paced trace every layer is a latency effect.
 
 > **★ The kernel layers cover only A, B and C.** L1 was run over all six regimes
 > (192 configurations × 6 workloads × 2 models); L2 and L3 were only ever run on the three
