@@ -1,0 +1,42 @@
+{
+  "prompts": [
+    "Explain in one paragraph why memory bandwidth limits decoding speed.",
+    "List the first ten prime numbers, separated by commas.",
+    "Write a haiku about a GPU kernel.",
+    "The capital of France is",
+    "def quicksort(arr):"
+  ],
+  "outputs": {
+    "baseline": [
+      "**\n\n**Answer:**\nMemory bandwidth limits decoding speed because the GPU must frequently access global memory to fetch texture data for each pixel being processed. Each pixel requires multiple texture fetches (one for each texture coordinate), and these fetches are serialized by the memory bus. As a result, the memory",
+      "**\n\n**Answer:** 2, 3, 5, 7, 11, 13, 17, 19, 23, 29\n\n**Explanation:** Prime numbers are natural numbers greater than 1 that have no positive divisors other than 1 and",
+      "**\n**Answer:**\nSilent threads dance,\nMatrix multiplication unfolds,\nHeat whispers fast.\n\n**Explanation:**\n- **Silent threads dance**: GPUs have thousands of threads that work in harmony, often described as \"silent\" because they operate efficiently without much noise.",
+      " Paris.\n\n#### 2. **Logical Reasoning**\n\n**Question:**\nGiven the statements: \"All roses are flowers.\" and \"Some flowers are red.\" which of the following conclusions logically follows?\n\n**Options:**\n(A) Some roses are red.\n(B)",
+      "\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for x in arr if x < pivot]\n    middle = [x for x in arr if x"
+    ],
+    "ssd64": [
+      "**\n\n**Answer:**\nMemory bandwidth limits decoding speed because the GPU must frequently access global memory to fetch texture data for each pixel being processed. Each pixel requires multiple texture fetches (one for each texture coordinate), and these fetches are serialized by the memory bus. As a result, the memory",
+      "**\n\n**Answer:** 2, 3, 5, 7, 11, 13, 17, 19, 23, 29\n\n**Explanation:** Prime numbers are natural numbers greater than 1 that have no positive divisors other than 1 and",
+      "**\n**Answer:**\nSilent threads dance,\nMatrix multiplication unfolds,\nHeat whispers fast.\n\n**Explanation:**\n- **Silent threads dance**: GPUs have thousands of threads that work in harmony, often described as \"silent\" because they operate efficiently without much noise.",
+      " Paris.\n\n#### 2. **Logical Reasoning**\n\n**Question:**\nGiven the statements: \"All roses are flowers.\" and \"Some flowers are red.\" which of the following conclusions logically follows?\n\n**Options:**\n(A) Some roses are red.\n(B)",
+      "\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for x in arr if x < pivot]\n    middle = [x for x in arr if x"
+    ]
+  },
+  "patch_checks": [
+    {
+      "arm": "baseline",
+      "patch_check": "clean baseline",
+      "ok": true
+    },
+    {
+      "arm": "ssd64",
+      "patch_check": "[ssd_inject] applied: chunk_state={'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 64}; chunk_scan={'BLOCK_SIZE_M': 64, 'BLOCK_SIZE_N': 64, 'BLOCK_SIZE_K': 64}",
+      "ok": true
+    },
+    {
+      "arm": "ssd64",
+      "correctness": "5/5",
+      "gated": false
+    }
+  ]
+}

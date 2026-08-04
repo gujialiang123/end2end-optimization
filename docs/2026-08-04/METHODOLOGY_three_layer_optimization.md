@@ -58,7 +58,7 @@ LFM2.5 上（4 个 regime 独立支撑）：
 | 层 | 是什么 | 适用条件 | OLMo-2（dense）能做吗 |
 |---|---|---|---|
 | **L1** serving config tuning | 4 个 server 旋钮的全网格 | **总是适用** | ✅ |
-| **L2** kernel config tuning | 热 kernel 的 tile 参数 | **需要有一个 config 驱动的热 kernel** | ⚠️ **不能照抄** |
+| **L2** kernel config tuning | 热 kernel 的 tile 参数 | **需要最热的 kernel 的 tile 是「可改的」** —— 见 §0.3 的三种形态 | ⚠️ **不能照抄** |
 | **L3** kernel rewrite | 改模型代码 | 需要先审计出 gap | ✅ |
 
 ### ★ L2 在 OLMo-2 上的问题
@@ -72,11 +72,21 @@ sglang 用 JSON config 文件驱动这个 kernel，所以「换 config」是一�
 **必须先做的一步**：profile 一次，找出 dense 模型上**最热且 config 可调**的 kernel。
 候选：
 
-- `nvjet_*` / cuBLAS GEMM —— 通常没有用户可换的 config，**大概率 L2 不可做**
+- `nvjet_*` / cuBLAS GEMM —— 厂商闭源，**确实不可做**
 - Triton attention backend 的 tile 参数（若用 `--attention-backend triton`）
 - flashinfer 的 autotune 开关
+- **★ 任何硬编码 `tl.constexpr` tile 且无 `@triton.autotune` 的热 Triton kernel**
+  —— 这一条 2026-08-04 才补上，在 Falcon-H1 上值 **端到端 +27.63%**。
+  linear-attention / mamba / SSM 这类较新的算子尤其容易中招，因为它们的
+  Triton 实现常常是从参考实现直接搬来的，默认值从没为任何卡调过。
 
-**如果找不到 config 驱动的热 kernel，就诚实记录「L2 在这个模型上不适用」，
+> ⚠️ **本节标题「L2 在 OLMo-2 上的问题」在 2026-08-04 被部分推翻。**
+> 结论对 OLMo-2 本身仍然成立（它最热的是 cuBLAS GEMM），
+> 但**推理过程「没有 MoE → 没有 config 机制 → L2 不适用」是错的**。
+> Falcon-H1 同样没有 MoE，却有三个占 59% prefill 时间、tile 硬编码为 16 的
+> Triton kernel。**判据在 §0.3。**
+
+**如果找不到可改 tile 的热 kernel，就诚实记录「L2 在这个模型上不适用」，
 矩阵变成 2² 而不是 2³。** 这本身是个发现：**L2 这一层的适用性依赖架构，
 而 L1/L3 不依赖。**
 
@@ -128,10 +138,51 @@ python -m sglang.launch_server --model-path <PATH> --port <P> --tensor-parallel-
 python scripts/lfm_fusion/lf_audit.py --model <M> --regime C_long_prefill --gpu <G>
 ```
 
-看 kernel 时间构成。**问一个问题：最热的那个 kernel 有没有用户可换的 config？**
+> **⚠️ 2026-08-04 修正**：本节原先只问「有没有**用户可换的 config**（如 fused-MoE 的
+> JSON）」，并据此断言 dense 模型上 L2 不适用。**这个判据太窄，在 Falcon-H1 上漏掉了
+> 本轮最大的一个发现（端到端 +27.63%）。**
 
-- 有（如 fused-MoE 的 JSON） → L2 可做
-- 没有（纯 cuBLAS GEMM） → **L2 不适用，如实记录**
+看 kernel 时间构成，然后问**正确的那个问题**：
+
+> **最热的那个 kernel 的 tile 参数是谁定的？有没有人为这张卡定过？**
+
+三种形态，**前两种都能做 L2**：
+
+| 形态 | 长什么样 | 例子 | L2 |
+|---|---|---|:--:|
+| ① 外部 config 文件 | JSON 按 `E,N,device_name` 查表 | LFM2.5 的 fused-MoE，H200 缺文件 | ✅ |
+| ② **硬编码 constexpr 默认值** | `BLOCK_SIZE_M: tl.constexpr = 16`，无 `@triton.autotune`，调用点不传 | **Falcon-H1 的 mamba SSD kernel** | ✅ **本轮新增** |
+| ③ 厂商闭源 kernel | cuBLAS / `nvjet_*` / cutlass | 大多数 dense GEMM | ❌ |
+
+**形态 ② 的检查方法**（对最热的 Triton kernel）：
+
+```bash
+# 1. tile 参数有没有默认值？
+grep -n "BLOCK_SIZE.*tl.constexpr.*=" <kernel_file>.py
+# 2. 有没有 autotune？
+grep -n "@triton.autotune" <kernel_file>.py
+# 3. ★ 调用点传不传？（这一条最关键，很多人只查前两条）
+grep -A30 "<kernel_name>\[" <kernel_file>.py | grep -c "BLOCK_SIZE"
+```
+
+**三条都是「默认值 / 无 / 0」→ 这个 kernel 从来没人为任何卡调过 → L2 可做。**
+
+Falcon-H1 实测：`_chunk_state_fwd` / `_chunk_scan_fwd` / `_state_passing_fwd`
+三条全中，合计 **59% 的 prefill kernel 时间**跑在 16×16×16 上。
+换成 64×64×64 后**端到端长 prefill +27.63%，TTFT −32.4%，输出逐 token 相同**。
+细节见 `docs/2026-08-04/pipeline_replication_olmo2_falconh1.md` §3。
+
+> **不要为了凑齐三层而编一个 L2**（原则不变），
+> **但也不要因为「没有 JSON config」就放过形态 ②。**
+
+**注入方式**：`scripts/lfm_fusion/ssd_inject/sitecustomize.py` 演示了怎么在不改
+上游源码的前提下覆盖 tile —— 包住 kernel 对象，在 launch 时补 kwargs。
+比手写 microbench 可靠得多（那些 kernel 有 30+ 个 stride 参数，重构极易出错），
+而且 grid lambda 读 `META["BLOCK_SIZE_M"]` 会自动适配。
+
+⚠️ **扫 tile 时必须丢弃每个配置的第一次运行** —— 首次要付 Triton 编译
+（实测 1.1–1.8 s vs 稳态 0.68 s）。若 stock 配置已被别的实验编译过，
+不丢首次就是**拿冷配置比热配置**，本轮第一版数据就因此作废。
 
 ### 0.4 选 regime
 

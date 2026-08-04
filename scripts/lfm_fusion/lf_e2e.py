@@ -80,6 +80,16 @@ REGIME_SERVING = {
                                   cap=96, chunk=2048, policy="lpm", mem=0.9),
     "F_tool_agent_tuned": dict(workload="tool_agent",
                                cap=128, chunk=8192, policy="lpm", mem=0.75),
+
+    # Falcon-H1. Cookbook knobs; this model is here to end-to-end the SSD tile
+    # finding, not to build a matrix, so only the three canonical regimes are
+    # wired up.
+    "FH_low_batch_decode": dict(workload="R_short_decode",
+                                cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "FH_concurrent_decode": dict(workload="R_concurrent_decode",
+                                 cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "FH_long_prefill": dict(workload="R_long_prefill",
+                            cap=32, chunk=-1, policy="lpm", mem=0.85),
 }
 
 # arm name -> value of LFM_FUSION_PATCH ("" means leave it unset)
@@ -109,6 +119,11 @@ ARMS = {
     "main_base": "@src:/tmp/sglang_main_base/python",
     "main_fix":  "@src:/tmp/sglang_pr2/python",
     "all": "norm,scale,conv,gate,idx,qkrope",
+    # Falcon-H1: override the mamba SSD kernels' hardcoded 16x16x16 tiles. The
+    # baseline arm is stock sglang, so the comparison is "tiles nobody chose"
+    # versus "tiles chosen by a sweep".
+    "ssd64": "@ssd:chunk_state:64,64,64;chunk_scan:64,64,64",
+    "ssd64_32": "@ssd:chunk_state:64,64,32;chunk_scan:64,64,32",
 }
 
 
@@ -199,6 +214,8 @@ def kill_server(process):
 
 
 GM_INJECT = Path(__file__).resolve().parent / "gm_inject"
+SSD_INJECT = Path(__file__).resolve().parent / "ssd_inject"
+MAMBA_INJECT = Path(__file__).resolve().parent / "mamba_inject"
 
 
 def arm_overlay(arm: str) -> dict:
@@ -207,6 +224,12 @@ def arm_overlay(arm: str) -> dict:
     if not spec:
         return {}
     existing = os.environ.get("PYTHONPATH", "")
+    if spec.startswith("@ssd:"):
+        return {
+            "SSD_TILES": spec[len("@ssd:"):],
+            "PYTHONPATH": os.pathsep.join(
+                [str(SSD_INJECT)] + ([existing] if existing else [])),
+        }
     if spec.startswith("@src:"):
         tree = spec[len("@src:"):]
         ov = {"PYTHONPATH": f"{tree}{os.pathsep}{existing}" if existing else tree}
@@ -239,12 +262,17 @@ def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
         # from the patched tree instead.
         tree = ARMS[arm][len("@src:"):]
         return True, f"source tree {tree} (verified separately)"
+    if not ARMS[arm]:
+        if "fusion_patch] applied" in txt or "[ssd_inject] applied" in txt:
+            return False, "baseline arm unexpectedly has a patch applied"
+        return True, "clean baseline"
+    if ARMS[arm].startswith("@ssd:"):
+        if "[ssd_inject] applied" not in txt:
+            return False, "ssd tile override never applied (silent no-op)"
+        return True, [l for l in txt.splitlines()
+                      if "[ssd_inject] applied" in l][-1].strip()
     marker = ("[gemma_fusion_patch] applied"
               if ARMS[arm].startswith("@gemma:") else "[lfm_fusion_patch] applied")
-    if not ARMS[arm]:
-        if "fusion_patch] applied" in txt:
-            return False, "baseline arm unexpectedly has the patch applied"
-        return True, "clean baseline"
     if marker not in txt:
         return False, "patch never applied (silent no-op)"
     line = [l for l in txt.splitlines() if marker in l][-1]
