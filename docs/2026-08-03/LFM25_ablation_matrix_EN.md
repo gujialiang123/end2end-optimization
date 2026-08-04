@@ -19,23 +19,23 @@ model and workload; only the layer under test varies.
 ## 1. The matrix
 
 Each cell: **absolute req/s** and **(Δ vs the cookbook baseline of that regime)**.
-⬜ = not measured. Blank cells are left blank rather than interpolated.
+All 48 cells are measured; no cell is interpolated.
 
-**Cell markers**: † = measured in a *different campaign* with its own cookbook baseline, so
-only the ratio transfers, not the absolute value. ‡ = older n=6 measurement taken before
-arm-order counterbalancing was adopted. § = throughput is the wrong yardstick for this
-regime; see the latency table below the matrix.
+**Cell marker**: § = throughput is the wrong yardstick for this regime; see the latency
+table below the matrix. The † and ‡ markers of earlier drafts are gone: every cell is now
+measured in this campaign, at n≥16 per arm with arm order counterbalanced, so absolute
+values are comparable within a row and not only ratios.
 
 | Regime | Workload | **S0** cookbook | **L1** only | **L2** only | **L3** only | **L1+L2** | **L1+L3** | **L2+L3** | **L1+L2+L3** |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | **A** low-batch decode | synthetic · in≈100, out=256, conc=1 | **1.6863**<br>±0.0027 | **1.6767**<br>±0.0025<br>(−0.57%) ³ | 1.6872<br>(+0.05%) **n.s.** | 1.7992<br>**(+6.70%)** | **1.6791**<br>±0.0021<br>(−0.43%) | **1.8018**<br>±0.0018<br>**(+6.85%)** | **1.7944**<br>**(+6.41%)** | **1.8025**<br>±0.0019<br>**(+6.89%)** |
-| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.661**<br>±0.17 | 22.234 †<br>(+1.11%) | **22.026**<br>±0.18<br>**(+1.68%)** | **23.118**<br>±0.16<br>**(+6.72%)** | ⬜ | ⬜ | **23.537**<br>±0.18<br>**(+8.66%)** | ⬜ |
+| **B** concurrent decode | synthetic · in≈200, out=256, conc=32 | **21.661**<br>±0.17 | **21.902**<br>±0.11<br>**(+1.11%)** | **22.026**<br>±0.18<br>**(+1.68%)** | **23.118**<br>±0.16<br>**(+6.72%)** | **22.192**<br>±0.11<br>**(+2.45%)** | **23.351**<br>±0.11<br>**(+7.80%)** | **23.537**<br>±0.18<br>**(+8.66%)** | **23.777**<br>±0.11<br>**(+9.77%)** |
 | **C** long prefill | synthetic · in≈4000, out=32, conc=4 | **12.119**<br>±0.116 | **21.530**<br>±1.37<br>**(+77.7%)** | **14.939**<br>±0.123<br>**(+23.27%)** | 12.869<br>±0.182<br>(+6.19%) | **20.413**<br>±1.9<br>(+68.4%) ² | **22.879**<br>±1.07<br>**(+88.8%)** | **16.392**<br>±0.200<br>**(+35.26%)** | **21.717**<br>±0.5<br>(+79.2%) ² |
 | **D** medium balanced | synthetic · in≈800, out=256, conc=8 | **6.900**<br>±0.019 | **7.074**<br>±0.085<br>**(+2.52%)** | **7.027**<br>±0.013<br>**(+1.85%)** | **7.472**<br>±0.018<br>**(+8.29%)** | **7.162**<br>±0.096<br>**(+3.80%)** | **7.668**<br>±0.089<br>**(+11.13%)** | **7.598**<br>±0.044<br>**(+10.13%)** | **7.762**<br>±0.091<br>**(+12.49%)** |
 | **E** shared prefix | agentic · 8 groups × 16, sys 2048 / q 128 / out 256 | **14.220**<br>±0.024 | **27.552**<br>±0.36<br>**(+93.76%)** | **15.995**<br>±0.031<br>**(+12.49%)** | **15.249**<br>±0.031<br>**(+7.24%)** | **31.430**<br>±0.63<br>**(+121.0%)** | **28.059**<br>±0.40<br>**(+97.3%)** | **17.237**<br>±0.038<br>**(+21.22%)** | **32.218**<br>±1.02<br>**(+126.6%)** |
-| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | **5.2646**<br>±0.0085 § | 5.280 †<br>(+0.31%) | **5.2724**<br>±0.0080<br>(+0.15%) § | **5.2857**<br>±0.0084<br>(+0.40%) § | ⬜ | ⬜ | **5.2952**<br>±0.0053<br>(+0.58%) § | ⬜ |
+| **F** tool agent | **real trace** · mooncake toolagent, n=200, conc=64 | **5.2646**<br>±0.0085 § | **5.2811**<br>±0.0035<br>(+0.31%) § | **5.2724**<br>±0.0080<br>(+0.15%) § | **5.2857**<br>±0.0084<br>(+0.40%) § | **5.2794**<br>±0.0090<br>(+0.28%) § | **5.2943**<br>±0.0110<br>(+0.56%) § | **5.2952**<br>±0.0053<br>(+0.58%) § | **5.2903**<br>±0.0182<br>(+0.49%) § |
 
-🔄 = in flight. ¹ ² ³ see the footnotes below.
+¹ ² ³ see the footnotes below.
 
 ### Regime F, the only real trace, measured on latency
 
@@ -77,6 +77,16 @@ And **L2 is far from neutral here even though it barely moves throughput**: it t
 from 537 ms to 380 ms, −29%, while request throughput goes from 5.2646 to 5.2724, +0.15%. On
 a self-paced trace every layer is a latency effect.
 
+The L1 half of the row behaves the same way, and shows the same crowding-out E does. The
+serving ceiling here (`cap128 · chunk8192 · lpm · mem0.75`) takes TTFT p50 from 321 ms to
+179 ms on its own; on top of that, L3 is worth −3.64% (p=8.0e-03) instead of −7.91%, and
+TTFT p95 no longer separates at all. TPOT p50 is the one metric that keeps its full effect
+across every baseline: −4.47%, −5.17%, −4.65%, −5.56%.
+
+**Read the whole row as latency and the ordering of the layers is the reverse of what the
+throughput column suggests.** By TTFT p50: L1 −44%, L2 −30%, L3 −8%. By throughput all three
+are under 0.6% and indistinguishable from each other.
+
 > **★ The kernel layers cover only A, B and C.** L1 was run over all six regimes
 > (192 configurations × 6 workloads × 2 models); L2 and L3 were only ever run on the three
 > synthetic ones. **In particular, the only workload in the suite that is a real trace —
@@ -102,13 +112,11 @@ a self-paced trace every layer is a latency effect.
 
 **Footnotes**
 
-† **The L1 column comes from a different campaign** (`2026-07-24_serving_ceiling_validation`)
-with its own cookbook baseline (A=1.6814, B=21.990, C=12.604, D=7.108, E=14.081, F=5.264).
-**Only the ratios are comparable across columns, not the absolute values.** An internally
-consistent L1 column for regime C is being measured now (see §5, gap #4).
-
-‡ **Regime B's L3 cell is the older n=6 measurement** taken before we adopted arm-order
-counterbalancing. A and C have since been re-measured at n=16. See §5, gap #1.
+**The L1 column used to be borrowed** from `2026-07-24_serving_ceiling_validation`, which
+had its own cookbook baseline, so only ratios transferred. It is now measured in this
+campaign for all six regimes. Where the two agree they agree closely — B +1.11% vs +1.11%,
+E +93.61% vs +93.76% — and where they disagree, regime A, the disagreement is the finding
+(footnote ³).
 
 ¹ A separate study measured L2 on regime B at 1.005× (n=8), but without order
 counterbalancing, which we later found produces a 1.7% position effect — larger than half
@@ -147,7 +155,43 @@ that serving autotuning on this regime buys **nothing at all** — the best of 1
 configurations cannot beat the cookbook across an independent re-measurement — which is a
 stronger form of "autotuning has run out" than a small positive number would have been.
 
-### 1.1 The L1 ceilings are not throughput-for-latency trades
+### 1.1 What the completed matrix says across regimes
+
+With all 48 cells measured, the L3 column can be read against how much room the layers
+underneath it had already taken. **L3's increment is unrelated to what L2 does, and inversely
+related to what L1 does.**
+
+| Regime | L1 alone | L3 on cookbook | L3 on L1 | L3 on L1+L2 |
+|---|---:|---:|---:|---:|
+| **A** low-batch decode | −0.57% | +6.70% | **+7.46%** | +7.35% |
+| **B** concurrent decode | +1.11% | +6.72% | **+6.62%** | +7.14% |
+| **D** medium balanced | +2.52% | +8.29% | **+8.40%** | +8.38% |
+| **C** long prefill | +77.7% | +6.18% | **+6.26%** | +6.38% |
+| **E** shared prefix | +93.8% | +7.24% | **+1.84%** | +2.51% |
+| **F** tool agent (TTFT p50) | −44% | −7.91% | **−3.64%** | −5.56% |
+
+On the four regimes where serving tuning moves things by under 3%, the kernel rewrite is
+worth 6.2–8.4% and **does not care what is underneath it** — the three columns agree to
+within a few tenths of a point. That is the deliverable's central claim, and it now rests on
+four regimes rather than one.
+
+The two regimes where L1 nearly doubles throughput are the exceptions, and they are
+exceptions in the expected direction: on E the kernel gain falls from +7.24% to +1.84%, on F
+from −7.9% to −3.6% of TTFT. Both L1 winners get their gain by turning **chunked prefill**
+on, which is removing some of the same per-forward overhead the kernel work removes. This is
+the subadditivity the project documented within the kernel layer, appearing for the first
+time across layers.
+
+**C is the interesting case**: L1 is worth +77.7% there and yet L3 keeps its full +6.26%.
+The difference from E is that C's L1 winner shrinks the measurement window rather than the
+per-token work — it raises throughput by batching prefill better, not by eliminating the
+elementwise traffic the seven items target.
+
+L2's effect, by contrast, tracks how much prefill a regime does and nothing else: +0.05% on
+A (in≈100), +1.68% on B (in≈200), +1.85% on D (in≈800), +12.49% on E (2048-token system
+prompt), +23.27% on C (in≈4000).
+
+### 1.2 The L1 ceilings are not throughput-for-latency trades
 
 A reasonable objection to stacking on top of L1 is that its large wins might be bought by
 destroying latency. **On the validated (n=5) ceilings they are not.** Sign convention:
@@ -531,7 +575,7 @@ study, not to the numbers in this document.
 
 Run it **twice per regime** — once at the cookbook serving config and once at that regime's
 L1 ceiling — and the **entire row of 8 cells is filled and internally consistent** (same
-tree, same campaign, same protocol, so the absolute values are comparable and the `†`
+tree, same campaign, same protocol, so the absolute values are comparable and the borrowed-column
 marker goes away).
 
 ```
@@ -541,32 +585,49 @@ invocation at L1-ceiling serving →  L1,  L1+L2,  L1+L3,  L1+L2+L3
 
 ### What remains
 
-| Regime | cookbook invocation | L1-ceiling invocation | L1 winner knobs to add | Est. |
-|---|---|---|---|---|
-| **A** low-batch decode | ✅ done (exp3) | ⬜ needed | `cap8 · chunk−1 · fcfs · mem0.85` | ~35 min |
-| **B** concurrent decode | ⬜ needed | ⬜ needed | `cap64 · chunk8192 · fcfs · mem0.75` | ~70 min |
-| **C** long prefill | ✅ done (exp3) | 🔄 in flight (exp5) | `cap8 · chunk2048 · fcfs · mem0.90` ✅ already in harness | — |
-| **D** medium balanced | ⬜ needed | ⬜ needed | `cap8 · chunk2048 · fcfs · mem0.90` | ~65 min |
-| **E** shared prefix | ⬜ needed | ⬜ needed | `cap96 · chunk2048 · lpm · mem0.90` | ~105 min |
-| **F** tool agent | ⬜ needed | ⬜ needed | `cap128 · chunk8192 · lpm · mem0.75` | ~145 min |
+**Nothing in the matrix.** All 48 cells were measured on 2026-08-03/04 across GPUs 3 and 4,
+twelve `exp3_layered.sh` invocations in total. Every regime's eight cells come from the same
+tree, harness and protocol, so absolute values are comparable across a row, not only ratios.
 
-**≈ 7 GPU-hours serial.** The invocations are independent, so with six free GPUs this is
-**≈ 2 hours wall clock**.
+| Regime | cookbook invocation | L1-ceiling invocation | L1 winner knobs |
+|---|---|---|---|
+| **A** low-batch decode | ✅ | ✅ | `cap8 · chunk−1 · fcfs · mem0.85` |
+| **B** concurrent decode | ✅ | ✅ | `cap64 · chunk8192 · fcfs · mem0.75` |
+| **C** long prefill | ✅ | ✅ | `cap8 · chunk2048 · fcfs · mem0.90` |
+| **D** medium balanced | ✅ | ✅ | `cap8 · chunk2048 · fcfs · mem0.90` |
+| **E** shared prefix | ✅ | ✅ | `cap96 · chunk2048 · lpm · mem0.90` |
+| **F** tool agent | ✅ | ✅ | `cap128 · chunk8192 · lpm · mem0.75` |
 
-Timing is dominated by server startup (8 lifetimes × ~3.5 min) for the short workloads and
-by benchmark time for E (~20 s/run) and F (~42 s/run).
+Two independent reproductions fell out of this, both against the 2026-07-24 campaign, from a
+different script eleven days apart: L1 on regime B, +1.11% there and +1.11% here; L1 on
+regime E, +93.61% there and +93.76% here. Regime A's L1 is the one that did **not**
+reproduce, and that is written up in footnote ³.
 
-### Code changes needed first (small)
+### What is still open
 
-`scripts/lfm_fusion/lf_e2e.py` currently defines only `A/B/C` plus `C_long_prefill_tuned`.
-To run the table above it needs:
+1. **`moesum` alone on C, D, E, F.** The per-component ablation only ever ran on A and B.
+   D's +8.29% is the largest kernel gain in the matrix and nothing says which of the seven
+   items carries it.
+2. **The `_down` MoE config.** `scripts/check_moe_down_config.py` shows the existing
+   candidate cannot be used — the up and down files are looked up independently by nearest
+   bucket, and M∈[97,112] resolves to `BLOCK_SIZE_M` 16 vs 32, which trips the assert at
+   `fused_moe_triton_config.py:264` and kills the server. Fixing it means re-tuning the down
+   projection on the up config's 19 buckets under an equality constraint, then re-measuring
+   every L2 cell. **L2 is therefore measured below its own ceiling throughout this matrix.**
+3. **L2 on C's L1 baseline** (footnote ²) — the only cell whose value is unusable, because
+   `R_long_prefill` under L1 runs for 0.196 s per repetition.
 
-1. Base entries for `D_medium_balanced`, `E_shared_prefix`, `F_tool_agent`
-   (workload names already exist in `serving_ceiling_lib.WORKLOADS`).
-2. `*_tuned` entries for A, B, D, E, F carrying the L1 winner knobs above.
+### Code changes made
 
-No harness logic changes — `run_workload` already dispatches on the workload name, and
-`shared_prefix` / `tool_agent` are already wired into the campaign library.
+`scripts/lfm_fusion/lf_e2e.py` gained base entries for `D_medium_balanced`,
+`E_shared_prefix`, `F_tool_agent` and `*_tuned` entries for A, B, D, E, F. No harness logic
+changed — `run_workload` already dispatches on the workload name.
+
+`exp3_layered.sh` gained two guards after both traps fired during this campaign: a `_tuned`
+regime now defaults `SUITE=l1_` so its result directory cannot collide with the cookbook
+run's, and it refuses to start a `_tuned` regime without an explicit `WARMUP`, because the
+warm-up table is calibrated on the cookbook knobs and running a tuned config under it
+produced a cell reading "+0.0%, the kernel gain vanished".
 
 ### ⚠️ Sequence this correctly
 
