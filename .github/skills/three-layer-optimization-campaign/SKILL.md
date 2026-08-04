@@ -70,6 +70,52 @@ trace, the full three-layer stack moves request throughput by **+0.48 %** and
 TTFT p95 from **537 ms to 218 ms (-59 %)**. A throughput-only report concludes
 "the optimization does nothing".
 
+## CANDIDATES
+
+**Do not pick a model from scratch.** An 11-model cross-architecture audit
+already ranked the L3 headroom
+(`results/lfm_fusion/processed/cross_architecture_audit_summary.csv`).
+`removable_pct` is the share of kernel time spent in kernels a fused
+implementation would never launch.
+
+| model | arch | layers | removable | all gaps | L2 possible | pick |
+|---|---|---:|---:|---:|:--:|:--:|
+| gemma3 (1B) | dense + sliding-window attn | 26 | **37.06 %** | 46.32 % | no | already harvested |
+| **olmo2 (1B)** | dense (AllenAI) | 16 | **14.71 %** | **27.74 %** | no | **yes** |
+| exaone4 (1.2B) | dense (LG) | 30 | 3.54 % | 15.66 % | no | maybe |
+| phi4mini (3.8B) | phi3 dense | 32 | 6.43 % | 13.87 % | no | maybe |
+| *lfm25 (8B)* | *MoE + gated short conv* | *24* | *4.06 %* | *11.31 %* | *yes* | *done* |
+| **olmoe (1B-7B)** | **MoE 64E (AllenAI)** | 16 | 0.43 % | 4.70 % | **yes** | **yes** |
+| qwen3next / qwen06 / granite / qwen32 | — | — | < 0.5 % | < 0.7 % | — | no |
+| qwen (30B) | MoE + full attn | 48 | 0.18 % | 0.23 % | yes | **control** |
+
+**The recommended pair is olmo2 + olmoe**, because it is a controlled contrast:
+same family, same 16 layers, same 2048 hidden size, same 4096 context — the only
+difference is dense versus 64-expert MoE. That isolates whether L2's
+applicability and payoff are determined purely by the presence of MoE.
+
+olmoe's L2 prospect has been checked: its MoE shape is `E=64, N=1024`, and the
+only upstream config matching it is
+`triton_3_1_0/E=64,N=1024,device_name=NVIDIA_H100_80GB_HBM3,dtype=fp8_w8a8`.
+**No H200, no bf16** — the same gap shape that was worth +23.3 % on LFM2.5.
+Its L3 headroom is only 4.70 % though, so expect a strong-L2 / weak-L3 model,
+which is a useful contrast rather than a problem.
+
+**gemma3 has the largest headroom in the table but is not a fresh target**: that
+gap was already found and fixed in 2026-07 (`Gemma3RMSNorm.forward_cuda` running
+eager PyTorch; a one-line fall-through, 2.07x / 1.75x / 1.57x end-to-end). Cite
+it as a completed case rather than spending GPU time on it.
+
+**phi4mini is the only candidate above 3B.** If the concern is that the result
+only holds on small models, it is the cheapest rebuttal.
+
+⚠️ **Every candidate here is 1-3.8B, against LFM2.5's 8B.** `R_long_prefill`
+already measures in a 0.31 s window on LFM2.5; a 1B model may drive it to tens
+of milliseconds, below the noise. Measure `dur_s` in stage 0 and, if that
+workload's window is under ~0.5 s, either raise `--num-prompts` (which changes
+the workload definition, so re-measure the whole row) or drop that regime for
+that model and say why.
+
 ## HOW
 
 Six stages, ~20-25 GPU-hours serially, 6-8 h wall clock across several GPUs.
