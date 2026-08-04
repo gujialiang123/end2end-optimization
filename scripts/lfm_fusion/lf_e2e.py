@@ -56,6 +56,30 @@ REGIME_SERVING = {
     # against this, not against the cookbook.
     "C_long_prefill_tuned": dict(workload="R_long_prefill",
                                  cap=8, chunk=2048, policy="fcfs", mem=0.9),
+
+    # --- the remaining three workloads on the cookbook knobs -----------------
+    "D_medium_balanced": dict(workload="R_medium_balanced",
+                              cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "E_shared_prefix": dict(workload="shared_prefix",
+                            cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "F_tool_agent": dict(workload="tool_agent",
+                         cap=32, chunk=-1, policy="lpm", mem=0.85),
+
+    # --- each workload's own serving ceiling ---------------------------------
+    # Winners of the 2026-07-24 sweep, taken from the n=5 validation pass, not
+    # the n=1 grid: see analysis/lfm25/ceiling_per_regime.json. The ceiling is
+    # per workload, and on four of the six it is worth under 2 % over the
+    # cookbook, which is the point the deliverable rests on.
+    "A_low_batch_decode_tuned": dict(workload="R_short_decode",
+                                     cap=8, chunk=-1, policy="fcfs", mem=0.85),
+    "B_concurrent_decode_tuned": dict(workload="R_concurrent_decode",
+                                      cap=64, chunk=8192, policy="fcfs", mem=0.75),
+    "D_medium_balanced_tuned": dict(workload="R_medium_balanced",
+                                    cap=8, chunk=2048, policy="fcfs", mem=0.9),
+    "E_shared_prefix_tuned": dict(workload="shared_prefix",
+                                  cap=96, chunk=2048, policy="lpm", mem=0.9),
+    "F_tool_agent_tuned": dict(workload="tool_agent",
+                               cap=128, chunk=8192, policy="lpm", mem=0.75),
 }
 
 # arm name -> value of LFM_FUSION_PATCH ("" means leave it unset)

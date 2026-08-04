@@ -83,8 +83,8 @@ run () {           # $1 tag  $2 arms  $3 config-dir ("" = leave unset)
       --tag "_exp3_${SUITE}${REGIME_SHORT}$tag" --correctness-nogate
 }
 
-run nocfg_fwd "${ARMS_FWD:-baseline,all7}" ""
-run nocfg_rev "${ARMS_REV:-all7,baseline}" ""
+#run nocfg_fwd "${ARMS_FWD:-baseline,all7}" ""
+#run nocfg_rev "${ARMS_REV:-all7,baseline}" ""
 run cfg_fwd   "${ARMS_FWD:-baseline,all7}" "$PROFILE"
 run cfg_rev   "${ARMS_REV:-all7,baseline}" "$PROFILE"
 
