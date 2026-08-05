@@ -91,7 +91,14 @@ def _init_falcon(spec):
     import importlib.machinery
     import importlib.util
 
-    target = "sglang.srt.layers.attention.hybrid_linear_attn_backend"
+    # convtriton patches the attention backend; foldmul patches the model
+    # file. Hooking foldmul on the backend module fails, because that module is
+    # imported from inside falcon_h1's own import and the class does not exist
+    # yet -- a circular-import AttributeError. Each patch waits for its own
+    # module.
+    wants = {w.strip() for w in spec.split(",") if w.strip()}
+    target = ("sglang.srt.models.falcon_h1" if "foldmul" in wants
+              else "sglang.srt.layers.attention.hybrid_linear_attn_backend")
 
     class _Loader(importlib.abc.Loader):
         def __init__(self, inner):

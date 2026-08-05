@@ -146,6 +146,8 @@ ARMS = {
     # Falcon-H1: route the causal conv through the Triton implementation, which
     # reads strides instead of demanding a contiguous copy of a transposed view.
     "convtriton": "@falcon:convtriton",
+    "foldmul": "@falcon:foldmul",
+    "foldmul_tiled": "@falcon:foldmul+ssd:chunk_state:64,64,64;chunk_scan:64,64,64",
     # tiles and conv together, to see whether they stack
     "ssd64_conv": "@falcon:convtriton+ssd:chunk_state:64,64,64;chunk_scan:64,64,64",
 }
