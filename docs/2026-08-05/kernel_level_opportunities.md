@@ -7,15 +7,17 @@
 
 ## 0. 结论
 
-**有一个，+2.0~3.0%（decode），统计显著、正逆序一致、bit-identical。**
-另外**推翻了我自己前一天的一个结论**，并**证伪了一个候选**。
+**有两个，都确认了。** 另外**推翻了我自己前一天的一个结论**，并**证伪了一个候选**。
 
 | 项 | 模型 | 类型 | 结果 |
 |---|---|---|---|
+| **`foldmul`** | falconh1 | **权重折叠**（kernel 直接消失） | ✅ **+3.75% / +2.55% / +1.62%**，三 regime 全正 |
 | **`normadd`** | olmo2 | **新写的 Triton kernel** | ✅ **+3.04% / +2.00%**（p=6.8e-08 / 7.2e-34） |
 | `qknorm` | olmo2 | 调用点改动 | ⚠️ decode +0.90% / +0.69%；长 prefill 不可采信 |
 | `convtriton` | falconh1 | 调用点改动 | ❌ **+0.55%，证伪** |
 | SSD tile | falconh1 | config 级（L2） | ✅ +27.63%（8-04 已做） |
+
+**两个 kernel 级改动合计**：falconh1 上 +1.6~3.8%，olmo2 上 +2.0~3.0%。
 
 ---
 
@@ -113,6 +115,56 @@ decode 不受影响（decode 恒在门控之下，走 stock 路）。
 
 ---
 
+## 3b. ★ `foldmul`：把四个常数乘数折进权重，kernel 直接消失
+
+审计里 falconh1 的 `gating_mul`（修完 tile 后 **4.11%**）是每层四次**整张量标量乘**
+（`models/falcon_h1.py:334-355`）：
+
+```python
+self_attention(hidden_states * attention_in_multiplier)
+attention_hidden_states * attn_out_multiplier
+mamba(hidden_states * ssm_in_multiplier)
+mamba_hidden_states * ssm_out_multiplier
+```
+
+24 层 = **96 次 kernel launch**。
+
+**关键观察**：四个乘数全是 config 常数，且每个都紧挨着一个线性层。
+所以 `(x · a) @ W ≡ x @ (a · W)` —— **把常数折进相邻权重，这些 kernel 就彻底不存在了**，
+而不是被融合进别的东西：
+
+| 乘数 | 折进 |
+|---|---|
+| `attention_in` | `qkv_proj.weight` |
+| `attn_out` | `o_proj.weight` |
+| `ssm_in` | `mamba.in_proj.weight` |
+| `ssm_out` | `mamba.out_proj.weight` |
+
+四个投影在 Falcon-H1 上都无 bias（`attention_bias` / `mamba_proj_bias` /
+`projectors_bias` 全 false），代码里**断言**了这一点而不是假设。
+
+### 结果（三 regime 全正、全显著、正逆序一致）
+
+| regime | baseline | foldmul | 变化 | p | 正/逆序 |
+|---|---:|---:|---:|---|---|
+| **A 低批 decode** | 1.091 | **1.132** | **+3.75%** | 1.4e-18 | +3.67 / +3.83 |
+| **B 并发 decode** | 17.637 | **18.086** | **+2.55%** | 1.7e-07 | +1.82 / +3.29 |
+| **C 长 prefill** | 9.591 | **9.747** | **+1.62%** | 4.3e-15 | +2.05 / +1.19 |
+
+延迟：TTFT p50 −1.20%（p=4.7e-13）、E2E mean −1.65%（p=3.0e-19）。
+
+正确性 4/5 逐 token 相同——第 5 个不同是因为**折叠改变了浮点乘法的顺序**，
+预期内，所以这一项**不像 olmo2 的 kernel 那样声称 bit-exact**。
+
+### 两个先踩到的坑
+
+1. **把乘数设成 1.0 没用** —— `x * 1.0` 照样启动 kernel、照样全量读写。
+   必须写一个**不含这些乘法**的 forward，而不是替换常数。
+2. **不能在 patch 里重新 import `falcon_h1`** —— 会拿到还在初始化中的
+   `sys.modules` 条目并抛 AttributeError。要用 import hook 传进来的 module 对象。
+
+---
+
 ## 4. `convtriton`：证伪
 
 falconh1 的 prefill 里有 96 次 `direct_copy`（4 次/层），来自
@@ -197,12 +249,13 @@ $PY scripts/lfm_fusion/lf_e2e.py --model olmo2 --regime OL_concurrent_decode \
 
 **能，但这轮的产出比 LFM2.5 那次（七项 ~7%）少，而且原因是可解释的。**
 
-| | LFM2.5 | olmo2 |
-|---|---|---|
-| 层数 | 24 | 16 |
-| 特殊结构 | 18 层 gated short conv | 无（标准 dense） |
-| 找到的项 | 7 | 2（1 确认 + 1 未解决） |
-| 合计收益 | ~6.5% | **~2–3%**（decode） |
+| | LFM2.5 | olmo2 | falconh1 |
+|---|---|---|---|
+| 层数 | 24 | 16 | 24 |
+| 特殊结构 | 18 层 gated short conv | 无（标准 dense） | mamba2 hybrid |
+| 找到并确认的项 | 7 | **1**（+1 未解决） | **1**（+1 证伪） |
+| kernel 级收益 | ~6.5% | **+2.0~3.0%** | **+1.6~3.8%** |
+| 另有 config 级 | +23.3%（MoE config） | 无 | **+27.6%（SSD tile）** |
 
 **olmo2 是标准 dense 架构，可融合的点本来就少。** LFM2.5 的七项里有四项
 （`conv`/`gate`/`idx`/`moesum`）依赖它特有的 gated short conv 和 MoE 结构。
@@ -221,6 +274,7 @@ $PY scripts/lfm_fusion/lf_e2e.py --model olmo2 --regime OL_concurrent_decode \
 
 1. **qknorm 的长 prefill 格**（§3）——需要每臂 3–4 个 server lifetime 才能分辨
 2. **`normadd` 的 `MIN_TOKENS` 只粗调过一次**（4096），没有扫过
-3. **falconh1 的 `gating_mul`（4.11%）没动过** —— 它是 `attention_in/attn_out/
-   ssm_in/ssm_out_multiplier` 四个整张量标量乘（`falcon_h1.py:334-355`），
-   理论上可以折进相邻的 GEMM epilogue 或 norm，**是本轮没来得及做的最大候选**
+3. ~~falconh1 的 `gating_mul`~~ —— **已完成，见 §3b（+1.6~3.8%）**
+4. **falconh1 的 `layout_copy`（7.72%）仍未解决** —— `convtriton` 那条路被证伪（§4），
+   但 copy 本身还在。真正的修法可能是让上游的投影直接产出 conv 需要的布局，
+   而不是先 transpose 再 materialise —— 那要改 sglang 的 mamba mixer，成本更高。
