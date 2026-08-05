@@ -1,0 +1,42 @@
+{
+  "prompts": [
+    "Explain in one paragraph why memory bandwidth limits decoding speed.",
+    "List the first ten prime numbers, separated by commas.",
+    "Write a haiku about a GPU kernel.",
+    "The capital of France is",
+    "def quicksort(arr):"
+  ],
+  "outputs": {
+    "baseline": [
+      " The speed of a computer's memory is a critical factor in the overall performance of a system. Memory bandwidth refers to the rate at which data can be transferred from the memory to the CPU. The speed of memory is often measured in gigabytes per second (GBps). A high memory bandwidth allows the CPU to quickly access",
+      " \n\nThe first ten prime numbers are: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29\n\n",
+      " The GPU kernel is a piece of software that runs on the GPU (Graphics Processing Unit) of a computer's central processing unit (CPU). The GPU kernel is responsible for rendering graphics on the screen. It is a critical component of any computer graphics system.",
+      " Paris, and the largest city is Lyon. The country is bordered by the English Channel to the west, the Atlantic Ocean to the south, and the Pyrenees, Mediterranean Sea, and Spanish and Italian borders to the east and southeast. France is a unitary state with a constitutional monarchy, meaning that the king serves",
+      " \n    if len(arr) <= 1: \n        return arr \n    else: \n        pivot = arr[len(arr) // 2] \n        less = [x for x in arr[:len(arr) // 2] if x < pivot] \n        greater = [x for x in arr[len"
+    ],
+    "qknorm": [
+      " The speed of a computer's memory is a critical factor in the overall performance of a system. Memory bandwidth refers to the rate at which data can be transferred from the memory to the CPU. The speed of memory is often measured in gigabytes per second (GBps). A high memory bandwidth allows the CPU to quickly access",
+      " \n\nThe first ten prime numbers are: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29\n\n",
+      " The GPU kernel is a piece of software that runs on the GPU (Graphics Processing Unit) of a computer's central processing unit (CPU). The GPU kernel is responsible for rendering graphics on the screen. It is a critical component of any computer graphics system.",
+      " Paris, and the largest city is Lyon. The country is bordered by the English Channel to the west, the Atlantic Ocean to the south, and the Pyrenees, Mediterranean Sea, and Spanish and Italian borders to the east and southeast. France is a unitary state with a constitutional monarchy, meaning that the king serves",
+      " \n    if len(arr) <= 1: \n        return arr \n    else: \n        pivot = arr[len(arr) // 2] \n        less = [x for x in arr[:len(arr) // 2] if x < pivot] \n        greater = [x for x in arr[len"
+    ]
+  },
+  "patch_checks": [
+    {
+      "arm": "baseline",
+      "patch_check": "clean baseline",
+      "ok": true
+    },
+    {
+      "arm": "qknorm",
+      "patch_check": "[olmo2_fusion_patch] applied: ['qknorm']",
+      "ok": true
+    },
+    {
+      "arm": "qknorm",
+      "correctness": "5/5",
+      "gated": false
+    }
+  ]
+}

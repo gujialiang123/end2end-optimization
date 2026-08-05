@@ -81,6 +81,18 @@ REGIME_SERVING = {
     "F_tool_agent_tuned": dict(workload="tool_agent",
                                cap=128, chunk=8192, policy="lpm", mem=0.75),
 
+    # OLMo-2, cookbook knobs.
+    "OL_low_batch_decode": dict(workload="R_short_decode",
+                                cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "OL_concurrent_decode": dict(workload="R_concurrent_decode",
+                                 cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "OL_long_prefill": dict(workload="R_long_prefill",
+                            cap=32, chunk=-1, policy="lpm", mem=0.85),
+    # 1B model: R_long_prefill's window is 43-56 ms here, far too short. Use
+    # the x10 variant so the effect is larger than the noise.
+    "OL_long_prefill_x10": dict(workload="R_long_prefill_x10",
+                                cap=32, chunk=-1, policy="lpm", mem=0.85),
+
     # Falcon-H1. Cookbook knobs; this model is here to end-to-end the SSD tile
     # finding, not to build a matrix, so only the three canonical regimes are
     # wired up.
@@ -124,6 +136,18 @@ ARMS = {
     # versus "tiles chosen by a sweep".
     "ssd64": "@ssd:chunk_state:64,64,64;chunk_scan:64,64,64",
     "ssd64_32": "@ssd:chunk_state:64,64,32;chunk_scan:64,64,32",
+    # OLMo-2. qknorm stops _apply_qk_norm reaching past the dispatch to
+    # forward_native outside capture mode; normadd fuses the post-norm residual
+    # add with a kernel written for it, since fused_add_rmsnorm computes the
+    # other association and cannot express norm-after.
+    "qknorm": "@olmo2:qknorm",
+    "normadd": "@olmo2:normadd",
+    "olmo2_both": "@olmo2:qknorm,normadd",
+    # Falcon-H1: route the causal conv through the Triton implementation, which
+    # reads strides instead of demanding a contiguous copy of a transposed view.
+    "convtriton": "@falcon:convtriton",
+    # tiles and conv together, to see whether they stack
+    "ssd64_conv": "@falcon:convtriton+ssd:chunk_state:64,64,64;chunk_scan:64,64,64",
 }
 
 
@@ -214,7 +238,8 @@ def kill_server(process):
 
 
 GM_INJECT = Path(__file__).resolve().parent / "gm_inject"
-SSD_INJECT = Path(__file__).resolve().parent / "ssd_inject"
+SSD_INJECT = Path(__file__).resolve().parent / "fh_inject"
+OL_INJECT = Path(__file__).resolve().parent / "ol_inject"
 MAMBA_INJECT = Path(__file__).resolve().parent / "mamba_inject"
 
 
@@ -224,12 +249,25 @@ def arm_overlay(arm: str) -> dict:
     if not spec:
         return {}
     existing = os.environ.get("PYTHONPATH", "")
-    if spec.startswith("@ssd:"):
+    if spec.startswith("@olmo2:"):
         return {
-            "SSD_TILES": spec[len("@ssd:"):],
+            "OLMO2_FUSION_PATCH": spec[len("@olmo2:"):],
             "PYTHONPATH": os.pathsep.join(
-                [str(SSD_INJECT)] + ([existing] if existing else [])),
+                [str(OL_INJECT), str(PATCH_DIR)] + ([existing] if existing else [])),
         }
+    if spec.startswith("@falcon:") or spec.startswith("@ssd:"):
+        ov = {"PYTHONPATH": os.pathsep.join(
+            [str(SSD_INJECT), str(PATCH_DIR)] + ([existing] if existing else []))}
+        body = spec.split(":", 1)[1]
+        if spec.startswith("@ssd:"):
+            ov["SSD_TILES"] = body
+        else:
+            # "convtriton" or "convtriton+ssd:<tiles>"
+            fal, _, tiles = body.partition("+ssd:")
+            ov["FALCON_FUSION_PATCH"] = fal
+            if tiles:
+                ov["SSD_TILES"] = tiles
+        return ov
     if spec.startswith("@src:"):
         tree = spec[len("@src:"):]
         ov = {"PYTHONPATH": f"{tree}{os.pathsep}{existing}" if existing else tree}
@@ -263,7 +301,7 @@ def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
         tree = ARMS[arm][len("@src:"):]
         return True, f"source tree {tree} (verified separately)"
     if not ARMS[arm]:
-        if "fusion_patch] applied" in txt or "[ssd_inject] applied" in txt:
+        if ("fusion_patch] applied" in txt or "[ssd_inject] applied" in txt):
             return False, "baseline arm unexpectedly has a patch applied"
         return True, "clean baseline"
     if ARMS[arm].startswith("@ssd:"):
@@ -271,6 +309,20 @@ def check_patch_applied(log_path: Path, arm: str) -> tuple[bool, str]:
             return False, "ssd tile override never applied (silent no-op)"
         return True, [l for l in txt.splitlines()
                       if "[ssd_inject] applied" in l][-1].strip()
+    if ARMS[arm].startswith("@falcon:"):
+        marks = ["[falcon_fusion_patch] applied"]
+        if "+ssd:" in ARMS[arm]:
+            marks.append("[ssd_inject] applied")
+        missing = [m for m in marks if m not in txt]
+        if missing:
+            return False, f"falcon arm missing markers: {missing}"
+        return True, " | ".join(
+            [l for l in txt.splitlines() if any(m in l for m in marks)][-len(marks):])
+    if ARMS[arm].startswith("@olmo2:"):
+        m = "[olmo2_fusion_patch] applied"
+        if m not in txt:
+            return False, "olmo2 patch never applied (silent no-op)"
+        return True, [l for l in txt.splitlines() if m in l][-1].strip()
     marker = ("[gemma_fusion_patch] applied"
               if ARMS[arm].startswith("@gemma:") else "[lfm_fusion_patch] applied")
     if marker not in txt:

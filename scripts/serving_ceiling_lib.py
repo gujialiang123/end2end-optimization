@@ -99,6 +99,18 @@ WORKLOADS = {
               "--num-prompts", "4", "--max-concurrency", "4"],
         note="synthetic: in~4000 tok, out 32, conc 4, n 4 (v4 R_long_prefill)",
     ),
+    # Same shape as R_long_prefill with 10x the prompts. R_long_prefill runs
+    # for 0.3 s on an 8B model and only 43-56 ms on a 1B one, where a 6 %
+    # effect is indistinguishable from a scheduler tick. This variant restores
+    # a usable window on small models. It is NOT comparable with
+    # R_long_prefill -- start-up transients are amortised differently -- so a
+    # model measured on this one must be measured on it throughout.
+    "R_long_prefill_x10": dict(
+        args=["--dataset-name", "random-ids", "--random-input-len", "4000",
+              "--random-output-len", "32", "--random-range-ratio", "1.0",
+              "--num-prompts", "40", "--max-concurrency", "4"],
+        note="synthetic: in~4000 tok, out 32, conc 4, n 40 (small-model variant)",
+    ),
     "R_concurrent_decode": dict(
         args=["--dataset-name", "random-ids", "--random-input-len", "200",
               "--random-output-len", "256", "--random-range-ratio", "1.0",
@@ -131,6 +143,7 @@ WARMUP_RUNS = {
     "R_short_decode": 1,        # ~7 s/run, drift 0.9 %
     "R_medium_balanced": 2,     # ~3 s/run, drift 2.1 %
     "R_long_prefill": 4,        # ~0.3 s/run, drift 36.5 % -> needs the most
+    "R_long_prefill_x10": 2,    # ~3 s/run on a 1B model, already steady
     "R_concurrent_decode": 2,   # ~5 s/run, drift 1.5 %
     "shared_prefix": 1,         # ~20 s/run, one pass populates the radix cache
     "tool_agent": 0,            # ~42 s/run, drift 0.7 % -> already steady state
