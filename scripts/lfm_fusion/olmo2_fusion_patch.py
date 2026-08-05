@@ -98,23 +98,30 @@ def _patched_apply_qk_norm(
 def _patched_layer_forward(self, positions, hidden_states, forward_batch):
     import ol_triton_normadd as K
 
+    # Shape guard. One program per row means the launch is only as wide as the
+    # token count; below ~4096 tokens the stock pair is 26 % faster, and
+    # shipping without this guard turned a +2-3 % decode win into a 3.5 %
+    # long-prefill regression. Decode always falls here, so decode keeps the
+    # stock path and only large prefills take the fused kernel.
+    fused = K.should_use(hidden_states.shape[0])
+
+    def norm_add(x, res, norm):
+        if fused:
+            return K.rmsnorm_then_add(x, res, norm.weight.data,
+                                      norm.variance_epsilon)
+        return norm(x) + res
+
     # Attention block
     residual = hidden_states
     hidden_states = self.self_attn(positions, hidden_states, forward_batch)
-    hidden_states = K.rmsnorm_then_add(
-        hidden_states, residual,
-        self.post_attention_layernorm.weight.data,
-        self.post_attention_layernorm.variance_epsilon,
-    )
+    hidden_states = norm_add(hidden_states, residual,
+                             self.post_attention_layernorm)
 
     # MLP block
     residual = hidden_states
     hidden_states = self.mlp(hidden_states)
-    hidden_states = K.rmsnorm_then_add(
-        hidden_states, residual,
-        self.post_feedforward_layernorm.weight.data,
-        self.post_feedforward_layernorm.variance_epsilon,
-    )
+    hidden_states = norm_add(hidden_states, residual,
+                             self.post_feedforward_layernorm)
     return hidden_states
 
 

@@ -87,3 +87,23 @@ def rmsnorm_then_add(
         num_warps=num_warps,
     )
     return out
+
+
+# Below this token count the stock pair wins and this kernel must not be used.
+# One program per row means the launch is only as wide as the token count, so
+# under a few thousand rows the GPU is not filled and the saved kernel launch
+# does not pay for the lost parallelism. Measured on H200, H=2048, bf16:
+#
+#     T      stock norm+add   this kernel   ratio
+#     1-2048        0.022 ms      0.029 ms   0.74-0.77x   <- stock wins
+#     8192          0.059 ms      0.047 ms   1.25x
+#     16000         0.099 ms      0.069 ms   1.44x
+#
+# The 2026-07 LFM2.5 study reached the same conclusion for its hand-written
+# kernels and the guard was the fix there too; shipping without one turned a
+# +2 to +3 % decode win into a 3.5 % long-prefill regression.
+MIN_TOKENS = 4096
+
+
+def should_use(tokens: int) -> bool:
+    return tokens >= MIN_TOKENS
