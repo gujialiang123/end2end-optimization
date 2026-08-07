@@ -407,7 +407,13 @@ def run_workload(model, workload, port, out_jsonl, seed=SEED, timeout=1800):
     if py_override:
         argv = [py_override] + argv[1:]
         envdir = str(Path(py_override).parent.parent)
-    env.update(dict(CUDA_HOME=envdir, HF_HOME=str(REPO / ".hf_cache"),
+    # HF_HUB_CACHE takes precedence over HF_HOME, and the shell profile points
+    # it at /data/hf/hub, which is shared and read-only. Any dataset the client
+    # has to fetch -- ShareGPT is the one that bit -- then dies with
+    # PermissionError before the benchmark starts. Set both.
+    hf_home = REPO / ".hf_cache"
+    env.update(dict(CUDA_HOME=envdir, HF_HOME=str(hf_home),
+                    HF_HUB_CACHE=str(hf_home / "hub"),
                     PATH=f"{envdir}/bin:" + env.get("PATH", "")))
     try:
         r = subprocess.run(argv, env=env, capture_output=True, text=True,
