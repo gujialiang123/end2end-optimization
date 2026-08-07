@@ -111,6 +111,95 @@ WORKLOADS = {
               "--num-prompts", "40", "--max-concurrency", "4"],
         note="synthetic: in~4000 tok, out 32, conc 4, n 40 (small-model variant)",
     ),
+    # ---- 2026-08-07 real-trace study --------------------------------------
+    # Mooncake replays by trace timestamp, so offered load is a property of the
+    # file scaled by --mooncake-slowdown-factor: the replay sleeps until
+    # trace_ts * factor, so a SMALLER factor makes requests arrive SOONER.
+    # --request-rate is ignored in this mode (bench_serving.py:3389).
+    #
+    # num-prompts is chosen per level so the scored window stays >= 30 s. The
+    # default 200 records span 36 s at 1x but only 9 s at 4x, which is shorter
+    # than the server's own jitter. The trace has 23608 records, so this is
+    # done by taking more unique records -- no tiling, and therefore no risk of
+    # manufacturing prefix-cache hits by replaying the same hash_ids twice.
+    #
+    # Client concurrency is 128 rather than the 64 used elsewhere, so that the
+    # client cannot become the binding limit at 4x (offered ~22 req/s). See
+    # tool_agent_x1_cap64 for the control that shows this does not move 1x.
+    "tool_agent_x1": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "1.0",
+              "--num-prompts", "200", "--max-concurrency", "128"],
+        note="real trace: toolagent at 1.0x arrival (~5.6 req/s offered, 36 s)",
+    ),
+    "tool_agent_x1_cap64": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "1.0",
+              "--num-prompts", "200", "--max-concurrency", "64"],
+        note="control: identical to tool_agent_x1 but the old client cap",
+    ),
+    "tool_agent_x133": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "0.75",
+              "--num-prompts", "400", "--max-concurrency", "128"],
+        note="real trace: toolagent at 1.33x arrival (~7.1 req/s, 56 s)",
+    ),
+    "tool_agent_x2": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "0.5",
+              "--num-prompts", "400", "--max-concurrency", "128"],
+        note="real trace: toolagent at 2.0x arrival (~10.7 req/s, 38 s)",
+    ),
+    "tool_agent_x3": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "0.33",
+              "--num-prompts", "800", "--max-concurrency", "128"],
+        note="real trace: toolagent at 3.0x arrival (~16.8 req/s, 48 s)",
+    ),
+    "tool_agent_x4": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "toolagent",
+              "--mooncake-slowdown-factor", "0.25",
+              "--num-prompts", "800", "--max-concurrency", "128"],
+        note="real trace: toolagent at 4.0x arrival (~22.2 req/s, 36 s)",
+    ),
+    # Conversation is the trace that actually adds diversity. Its records are
+    # statistically distinct from toolagent's where it matters most:
+    # output_length p50 is 350 against toolagent's 30, so it is generation-heavy
+    # rather than prefill-heavy. (The "mooncake" arxiv trace, by contrast, is a
+    # sibling of toolagent -- same record count, same span, 86 % hash-id vocab
+    # overlap, near-identical percentiles -- so it is measured for completeness
+    # but must not be presented as an independent workload.)
+    "conversation_x2": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "conversation",
+              "--mooncake-slowdown-factor", "0.5",
+              "--num-prompts", "200", "--max-concurrency", "128"],
+        note="real trace: conversation at 2.0x arrival (~5.6 req/s, 36 s)",
+    ),
+    "conversation_x4": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "conversation",
+              "--mooncake-slowdown-factor", "0.25",
+              "--num-prompts", "400", "--max-concurrency", "128"],
+        note="real trace: conversation at 4.0x arrival (~11.3 req/s, 35 s)",
+    ),
+    "mooncake_generic_x2": dict(
+        args=["--dataset-name", "mooncake", "--mooncake-workload", "mooncake",
+              "--mooncake-slowdown-factor", "0.5",
+              "--num-prompts", "400", "--max-concurrency", "128"],
+        note="real trace: arxiv mooncake at 2.0x (sibling of toolagent, see above)",
+    ),
+    # ShareGPT has real prompt text but no arrival timestamps, so its load is a
+    # Poisson process we choose. It answers "real prompt distribution", not
+    # "real production traffic", and must be described that way.
+    "sharegpt_rate8": dict(
+        args=["--dataset-name", "sharegpt", "--num-prompts", "300",
+              "--request-rate", "8", "--max-concurrency", "128"],
+        note="real prompt text, Poisson arrivals at 8 req/s",
+    ),
+    "sharegpt_rate16": dict(
+        args=["--dataset-name", "sharegpt", "--num-prompts", "400",
+              "--request-rate", "16", "--max-concurrency", "128"],
+        note="real prompt text, Poisson arrivals at 16 req/s",
+    ),
     "R_concurrent_decode": dict(
         args=["--dataset-name", "random-ids", "--random-input-len", "200",
               "--random-output-len", "256", "--random-range-ratio", "1.0",
@@ -147,6 +236,12 @@ WARMUP_RUNS = {
     "R_concurrent_decode": 2,   # ~5 s/run, drift 1.5 %
     "shared_prefix": 1,         # ~20 s/run, one pass populates the radix cache
     "tool_agent": 0,            # ~42 s/run, drift 0.7 % -> already steady state
+    # every real-trace variant paces itself from the trace and runs >= 30 s,
+    # so it is in steady state for the same reason tool_agent is
+    "tool_agent_x1": 0, "tool_agent_x1_cap64": 0, "tool_agent_x133": 0,
+    "tool_agent_x2": 0, "tool_agent_x3": 0, "tool_agent_x4": 0,
+    "conversation_x2": 0, "conversation_x4": 0, "mooncake_generic_x2": 0,
+    "sharegpt_rate8": 0, "sharegpt_rate16": 0,
 }
 
 

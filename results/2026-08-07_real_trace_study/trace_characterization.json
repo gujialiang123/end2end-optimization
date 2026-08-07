@@ -1,0 +1,125 @@
+{
+  "toolagent": {
+    "records": 23608,
+    "span_s": 3537.0,
+    "mean_arrival_req_s": 6.67,
+    "arrival_per_s_p50": 17.0,
+    "arrival_per_s_peak": 37,
+    "hash_ids_p50": 13,
+    "hash_ids_p95": 52,
+    "est_input_tokens_p50": 1664,
+    "est_input_tokens_p95": 6656,
+    "output_len_p50": 30,
+    "output_len_p95": 600,
+    "input_len_field_p50": 6346,
+    "load_plan": {
+      "1.0x": {
+        "num_prompts": 200,
+        "window_s": 36.0,
+        "offered_req_s": 5.56
+      },
+      "1.33x": {
+        "num_prompts": 400,
+        "window_s": 56.2,
+        "offered_req_s": 7.11
+      },
+      "2.0x": {
+        "num_prompts": 400,
+        "window_s": 37.5,
+        "offered_req_s": 10.67
+      },
+      "3.0x": {
+        "num_prompts": 800,
+        "window_s": 47.5,
+        "offered_req_s": 16.84
+      },
+      "4.0x": {
+        "num_prompts": 800,
+        "window_s": 36.0,
+        "offered_req_s": 22.22
+      }
+    }
+  },
+  "conversation": {
+    "records": 12031,
+    "span_s": 3537.0,
+    "mean_arrival_req_s": 3.4,
+    "arrival_per_s_p50": 9.0,
+    "arrival_per_s_peak": 19,
+    "hash_ids_p50": 14,
+    "hash_ids_p95": 78,
+    "est_input_tokens_p50": 1792,
+    "est_input_tokens_p95": 9984,
+    "output_len_p50": 350,
+    "output_len_p95": 698,
+    "input_len_field_p50": 6909,
+    "load_plan": {
+      "1.0x": {
+        "num_prompts": 200,
+        "window_s": 72.0,
+        "offered_req_s": 2.78
+      },
+      "1.33x": {
+        "num_prompts": 200,
+        "window_s": 54.0,
+        "offered_req_s": 3.7
+      },
+      "2.0x": {
+        "num_prompts": 200,
+        "window_s": 36.0,
+        "offered_req_s": 5.56
+      },
+      "3.0x": {
+        "num_prompts": 400,
+        "window_s": 46.5,
+        "offered_req_s": 8.6
+      },
+      "4.0x": {
+        "num_prompts": 400,
+        "window_s": 35.2,
+        "offered_req_s": 11.35
+      }
+    }
+  },
+  "mooncake": {
+    "records": 23608,
+    "span_s": 3600.0,
+    "mean_arrival_req_s": 6.56,
+    "arrival_per_s_p50": 17.0,
+    "arrival_per_s_peak": 37,
+    "hash_ids_p50": 13,
+    "hash_ids_p95": 51,
+    "est_input_tokens_p50": 1664,
+    "est_input_tokens_p95": 6528,
+    "output_len_p50": 30,
+    "output_len_p95": 600,
+    "input_len_field_p50": 6345,
+    "load_plan": {
+      "1.0x": {
+        "num_prompts": 200,
+        "window_s": 36.6,
+        "offered_req_s": 5.46
+      },
+      "1.33x": {
+        "num_prompts": 400,
+        "window_s": 57.3,
+        "offered_req_s": 6.99
+      },
+      "2.0x": {
+        "num_prompts": 400,
+        "window_s": 38.2,
+        "offered_req_s": 10.48
+      },
+      "3.0x": {
+        "num_prompts": 800,
+        "window_s": 48.4,
+        "offered_req_s": 16.54
+      },
+      "4.0x": {
+        "num_prompts": 800,
+        "window_s": 36.6,
+        "offered_req_s": 21.83
+      }
+    }
+  }
+}

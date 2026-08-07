@@ -81,6 +81,32 @@ REGIME_SERVING = {
     "F_tool_agent_tuned": dict(workload="tool_agent",
                                cap=128, chunk=8192, policy="lpm", mem=0.75),
 
+    # ---- 2026-08-07 real-trace external-validity study ---------------------
+    # All on the cookbook serving knobs, identical to every other LFM2.5 cell,
+    # so the L3 arm is the only thing that differs.
+    "RT_tool_agent_x1": dict(workload="tool_agent_x1",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_tool_agent_x1_cap64": dict(workload="tool_agent_x1_cap64",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_tool_agent_x133": dict(workload="tool_agent_x133",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_tool_agent_x2": dict(workload="tool_agent_x2",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_tool_agent_x3": dict(workload="tool_agent_x3",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_tool_agent_x4": dict(workload="tool_agent_x4",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_conversation_x2": dict(workload="conversation_x2",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_conversation_x4": dict(workload="conversation_x4",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_mooncake_generic_x2": dict(workload="mooncake_generic_x2",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_sharegpt_rate8": dict(workload="sharegpt_rate8",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+    "RT_sharegpt_rate16": dict(workload="sharegpt_rate16",
+                   cap=32, chunk=-1, policy="lpm", mem=0.85),
+
     # OLMo-2, cookbook knobs.
     "OL_low_batch_decode": dict(workload="R_short_decode",
                                 cap=32, chunk=-1, policy="lpm", mem=0.85),
