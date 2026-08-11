@@ -1,0 +1,124 @@
+=============== nocfg_fwd | arms=baseline,all7 | cfg=<none> ===============
+{
+  "model": "lfm25",
+  "regime": "RT_tool_agent_x4",
+  "workload": "tool_agent_x4",
+  "arms": [
+    "baseline",
+    "all7"
+  ],
+  "reps": 8,
+  "gpu": 0,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_tool_agent_x4] arm=baseline
+  patch check: clean baseline
+  correctness: recorded baseline signature
+
+[RT_tool_agent_x4] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_nocfg_fwd/RT_tool_agent_x4/e2e_runs.json (16 rows)
+  baseline       18.473 +/- 0.314 req/s   1.0000x  n=8
+  all7           18.959 +/- 0.244 req/s   1.0263x  n=8
+=============== nocfg_rev | arms=all7,baseline | cfg=<none> ===============
+{
+  "model": "lfm25",
+  "regime": "RT_tool_agent_x4",
+  "workload": "tool_agent_x4",
+  "arms": [
+    "all7",
+    "baseline"
+  ],
+  "reps": 8,
+  "gpu": 0,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_tool_agent_x4] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: recorded baseline signature
+
+[RT_tool_agent_x4] arm=baseline
+  patch check: clean baseline
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_nocfg_rev/RT_tool_agent_x4/e2e_runs.json (16 rows)
+  all7           19.055 +/- 0.145 req/s   1.0000x  n=8
+  baseline       18.409 +/- 0.346 req/s   0.9661x  n=8
+=============== cfg_fwd | arms=baseline,all7 | cfg=/home/t-jialianggu/work/EndtoEnd-auto-optimization/configs/regime_kernel/profiles/lfm25_pr_candidate ===============
+{
+  "model": "lfm25",
+  "regime": "RT_tool_agent_x4",
+  "workload": "tool_agent_x4",
+  "arms": [
+    "baseline",
+    "all7"
+  ],
+  "reps": 8,
+  "gpu": 0,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_tool_agent_x4] arm=baseline
+  FAILED to start: server exited rc=-9
+
+[RT_tool_agent_x4] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: recorded baseline signature
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_cfg_fwd/RT_tool_agent_x4/e2e_runs.json (9 rows)
+  baseline     no successful runs
+  all7           20.161 +/- 0.032 req/s   1.0000x  n=8
+=============== cfg_rev | arms=all7,baseline | cfg=/home/t-jialianggu/work/EndtoEnd-auto-optimization/configs/regime_kernel/profiles/lfm25_pr_candidate ===============
+{
+  "model": "lfm25",
+  "regime": "RT_tool_agent_x4",
+  "workload": "tool_agent_x4",
+  "arms": [
+    "all7",
+    "baseline"
+  ],
+  "reps": 8,
+  "gpu": 0,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_tool_agent_x4] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: recorded baseline signature
+
+[RT_tool_agent_x4] arm=baseline
+  patch check: clean baseline
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_cfg_rev/RT_tool_agent_x4/e2e_runs.json (16 rows)
+  all7           20.134 +/- 0.049 req/s   1.0000x  n=8
+  baseline       19.495 +/- 0.300 req/s   0.9683x  n=8
+all four cells done

@@ -1,0 +1,125 @@
+=============== nocfg_fwd | arms=baseline,all7 | cfg=<none> ===============
+{
+  "model": "lfm25",
+  "regime": "RT_sharegpt_rate8",
+  "workload": "sharegpt_rate8",
+  "arms": [
+    "baseline",
+    "all7"
+  ],
+  "reps": 8,
+  "gpu": 3,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_sharegpt_rate8] arm=baseline
+  patch check: clean baseline
+  correctness: recorded baseline signature
+
+[RT_sharegpt_rate8] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_nocfg_fwd/RT_sharegpt_rate8/e2e_runs.json (16 rows)
+  baseline        8.086 +/- 0.025 req/s   1.0000x  n=8
+  all7            8.154 +/- 0.010 req/s   1.0084x  n=8
+=============== nocfg_rev | arms=all7,baseline | cfg=<none> ===============
+{
+  "model": "lfm25",
+  "regime": "RT_sharegpt_rate8",
+  "workload": "sharegpt_rate8",
+  "arms": [
+    "all7",
+    "baseline"
+  ],
+  "reps": 8,
+  "gpu": 3,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_sharegpt_rate8] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: recorded baseline signature
+
+[RT_sharegpt_rate8] arm=baseline
+  patch check: clean baseline
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_nocfg_rev/RT_sharegpt_rate8/e2e_runs.json (16 rows)
+  all7            8.155 +/- 0.006 req/s   1.0000x  n=8
+  baseline        8.089 +/- 0.004 req/s   0.9920x  n=8
+=============== cfg_fwd | arms=baseline,all7 | cfg=/home/t-jialianggu/work/EndtoEnd-auto-optimization/configs/regime_kernel/profiles/lfm25_pr_candidate ===============
+{
+  "model": "lfm25",
+  "regime": "RT_sharegpt_rate8",
+  "workload": "sharegpt_rate8",
+  "arms": [
+    "baseline",
+    "all7"
+  ],
+  "reps": 8,
+  "gpu": 3,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_sharegpt_rate8] arm=baseline
+  patch check: clean baseline
+  correctness: recorded baseline signature
+
+[RT_sharegpt_rate8] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_cfg_fwd/RT_sharegpt_rate8/e2e_runs.json (16 rows)
+  baseline        8.090 +/- 0.004 req/s   1.0000x  n=8
+  all7            8.158 +/- 0.005 req/s   1.0085x  n=8
+=============== cfg_rev | arms=all7,baseline | cfg=/home/t-jialianggu/work/EndtoEnd-auto-optimization/configs/regime_kernel/profiles/lfm25_pr_candidate ===============
+{
+  "model": "lfm25",
+  "regime": "RT_sharegpt_rate8",
+  "workload": "sharegpt_rate8",
+  "arms": [
+    "all7",
+    "baseline"
+  ],
+  "reps": 8,
+  "gpu": 3,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_sharegpt_rate8] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: recorded baseline signature
+
+[RT_sharegpt_rate8] arm=baseline
+  patch check: clean baseline
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_cfg_rev/RT_sharegpt_rate8/e2e_runs.json (16 rows)
+  all7            8.159 +/- 0.005 req/s   1.0000x  n=8
+  baseline        8.092 +/- 0.005 req/s   0.9918x  n=8
+all four cells done

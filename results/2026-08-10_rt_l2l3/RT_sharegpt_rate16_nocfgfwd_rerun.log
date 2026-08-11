@@ -1,0 +1,30 @@
+{
+  "model": "lfm25",
+  "regime": "RT_sharegpt_rate16",
+  "workload": "sharegpt_rate16",
+  "arms": [
+    "baseline",
+    "all7"
+  ],
+  "reps": 8,
+  "gpu": 3,
+  "warmup": null,
+  "serving_knobs": {
+    "cap": 32,
+    "chunk": -1,
+    "policy": "lpm",
+    "mem": 0.85
+  }
+}
+
+[RT_sharegpt_rate16] arm=baseline
+  patch check: clean baseline
+  correctness: recorded baseline signature
+
+[RT_sharegpt_rate16] arm=all7
+  patch check: [lfm_fusion_patch] applied: ['moesum(decode<=32,prefill>=4096)', 'norm', 'scale', 'conv(min_tokens=2048)', 'gate', 'idx', 'qkrope']
+  correctness: 2/5 prompts identical -> MISMATCH (recorded, not gated)
+
+wrote /home/t-jialianggu/work/EndtoEnd-auto-optimization/results/lfm_fusion/e2e/lfm25_exp3_RT_nocfg_fwd/RT_sharegpt_rate16/e2e_runs.json (16 rows)
+  baseline       15.707 +/- 0.041 req/s   1.0000x  n=8
+  all7           15.926 +/- 0.032 req/s   1.0139x  n=8
