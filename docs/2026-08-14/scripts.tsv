@@ -1,0 +1,204 @@
+scripts/_siteinject/sitecustomize.py	
+scripts/add_mfu_retro.py	Retro-annotate all existing bench summary.json files with MFU/MBU fields. 
+scripts/analyze_alternative_serving_objectives.py	Alternative-objective re-analysis of the completed serving-ceiling campaign. 
+scripts/analyze_moe_bucket_usage.py	Which MoE config bucket does each forward actually land in? 
+scripts/analyze_nsys_universal_config.py	Analyze nsys profile of universal-config sglang run. 
+scripts/analyze_serving_ceiling.py	Analysis for the 2026-07-24 serving-ceiling campaign. 
+scripts/analyze_v44_config_ab.py	v42 analysis: compare baseline vs ours e2e A/B, per cell, with Welch t-test. 
+scripts/analyze_v45_server_ab.py	v45 analysis: server-level ours vs fallback, per regime, Welch t-test. 
+scripts/archive/run_stage1_v0.2.py	Stage 1 end-to-end orchestrator. 
+scripts/archive/score_suspicion_v1.py	Stage 1: score suspiciousness of each workload run. 
+scripts/autotune_two_regimes.sh	Drive 2 Optuna studies sequentially on one GPU.
+scripts/bench_moe_3way.py	MoE GEMM 3-way performance benchmark on H200 bf16. v2 — fixed API.
+scripts/bench_ncu_all_regimes.sh	Run all 4 regimes through bench_ncu_one_regime.sh sequentially.
+scripts/bench_ncu_one_regime.sh	Per-regime NCU runner — uses sglang.bench_one_batch with --profile-activities CUDA_PROFILER
+scripts/build_chendi_v4_report.py	Build spreadsheet per Chendi's spec (2026-07-07): 
+scripts/build_config_spreadsheet.py	Build consolidated config spreadsheet across v2 and v3 experiments. 
+scripts/build_config_xlsx.py	Convert consolidated_config_spreadsheet.csv → xlsx with formatting. 
+scripts/build_v4_spreadsheet.py	Build v4 cross-model spreadsheet. 
+scripts/build_v5_kernel_report.py	Aggregate v5 kineto kernel-level data into a shareable spreadsheet. 
+scripts/build_v5b_ncu_report.py	Aggregate v5b NCU kernel-level metrics into a clean spreadsheet. 
+scripts/build_v6_sglang_ncu_report.py	Build unified NCU kernel report combining:   - June 9 data: Qwen3-30B-A3B (bf16), 1 config (cookbook), 4 regimes
+scripts/check_moe_down_config.py	Can an up-projection and a down-projection MoE config be used together? 
+scripts/cluster_regimes.py	Stage 1: cluster suspicious cases into regimes and emit a human-readable map. 
+scripts/compute_v10_roofline.py	v10 roofline: decode end-to-end floor + per-kernel bandwidth roofline. 
+scripts/compute_v18_gflops.py	v18: compute achieved GFLOP/s per kernel from NCU FLOP counters. 
+scripts/custom_moe_patch.py	Monkeypatch sglang's TritonRunner.run to use a custom small-M (decode) MoE kernel when M<=SMALL_M_MAX and the case is bf16/gated/no-quant/shape-matched. Falls back to
+scripts/finalize_alternative_objectives.py	Phase-5: validated selection for the alternative-objective study. 
+scripts/fx_fusion/accuracy_vs_fp64.py	Is the fused kernel as accurate as the path it replaces? 
+scripts/fx_fusion/e2e_ab_gemma3.py	End-to-end A/B of the fused qk-norm + rope path on Gemma-3. 
+scripts/fx_fusion/fx_dispatch_gap_detector.py	Detect dispatch gaps by comparing a module's FX graph across input shapes. 
+scripts/fx_fusion/fx_fusion_scanner.py	Find fusable elementwise chains in a torch.compile FX graph. 
+scripts/fx_fusion/fx_scan_models.py	Run the FX fusion scanner over real HF models. 
+scripts/fx_fusion/gemma3_fused_qknorm_rope_feasibility.py	Can Gemma-3 use the fused QK-norm + RoPE kernel sglang already ships? 
+scripts/fx_fusion/gsm8k_accuracy_gate.py	Does the fused path cost any task accuracy? 
+scripts/fx_fusion/gsm8k_paired_test.py	Paired significance test for the GSM8K arms. 
+scripts/fx_fusion/locate_fused_qknorm_error.py	Where does the 3.94% actually come from? 
+scripts/fx_fusion/scan_models_pipeline.py	Run the fusion-gap pipeline over several models and report what it finds. 
+scripts/fx_fusion/scan_qknorm_rope_candidates.py	Which models could call fused_qk_norm_rope but do not? 
+scripts/fx_fusion/verify_add_one_kernel.py	Does the add_one kernel variant remove the accuracy cost of folding (1 + w)? 
+scripts/fx_fusion/verify_against_model_path.py	[b, h, s, d] -> [b, s, h, d], then flatten to the kernel's layout
+scripts/fx_fusion/verify_generation_identical.py	Does the fused path change what the model generates? 
+scripts/fx_fusion/verify_qknorm_merge.py	Validate the QK-norm merge opportunity found by FX scanning. 
+scripts/generate_ncu_reports.py	Generate human-readable markdown NCU report per regime from ncu_summary.json.
+scripts/generate_seed_suite.py	Materialize regime_scout/seed_suite.yaml → one workload YAML per seed. 
+scripts/launch_server.py	Launch a SGLang server from a YAML config. 
+scripts/lfm25_serving_ceiling_per_regime.py	What the serving-knob ceiling actually is on LFM2.5, per regime. 
+scripts/lfm_fusion/exp3_analyze.py	Analyse the 2x2 layered experiment on LFM2.5 regime C. 
+scripts/lfm_fusion/exp3_latency.py	Latency for the cells where throughput is the wrong yardstick. 
+scripts/lfm_fusion/exp3_layered.sh	Experiment 3: does the kernel rewrite still pay once the baseline already has
+scripts/lfm_fusion/exp3_layered_cfgonly.sh	Experiment 3: does the kernel rewrite still pay once the baseline already has
+scripts/lfm_fusion/exp3_littles_law.py	Is the client the bottleneck, or is the server? 
+scripts/lfm_fusion/exp3_moesum_marginal.py	Marginal contribution of `moesum`, at both baseline levels, on regime C. 
+scripts/lfm_fusion/falcon_fusion_patch.py	Opt-in kernel patches for Falcon-H1 (and any mamba2 hybrid). 
+scripts/lfm_fusion/fh_inject/sitecustomize.py	Both Falcon-H1 shims in one module. 
+scripts/lfm_fusion/fh_sweep_ssd_tiles.py	Sweep the mamba SSD kernels' tile sizes on Falcon-H1 prefill. 
+scripts/lfm_fusion/fx_bench_elementwise_paths.py	Decompose the ShortConv glue into its three elementwise passes and compare each against a fully contiguous baseline of identical HBM traffic.
+scripts/lfm_fusion/fx_bench_fusions.py	Microbenchmarks for the ShortConv fusion candidates found by the FX/Inductor graph study.
+scripts/lfm_fusion/fx_common.py	Shared helpers for the LFM2.5 FX / dynamo graph-export study. 
+scripts/lfm_fusion/fx_export_graphs.py	Export FX / dynamo / AOT graphs and Inductor output code for the LFM2.5 ShortConv module and a full decoder layer.
+scripts/lfm_fusion/fx_verify_fusion.py	Correctness verification for the ShortConv fusion candidates. 
+scripts/lfm_fusion/gap_table_2026_08_04.py	Cross-model gap table for the 2026-08-04 campaign, against the Qwen control. 
+scripts/lfm_fusion/gemma_fusion_patch.py	Opt-in fusion patch for SGLang's Gemma-3 implementation. 
+scripts/lfm_fusion/gm_inject/sitecustomize.py	Applies the Gemma-3 fusion patch at import time (loaded via PYTHONPATH). 
+scripts/lfm_fusion/lf_analyze.py	Aggregate the LFM2.5 fusion A/B into tidy CSVs plus a Welch t-test. 
+scripts/lfm_fusion/lf_audit.py	Operator-level audit of LFM2.5 (and Qwen as control) across the three regimes. 
+scripts/lfm_fusion/lf_bench_moesum.py	Correctness-gated microbenchmark for MoE sum + residual RMSNorm.
+scripts/lfm_fusion/lf_bench_shortconv.py	Correctness-gated microbenchmark for the fused ShortConv glue kernels. 
+scripts/lfm_fusion/lf_correctness.py	Numeric correctness gate for the LFM2.5 fusion patch. 
+scripts/lfm_fusion/lf_e2e.py	End-to-end A/B for the LFM2.5 fusion patch, with a correctness gate. 
+scripts/lfm_fusion/lf_inject/sitecustomize.py	Applies the LFM2.5 fusion patches at import time (loaded via PYTHONPATH). 
+scripts/lfm_fusion/lf_lib.py	Shared definitions for the LFM2.5 kernel-fusion / rewrite study. 
+scripts/lfm_fusion/lf_plot_crossarch.py	Cross-architecture audit figure: the gap tracks model family, not novelty.
+scripts/lfm_fusion/lf_plots.py	Two figures for the LFM2.5 fusion study. 
+scripts/lfm_fusion/lf_precision_analysis.py	Precision analysis: is a fused-kernel swap lossy, or just a different rounding? 
+scripts/lfm_fusion/lf_triton_moesum.py	Fused top-k MoE reduction, residual add, and RMSNorm for LFM2.5. 
+scripts/lfm_fusion/lf_triton_shortconv.py	Fused Triton kernels for the LFM2.5 gated short-convolution path. 
+scripts/lfm_fusion/lf_tune_shortconv.py	Tile-size sweep for the fused ShortConv kernels. 
+scripts/lfm_fusion/lfm_fusion_patch.py	Opt-in fusion patches for SGLang's LFM2.5 (Lfm2Moe) implementation. 
+scripts/lfm_fusion/mamba_inject/sitecustomize.py	Make bench_one_batch usable on hybrid-mamba models. 
+scripts/lfm_fusion/nsys_analyze.py	Derive LFM2.5 kernel timelines and fusion ceilings from nsys SQLite exports.
+scripts/lfm_fusion/ol_inject/sitecustomize.py	Applies the OLMo-2 fusion patches at import time (loaded via PYTHONPATH). 
+scripts/lfm_fusion/ol_triton_normadd.py	Fused RMSNorm-then-add for OLMo-2. 
+scripts/lfm_fusion/olmo2_fusion_patch.py	Opt-in fusion patches for SGLang's OLMo-2 implementation. 
+scripts/lfm_fusion/pr_verify_gemma3.py	PR-grade numeric verification of the Gemma3RMSNorm CUDA fix. 
+scripts/lfm_fusion/rt_l2l3_consolidate.py	Consolidate the L2/L3/L2+L3 ablation on the real/agentic RT_ workloads. 
+scripts/lfm_fusion/rt_l2l3_matrix.sh	Run the L2/L3/L2+L3 ablation (the 2x2 {MoE config off/on} x {L3 off/on},
+scripts/lfm_fusion/rt_load_curve.py	Turn the Tool-Agent arrival-load sweep into a saturation curve. 
+scripts/lfm_fusion/rt_plot_load_curve.py	Plot the Tool-Agent arrival-load sweep. 
+scripts/lfm_fusion/rt_plot_workload_matrix.py	Plot L3's effect across every real / agentic workload, both metrics. 
+scripts/lfm_fusion/rt_workload_matrix.py	Compare the L3 effect across every real / agentic workload measured. 
+scripts/lfm_fusion/run_audit_all.sh	Operator-level fusion-gap audit: LFM2.5 across 3 regimes + Qwen3-30B control.
+scripts/lfm_fusion/ssd_inject/sitecustomize.py	Override the mamba SSD kernels' hardcoded tile sizes at launch time. 
+scripts/logging_setup.py	Logging helper: file + stdout simultaneously, with structured fields. 
+scripts/ncu_csv_to_summary.py	Convert one regime's ncu_raw.csv (from bench_ncu_one_regime.sh) into the ncu_summary.json shape expected by profile-summary-unified.
+scripts/ncu_csv_wide_to_summary.py	Convert NCU 'wide' CSV (one row per kernel, many metric columns) to ncu_summary.json shape. Used when CSV is from `ncu --import ... --csv --page raw`
+scripts/ncu_discover_kernels.py	Discover which kernels are hot in sglang decode + prefill on a given model. 
+scripts/ncu_one_regime.sh	Per-regime NCU runner — launches sglang under ncu wrap, runs ONE regime, kills.
+scripts/ncu_run_one_regime_workload.py	Run one regime workload against the local sglang server. Used inside ncu_one_regime.sh.
+scripts/nsys_on_universal_config.sh	Wrap sglang server under nsys, run a single regime workload, kill, export sqlite.
+scripts/parse_metrics.py	Normalize one sglang.bench_serving --output-file jsonl into a stable metrics schema. 
+scripts/parse_v18_ncu_long.py	Parse NCU long-format ncu_raw.csv (Metric Name/Value) -> accurate achieved GFLOP/s. 
+scripts/parse_v19b_ncu.py	Parse v19b NCU CSVs into a per-regime, per-kernel-family summary of the 11 metrics, and compute decode roofline signals (DRAM %, occupancy limiter, bytes).
+scripts/plot_v16.py	Plot v16 router distributions from raw.npz (CPU only, no GPU).
+scripts/qwen15_gate_patch.py	Patch Qwen2MoeSparseMoeBlock._forward_shared_experts to FUSE the shared-expert gate (linear + sigmoid + mul) into ONE triton kernel on CUDA — filling sglang's CUDA gap
+scripts/regime_kernel/rk_agent.py	Minimal closed-loop kernel-specialization agent (RQ4). 
+scripts/regime_kernel/rk_backend_table.py	Build the K1 backend-comparison table from the raw per-run JSON. 
+scripts/regime_kernel/rk_backends.py	K1: does the best MoE kernel IMPLEMENTATION differ by regime? 
+scripts/regime_kernel/rk_build_config.py	Build a tuned MoE config from sweep results, using the guarded policy. 
+scripts/regime_kernel/rk_campaign.py	P0 driver: tuning sweep, transfer matrix and routing control. 
+scripts/regime_kernel/rk_e2e.py	End-to-end stage: swap MoE kernel profiles with serving knobs frozen. 
+scripts/regime_kernel/rk_guarded_profile.py	Build a guardrailed regime-aware profile. 
+scripts/regime_kernel/rk_lib.py	Regime-aware kernel specialization — shared harness. 
+scripts/regime_kernel/rk_microbench.py	Fused-MoE kernel microbenchmark + correctness engine. 
+scripts/regime_kernel/rk_plots.py	Figures for the regime-aware kernel specialization study. 
+scripts/regime_kernel/rk_process.py	Turn raw regime-kernel results into the tidy tables the plots consume.
+scripts/regime_kernel/rk_profiles.py	Build kernel profiles and compare selection strategies (RQ2 / RQ3). 
+scripts/regime_kernel/rk_routing_cross.py	Does the regime change the optimal kernel config BEYOND the shape it implies? 
+scripts/regime_kernel/rk_trace/sitecustomize.py	Opt-in MoE kernel trace (loaded as sitecustomize when on PYTHONPATH). 
+scripts/regime_kernel/run_qwen_backends.sh	HANDOFF §8.1 -- Qwen backend comparison (K1 cross-model validation).
+scripts/regime_study/aggregate.py	Aggregate regime-study runs across models + repeats into CSV + Markdown reports. 
+scripts/regime_study/aggregate_hw_view.py	Aggregate hardware_view.json files across (model, regime) into one CSV + Markdown table.
+scripts/regime_study/aggregate_moe_opt_levels.py	Aggregate MoE optimization-level study (configs/moe_variants/C*.yaml). 
+scripts/regime_study/detect_silent_noop.py	Detect silent-no-op cases where a sglang server arg flag was ignored. 
+scripts/regime_study/gpu_sampler.py	nvidia-smi periodic sampler. Append-only CSV. 
+scripts/regime_study/run_hw_view.py	Hardware-view run: one regime + nvidia-smi sampler + torch profile + /get_server_info. 
+scripts/regime_study/run_moe_opt_levels.sh	Run hardware-view profile on 7 MoE optimization-knob variants × R8 regime.
+scripts/regime_study/run_moe_real_kernel_swap.sh	Run hardware-view profile on the 2 REAL kernel-swap MoE variants × R8.
+scripts/render_alternative_objective_figures.py	Phase-6 figures for the alternative-objective study (PNG + SVG).
+scripts/render_serving_ceiling_figures.py	Slide-ready figures for the 2026-07-24 serving-ceiling campaign (Phase 9). 
+scripts/run_alternative_objective_validation.py	Phase-4: run ONLY the missing targeted validations for alternative objectives. 
+scripts/run_benchmark.py	Run one sglang.bench_serving invocation against an already-running server. 
+scripts/run_configs_with_gpu_profile.py	Run selected configs with real GPU sampling + TTFT/TPOT capture from sglang. 
+scripts/run_e2e_bench.py	E2E launcher: install custom MoE patch, then run sglang.bench_one_batch. Toggle CUSTOM_MOE=1 to use the custom small-M decode kernel (captured into cudagraph).
+scripts/run_e2e_correctness.py	
+scripts/run_e2e_qwen15.py	
+scripts/run_e2e_qwen15_verify.py	
+scripts/run_e2e_sweep.py	
+scripts/run_e2e_verify.py	
+scripts/run_experiment.py	Run ONE workload end-to-end: launch server → wait → benchmark → parse → cleanup. 
+scripts/run_regime_suite.py	Run a list of workload YAMLs under one fixed server config and collect metrics. 
+scripts/run_serving_ceiling_campaign.py	2026-07-24 Qwen/LFM serving-ceiling campaign runner. 
+scripts/run_serving_ceiling_validation.py	Phase-4 validation pass: re-run selected configurations with N repetitions. 
+scripts/run_v10_load_sweep.py	v10: offered-load sweep — how much does higher concurrency recover? 
+scripts/run_v11b2_multistream.sh	v11-B2: multi-stream utilization sweep — prove serving idle is recoverable by
+scripts/run_v12_ncu_spec.sh	v12: NCU on ngram-spec vs baseline decode -> measure how much SM idle (No-Eligible) spec reclaims
+scripts/run_v13_router_analysis.py	v13: analyze MoE router behavior on agentic input (Qwen3-30B-A3B). 
+scripts/run_v14_consolidation.py	v14: simulate batch-level expert consolidation -> transfer saving vs cost. 
+scripts/run_v14b_consolidation_batch.py	v14b: consolidation tradeoff AS A FUNCTION OF BATCH SIZE. 
+scripts/run_v15_perplexity.py	v15: REAL perplexity cost of reducing active experts (top-k reduction). 
+scripts/run_v16_router_dist.py	v16: DETAILED router distribution analysis (Qwen3-30B-A3B, agent input). 
+scripts/run_v17_gsm8k_topk.py	v17: GSM8K accuracy + timing vs active experts (top-k reduction). 
+scripts/run_v18_dynamic_topk.py	v18: DYNAMIC top-k (confidence-adaptive) vs fixed top-k on GSM8K. 
+scripts/run_v19_wall_sweep.sh	v19 Part A: prefill vs decode wall proportion across concurrency, agent (toolagent) workload.
+scripts/run_v19b_ncu_decode.py	v19 Part B: NCU decode-kernel profiling with Chendi's EXACT metric list. 
+scripts/run_v23_config_evidence.py	v23: Evidence for config-tuning PRs — our re-tuned fused_moe config vs sglang's stale fallback config, on the exact Qwen3-30B-A3B shape (E=128,N=768,H200).
+scripts/run_v23_generic.py	v23c: model-agnostic config-tuning benchmark. Compares default heuristic vs a tuned fused_moe config on the real triton kernel, for any MoE model shape.
+scripts/run_v24_shared_expert_fusion.py	v24: shared-expert fusion opportunity (reproduces the SPIRIT of #22325 / #26727 via torch.compile). Qwen2-MoE-style shared-expert path (Qwen1.5-MoE-A2.7B dims):
+scripts/run_v25_kernel_fusion.py	v25: KERNEL-LEVEL improvement evidence — reproduce #22325 (fuse linear+sigmoid+mul in shared_experts) by actually WRITING a fused triton kernel and measuring its speedup
+scripts/run_v26_swiglu_fusion.py	v26: second kernel-level fusion (bandwidth-saving, persists at large batch). Fuses the SwiGLU activation silu(gate)*up over the shared MLP intermediate [M, N=5632].
+scripts/run_v27_moe_baseline.py	v27: sglang fused_moe real baseline + achieved HBM bandwidth (decode/prefill). 
+scripts/run_v28_b1_diagnose.py	v28: diagnose b1 decode MoE — can the existing triton kernel hit higher bandwidth with a different (parallelism-heavy) config? Sweep BLOCK_N / GROUP / warps / stages at
+scripts/run_v29_custom_moe.py	v29: custom small-M decode MoE kernel attempt (bf16). Target: beat sglang's fused_moe at M=1 (which is only 49% HBM / 24us GEMM + 6us overhead).
+scripts/run_v30_custom_moe_tldot.py	v30: small-M decode MoE with tensor cores (tl.dot), skipping align/sort and fusing act+sum. Target sglang's b1 31.8us (24us GEMM + 6us overhead). Idea: match the GEMM with
+scripts/run_v31_tune_custom.py	v31: tune the custom small-M MoE (v30) tiling to try to actually beat sglang b1 (31.8us). Sweeps BN/BK/num_warps for both kernels; reports best vs sglang.
+scripts/run_v32_scan_M.py	v32: generalize the winning small-M MoE kernel to M>1 (token = pair//topk) and find the crossover batch where sglang (which groups by expert, reading each weight once)
+scripts/run_v34_figures.py	v34: build the 'headroom beyond tuning' figures for Qwen3-30B-A3B (decode). All numbers measured in this project (cited in the doc). Saves PNGs.
+scripts/run_v41_noise_verify.py	Chendi verification: is the custom-MoE-kernel b1 +1.4% e2e real or noise? Runs MANY interleaved separate bench_one_batch launches (cudagraph ON, matching
+scripts/run_v42_kernel_e2e.py	v42: END-TO-END validation of MoE kernel-config tuning across ALL regimes. Answers Chendi/user: the §1.6 kernel-level +35-54% (tuned config vs default
+scripts/run_v43_server_e2e.py	v43: server-level END-TO-END A/B (default heuristic vs tuned MoE config) across our artificial regimes + the sglang agent dataset (mooncake toolagent).
+scripts/run_v44_e2e_config_ab.py	v42: End-to-end A/B of fused_moe kernel-config tuning (the gap left by §1.6). 
+scripts/run_v45_server_ours_vs_fallback.py	v45: server-level END-TO-END A/B — OURS (re-tuned on triton 3.6.0) vs the FALLBACK config sglang actually loads — across all regimes + the agent dataset.
+scripts/run_v46_ab.py	v46 A/B: OURS (retuned for triton 3.5.1) vs FALLBACK (sglang现状, triton_3_2_0). 
+scripts/run_v46_l2norm_recompile_microbench.py	v46 microbench: does PR #31558 (do_not_specialize=["T"]) actually remove per-token-count recompilation of the FLA l2norm Triton kernel?
+scripts/run_v47_pr31558_server_ab.py	v47: server-level e2e A/B for PR #31558 (avoid FLA l2-norm recompile by token count) on Qwen3.6-35B-A3B-FP8 (hybrid linear-attention VLM).
+scripts/run_v48_baseline.py	v48 cookbook baseline reference — measured SEPARATELY, never enqueued into Optuna. 
+scripts/run_v48_dsv4_pr29007_ab.py	v48: DeepSeek-V4-Flash-FP8 e2e A/B for PR #29007 (MoE TP allreduce via NCCL symmetric memory / in-pool output allocation) on 8×H200 TP8.
+scripts/run_v48_lfm25_plateau.py	v48 — LFM2.5 serving-knob autotuning plateau study (clean, no warm start). 
+scripts/run_v48_plots.py	v48 plots + plateau analysis. Reads per_trial_log.csv, baseline_reference.json, best_validated.json. Emits 3 figures (png+svg) and prints plateau statistics that
+scripts/run_v48_validate.py	v48 post-search validation — re-run top configs + cookbook, interleaved x5. 
+scripts/run_v49_pr31438_mm_preproc_ab.py	v49: PR #31438 (parallelize multimodal preprocessing) e2e A/B on Qwen3.6-35B VLM. 
+scripts/run_v4_decode_sweep.py	v4 decode-stress sweep: 3 models × 3 configs × 5 regimes = 45 combos. 
+scripts/run_v4_lfm25_addon.py	Add-on to v4 sweep: run only LFM2.5-8B-A1B (same 3 configs × 5 regimes).
+scripts/run_v50_ncu_moe_microbench.py	v50 NCU microbench: isolate the sglang Triton fused_moe grouped-GEMM kernel at a single token count M so Nsight Compute captures ONE clean launch for roofline.
+scripts/run_v50_ncu_roofline.sh	v50 NCU roofline capture of the sglang Triton fused_moe grouped-GEMM kernel at
+scripts/run_v51_high_conc_ttft.py	v51 orchestrator — high-concurrency TTFT rerun (2 models x 3 configs x 2 regimes). 
+scripts/run_v5_ncu_profile.py	v5 NCU + kineto profiling pipeline. 
+scripts/run_v5b_ncu.py	v5b: NCU profiling for top hot kernels only. 
+scripts/run_v6_ncu_sglang.py	v6 NCU on REAL sglang kernels via sglang.bench_one_batch. 
+scripts/run_v7_agentic_bench.py	v7: characterize REAL / agentic workloads via sglang.bench_serving. 
+scripts/run_v7_config_sweep.py	v7 config sweep: compare tuned configs on realistic agent workloads. 
+scripts/run_v8_tuning_sweep.py	v8: knob tuning sweep on REAL agent workloads (one model per GPU). 
+scripts/run_v9_ncu_realworkload.py	v9: NCU kernel profiling on REAL-workload representative points, with the v8-tuned BEST config, to show that tuning alone cannot reach the hardware limit.
+scripts/run_v9d_nsys_serveridle.sh	v9d: measure REAL server idle with nsys timeline (delay/duration aligns capture to bench).
+scripts/select_cases_for_stage2.py	Stage 1: pick top suspicious cases for Stage 2/3 handoff. 
+scripts/select_problems.py	Stage 1: assemble v1 problem packages from suspicious cases. 
+scripts/serve_with_patch.py	Launch sglang server with custom_moe_patch installed before model load. Usage: python scripts/serve_with_patch.py -- <sglang.launch_server args>
+scripts/serving_ceiling_lib.py	Shared library for the 2026-07-24 Qwen/LFM serving-ceiling campaign. 
+scripts/solver/config_agent.py	Minimal Stage B config-agent. 
+scripts/trace_characterize.py	Characterise the Mooncake replay traces before spending any GPU time. 
+scripts/unify_sweep.py	Per-regime unifier: run profile-summary-unified for each of the 4 regimes. Idempotent — re-run anytime to refresh unified.json after ncu finishes.
+scripts/update_performance_gap_slides.py	Phase-10: build the first six slides of the performance-gap deck as a NEW draft. 
+scripts/utils.py	Shared utilities for Stage 1 scripts. 
+scripts/v51_stream_bench.py	v51 — high-concurrency TTFT rerun for the v4 slide data points. 
+scripts/wait_ready.py	Poll a SGLang server until it answers /health, /v1/models, or accepts TCP.

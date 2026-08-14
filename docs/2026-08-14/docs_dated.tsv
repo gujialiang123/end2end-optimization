@@ -1,0 +1,129 @@
+docs/2026-06-01/meeting_brief_2026_06_01.md	SGLang regime-aware performance study — meeting brief	Author: Jialiang Gu · Date: 2026-06-01 · Hardware: 8× NVIDIA H200 (143 GB), single-GPU per run · SGLang: 0.5.12.post1 · Framework: 2-round experiment (workload 
+docs/2026-06-01/regime_benchmark_experiment.md	Regime benchmark experiment — Qwen3-0.6B vs Qwen3-30B-A3B (MoE) on H200	Date: 2026-06-01 · Author: Stage A harness + `scripts/regime_study/aggregate.py` ·
+docs/2026-06-03/kernel_inventory_R7_qwen3_moe.md	Kernel Inventory — Qwen3-30B-A3B MoE on H200, R7 mixed-lengths regime	Date: 2026-06-03 · Author: end-to-end profiling harness · 
+docs/2026-06-04/moe_backend_decision_trees.md	MoE Backend Decision Trees — vLLM vs sglang deep dive	Date: 2026-06-04 · Status: comprehensive enumeration of every MoE backend dispatch branch in both frameworks, with code-snippet + file:line evidence
+docs/2026-06-04/triton_rewrite_investigation.md	Triton rewrite investigation — Is rewriting Triton kernels (to CUDA / Gluon / CUTLASS-DSL) a viable contribution to sgla	Date: 2026-06-04 · Author: end-to-end investigation harness
+docs/2026-06-08/agent_profiling_capability_audit.md	Agent profiling 能力盘点 — 现状 / 缺口 / 需要 mentor 协助的部分	2026-06-09 更新 (晚): Part B 的 NCU gap 已经解锁 — chendi 加了 sudo NOPASSWD 给 ncu 二进制,新 skill `ncu-microarch` 已上线并接入 `profile-summary-unified`。实战发现 CUTLASS MoE GEMM Tens
+docs/2026-06-08/buga_fix_validation.md	Bug A Fix 验证 — autotune 跑了但 e2e 没改善	差出来的 9 ms 在 MoE 之外 (attn, rmsnorm, sample, IPC),这部分跟 tuning 无关。
+docs/2026-06-08/fix1_invalidated.md	Fix 1 验证 — 失败,原 ROOT_CAUSE 分析错了	Fix 1 没改善 9x 差距,反而略微变差。
+docs/2026-06-08/nsys_2x2_validation_and_nsys_usage.md	2×2 nsys 验证: max(CPU, GPU) 假说 + nsys 用法证据	精确化: wall ≈ max(CPU work, GPU work)。如果两个 factor 各自打不同的维度,单开一个把其中一个降到 0 也救不了 max() —— 另一边还在那。两个一起开才让两边都降到 0。
+docs/2026-06-08/nsys_deep_dive_and_proton.md	nsys 能拿到什么 + proton 是什么 — 二级 profiling 工具盘点	结论: nsys = 全景调查; proton = 定向归因。两者互补,都应纳入工具箱。
+docs/2026-06-08/server_lifecycle_and_sm100_tuning.md	LLM Server 全生命周期时间事件表 + SM100 flashinfer tuning 调研	总: ~15-30 秒,基本被 weight load 主导
+docs/2026-06-08/sglang_vs_vllm_flashinfer_cutlass_analysis.md	sglang vs vLLM:FlashInfer CUTLASS MoE 性能差异根因分析	目的: 解释为什么同一份 `flashinfer.fused_moe.cutlass_fused_moe` kernel,
+docs/2026-06-08/triton_vs_cutlass_moe_kernel_source_comparison.md	sglang vs vLLM — MoE Kernel 源码对比(SM90 BF16)	目的: 把 Triton MoE kernel 跟 FlashInfer CUTLASS MoE kernel 的关键源码片段
+docs/2026-06-08/vllm_2x2_autotune_cudagraph_matrix.md	vLLM 2×2 矩阵: autotune × cudagraph 实测,翻盘所有之前推论	单开任一个几乎都没用:
+docs/2026-06-08/vllm_autotune_e2e_impact.md	vLLM autotune 影响 e2e 实测 — 2.5-3.4× 真的	直接对照告诉我们: autotune 关掉,vLLM 跟 sglang 一样慢。
+docs/2026-06-08/vllm_autotune_vs_sglang_correction.md	vLLM 的 flashinfer autotune 机制 — 跟 sglang 的关键差异	2026-06-08 新发现: vLLM 启动时显式跑 `with autotune(): _dummy_run()`,
+docs/2026-06-09/cutlass_vs_triton_e2e_investigation.md	Why is flashinfer CUTLASS MoE no faster than Triton MoE at e2e?	Mission: theoretically a hand-tuned CUTLASS kernel should beat a Triton
+docs/2026-06-09/cutlass_vs_triton_e2e_investigation.zh.md	为什么 vLLM/sglang 上 flashinfer CUTLASS MoE 没比 Triton 快？	任务: 理论上,手工调优的 CUTLASS kernel 应该明显跑赢 Triton codegen。
+docs/2026-06-09/sglang_triton_4regime_profiling.md	sglang Triton MoE — 4-regime nsys + ncu profiling sweep	Status: ✅ COMPLETE — all 4 regimes profiled with nsys (200 MB
+docs/2026-06-09/sglang_triton_4regime_profiling.zh.md	sglang Triton MoE — 4-regime nsys + ncu profiling sweep	状态: ✅ 完成 — 4 个 regime 全部跑完 nsys (200 MB .nsys-rep,按时间窗切 4 段) + ncu (`--set full`, `--kernel-name regex:.*`,每 regime 30–50 个 unique kernel)。4 份 `profile_unified.
+docs/2026-06-09/skill_architecture.md	Skill architecture — how the 14 skills fit together (2026-06-09)	Remaining ncu limitation: same as nsys-capture — can only profile its own
+docs/2026-06-11/harness_v1_4way_findings.md	2026-06-11 harness v1 — 4-way bench results	2026-06-11 20:35 update: Discovered after the experiments that this exact
+docs/2026-06-11/ofer_meeting_findings_draft.md	Ofer 会议草稿：sglang 推理优化项目 —— 近期发现与问题定义	2026-06-11 19:00 更新：harness v1 上线后跑了 4-way bench，TL;DR 第 2 条要修订，新增第 5 条。详见 `docs/2026-06-11/harness_v1_4way_findings.md`。
+docs/2026-06-25/autotuning_ceiling_report.md	Framework-Level Autotuning Ceiling Report — sglang on H200	2026-06-25 — In response to Debadeepta's 6/24 meeting feedback. We use
+docs/2026-06-25/autotuning_honest_results.md	Framework-Level Autotuning Study — Honest Results	2026-06-25 | sglang × Optuna × 4 regimes × H200
+docs/2026-06-25/fp8_config_copy_experiment.md	FP8 Tuned Config Copy Experiment — Negative Result	2026-06-25 — Hypothesis tested + rejected. Copying vLLM's tuned config
+docs/2026-06-25/sglang_autotuning_search_space.md	sglang Framework-Level Autotuning — Search Space Design	Context: Following Debadeepta's 6/24 meeting feedback, we are quantifying
+docs/2026-06-29/profiling_validation_of_universal_config.md	Profiling Validation of the Autotuned Config — what's the bottleneck?	2026-06-29 | sglang × Optuna universal config × H200 | follow-up to 6/24 meeting
+docs/2026-06-29/profiling_validation_of_universal_config.zh.md	Profile 验证：autotuned universal config 到底在哪个瓶颈上？	2026-06-29 | sglang × Optuna universal config × H200 | 6/24 meeting 的 follow-up
+docs/2026-06-30/cookbook_baseline_analysis.md	sglang Cookbook 部署 baseline 分析	2026-06-30 | 输入文件分析报告
+docs/2026-06-30/lfm2.5_conditional_autotuning.md	LFM2.5-8B-A1B 条件化搜索空间自动调参实验报告（2026-06-30）	主要结论：
+docs/2026-07-02/lfm2.5_v3_mfu_longctx.md	LFM2.5-8B-A1B v3 实验报告：MFU 引入 + 长上下文 regime + TPE 失效修复（2026-07-02）	主要结论：
+docs/2026-07-02/llm_autotuner_pipeline_design.md	LLM + Autotuner: 迭代式 sglang 推理配置优化 pipeline	Design doc / project proposal
+docs/2026-07-08/v6_ncu_sglang_experiment_report.md	v6 实验报告：用 NCU 对真实 sglang kernel 做硬件计数器级 profiling	日期：2026-07-08 ~ 07-09
+docs/2026-07-09/v7_agentic_workload_characterization.md	v7 实验报告：用真实 / agent 负载给 regime 做画像（bench_serving）	日期：2026-07-09
+docs/2026-07-09/v7_config_sweep_on_agentic.md	v7 config sweep：在真实 agent 负载上对比 tuned config	日期：2026-07-09
+docs/2026-07-09/v8_tuning_on_real_workload.md	v8 实验报告：真实负载上的 knob tuning（chunked-prefill × max-running-requests）	日期：2026-07-09
+docs/2026-07-10/discussion_prep_concurrency_and_headroom.md	讨论准备：concurrency / serving command / TBT headroom（回应 Dey&Chendi 追问）	证据（同一负载、不同 server cap，并发几乎不变）：
+docs/2026-07-10/reply_to_dey_tbt_headroom.md	Reply to Dey — "How much can TBT still improve at best config?"	1. Kernel-level SM idle (the SM stalls with no issuable warp — NCU's "No Eligible"):
+docs/2026-07-10/v9_ncu_hardware_ceiling_evidence.md	v9 实验报告：证明"单靠 tuning 不足以达到硬件上限"（真实负载 + NCU）	日期：2026-07-10
+docs/2026-07-10/v9b_walltime_and_stall_analysis.md	v9b/v9c 补充：真实 workload 的时间占比 + decode 的空闲/等待分析	日期：2026-07-10（回答 Dey 追问：时间去哪了 + 45.8% 平均背后有多少空闲）
+docs/2026-07-14/opportunity_gap_comprehensive_analysis.md	Performance Opportunity Gap 综合分析报告	目的：把 v6→v12 所有能证明"优化机会 gap"的实测证据，串成完整的证据链 + 逻辑链 + 结论，供与 Chendi 讨论、并作为上报 Dey/Ofer 的 meeting 稿。本轮升级：在 v6→v10"gap 看得见"的基础上，补入 v11–v12 的干预实验，把 gap 从"看得见（potential）"
+docs/2026-07-14/v10_loadsweep_and_roofline.md	v10：Offered-load sweep + 标准 Roofline 重述（为 Ofer/Li 汇报补齐）	日期：2026-07-14
+docs/2026-07-15/discussion_log_2026-07-15.md	2026-07-15 讨论纪要：从"gap 看得见"到"gap 摸得着"再到"kernel 层根因"	目的：完整记录今天的对话逻辑链——干预实验证明 gap 可回收、scheduler 机制、MoE kernel 根因分析、搬运 vs 计算的本质。按讨论顺序整理，含所有数据、证据、问答。
+docs/2026-07-15/dynamic_topk_and_benchmark_plan.md	动态 topk 可行计划：实现难度 + 轻量级精度 benchmark	目的：回应用户——(1) 做动态 topk（或先固定改 topk）的实现难度；(2) 因为有损，需要轻量级精度 benchmark；调研并给可行计划。
+docs/2026-07-15/experiment_ideas_realizing_the_gap.md	实验设计：证明 opportunity gap "摸得着"（非 config 手段真能吃回一部分）	背景：前面（v6–v10）已经证明 gap 存在且看得见（config 到头、硬件没吃满、roofline 距屋顶 1.3–2.4×、server idle 85%）。但那是"上界/潜力"，是看得见。
+docs/2026-07-15/moe_routing_optimization_survey.md	MoE Routing 优化研究现状调研（回应"router 是否最优 + 改 route 换效率"）	目的：调研两个方向的真实学术工作——(1) router 不是最优、甚至不按 router 走能更好的证据；(2) 通过改变 route 排布、以损失部分性能换推理效率的工作。评估用户 idea 的新颖性。
+docs/2026-07-15/reply_to_chendi_decode_analysis.md	Reply to Chendi — decode wall proportion + NCU decode analysis (interim)	Takeaway: across the whole concurrency range, decode is 88–96% of end-to-end wall for this agent workload (output ~194 tok/req, input ~2700). This workload is d
+docs/2026-07-15/reply_to_dey_decode_kernels.md	Slack reply to Dey — decode is the bottleneck; which kernels to tune (2026-07-15)	agent-tuned knobs/values → best configuration → profile & find decode is the bottleneck → analyze decode kernels → tune the specific hot kernels.
+docs/2026-07-15/reply_to_dey_progress_update.md	Slack reply to Dey — progress update (2026-07-15)	1. Tuning on the *real* sglang regimes (not just the hand-made ones).
+docs/2026-07-15/scheduler_mechanism_and_agent_aware_idea.md	sglang 请求调度机制报告 + agent-aware 调度 idea 评估	目的：搞清 sglang 里 request 如何被接收/排队/组批/处理，并评估"agent 层知道 request 顺序 → 优化 inference scheduler"这个 idea 的可行性与落脚点。
+docs/2026-07-15/triton_moe_kernel_analysis.md	Triton MoE Kernel 分析：为什么 SM 利用率低 + 优化空间	目的：研究 sglang 现在用的 triton `fused_moe_kernel` 实现，结合我们 NCU 实测（decode fused_moe SM 16%、DRAM 75%、No-Eligible 78%），找出提升 SM 利用率的具体优化空间。
+docs/2026-07-15/v11_realize_gap_results.md	v11：干预实验——证明 opportunity gap "摸得着"（首批结果）	日期：2026-07-15
+docs/2026-07-15/v12_ncu_spec_mechanism.md	v12：NCU 测 spec decoding 的 SM 空转 —— 机制发现（反直觉但重要）	日期：2026-07-15
+docs/2026-07-15/v13_router_analysis.md	v13：Router 行为分析（Qwen3-30B-A3B，agent 输入）—— 量化"批内 expert 聚集" idea 的空间	日期：2026-07-15
+docs/2026-07-15/v14_consolidation_tradeoff.md	v14：批内 expert 聚集的搬运节省 vs 精度代价（模拟）	日期：2026-07-15
+docs/2026-07-15/v15_perplexity_tradeoff.md	v15：expert 缩减的真实 perplexity 代价 + 最终权衡曲线	日期：2026-07-15
+docs/2026-07-15/v16_router_distribution.md	v16：Router 分布详细分析（Qwen3-30B-A3B，agent 输入）—— 带分布图	日期：2026-07-15
+docs/2026-07-15/v17_gsm8k_topk_results.md	v17：GSM8K 真实精度 × 时间分布 vs top-k（丢专家的下游任务成本曲线）	日期：2026-07-15
+docs/2026-07-15/v18_dynamic_topk_results.md	v18：动态 top-k（置信度自适应）vs 固定 top-k — GSM8K 精度 × 平均激活专家	日期：2026-07-15
+docs/2026-07-15/v19_partC_decode_potential.md	v19 Part C — Decode optimization potential & gaps (NCU 11-metric analysis)	日期：2026-07-15
+docs/2026-07-16/mason_roadmap_qwen3_moe_matrix.md	Mason 路线图落地矩阵：Qwen3-30B-A3B（MoE）逼近 roofline 的分层进度表	目的：按 Mason 的建议，把"从 config autotuning 榨干一切 → kernel autotuning 补 shape → 选定 kernel 手改/融合"这条递进路线，针对唯一目标模型 Qwen3-30B-A3B-Instruct-2507（bf16, H200）列成一张可执行矩阵。已有的填数据、
+docs/2026-07-17/breadth_autotuner_experiment_design.md	实验设计：AutoTuner 普适性广度实验（20 model × regime × dataset × config）+ Mason 深度线	状态：设计稿，待 review 后执行
+docs/2026-07-19/pr_validation_report.md	SGLang MoE/Kernel PR 验证报告（Chendi PR 清单 · bf16 · H200）	状态：主结论完成（config-tuning 类已在 2 个模型上验证）；shared-expert 融合机会测量为可选后续。
+docs/2026-07-20/conversation_context_snapshot.md	对话上下文快照 — 2026-07-20 晚（kernel tuning e2e gap + 迁移到新机器）	但留下一个必须补的 gap（用户在对话末尾指出）：§1.6 的 kernel-config tuning 只有隔离 kernel 时间（µs），从未做端到端 A/B 验证。 这是迁移到新机器后要做的第一件事。
+docs/2026-07-20/headroom_beyond_tuning_figures.md	"Tuning 以外还有多少空间" — Qwen3-30B-A3B 图表说明（回答 Dey）	日期：2026-07-20 · 全部数字为本项目实测（decode，Qwen3-30B-A3B，H200，bf16）。
+docs/2026-07-20/kernel_config_retune_vs_fallback_e2e.md	v44 — Kernel-config tuning, layer 3: re-tune vs the fallback sglang actually loads (e2e)	re-tuning it for the current Triton version buys nothing end-to-end — this doc.
+docs/2026-07-20/kernel_config_server_ours_vs_fallback_e2e.md	v45 — Server-level e2e A/B: ours (re-tuned) vs fallback, all regimes + agent dataset	marginal value of re-tuning for the current Triton version under realistic serving.
+docs/2026-07-20/kernel_headroom_other_models_pr_evidence.md	换模型/换场景,kernel level 还有空间吗?—— 用别人的 sglang PR 作证据	日期：2026-07-20 · 目的:回答"如果换模型,kernel 层还有没有提升机会",用已合并的 sglang PR / 官方博客作为"这里有真实性能提升"的证据(不需我们自己找)。
+docs/2026-07-20/kernel_level_improvement_evidence.md	Kernel-Level 性能提升证据（能否靠"改 kernel 代码"拿到加速？）	日期：2026-07-20
+docs/2026-07-20/kernel_optimization_attempt_log.md	Kernel-Level 优化正面攻关日志（打赢 sglang 已 tuned 的 kernel）	日期：2026-07-20（autopilot 通宵）
+docs/2026-07-20/kernel_reproduction_results.md	复现 kernel-level 提升 —— 真实实测证据（在真实模型上端到端）	日期：2026-07-20 · 目的:按要求真复现那些 kernel PR 的技术,在真实模型上端到端量,得到我们自己的实测数字。
+docs/2026-07-20/new_architecture_linear_attention_e2e.md	New-architecture end-to-end headroom: linear attention decouples decode cost from context	Date: 2026-07-20 (autopilot session, GPU 0)
+docs/2026-07-20/noise_verification_custom_moe_b1.md	噪声验证：custom MoE kernel 的 b=1 "+1.4%" 是真信号还是波动？（Chendi 要求）	日期：2026-07-20 · 提出人：Chendi · 模型：Qwen3-30B-A3B / H200 / bf16
+docs/2026-07-20/qwen_optimization_full_report.md	Qwen3-30B-A3B 优化全纪录：做了什么 · 结果 · 有无提升 · 分析	模型：Qwen3-30B-A3B-Instruct-2507（MoE，E=128，top-8，hidden=2048，moe_intermediate=768，无 shared expert）
+docs/2026-07-20/regime_sweep_kernel_changes.md	Kernel 改动 × 全 regime 端到端矩阵(诚实修正:之前只测单点)	日期：2026-07-20（autopilot）
+docs/2026-07-21/pr29007_dsv4_symm_mem_allreduce_repro.md	PR #29007 reproduction — MoE TP allreduce via NCCL symmetric memory (DeepSeek-V4)	TP8, `attention_backend=dsv4`, `--enable-symm-mem`.
+docs/2026-07-21/pr31438_mm_preproc_parallel_repro.md	PR #31438 reproduction — parallelize VLM multimodal preprocessing	Reproduced — positive and bit-exact-correct. Moving image I/O + HF-processor
+docs/2026-07-21/pr31558_fla_l2norm_recompile_repro.md	PR #31558 reproduction — avoid FLA l2-norm recompilation by token count	Reproduced — mechanism exactly, e2e positively and significantly.
+docs/2026-07-21/pr_reproduction_session_summary.md	Upstream-PR reproduction line — session summary (2026-07-21)	
+docs/2026-07-22/lfm25_serving_autotuning_plateau.md	LFM2.5 Serving-Knob Autotuning: A Clean Plateau Study (no warm start)	Date: 2026-07-22 · Author: Jialiang
+docs/2026-07-22/ncu_real_regime_both_stages_roofline.md	NCU roofline — real decode-heavy & prefill-heavy regimes, both-stage hot kernels	NCU (CUDA graph disabled → single-kernel capture), get the roofline of the hot
+docs/2026-07-22/ncu_roofline_fused_moe_analysis.md	NCU roofline analysis — fused_moe kernel, decode (memory-bound) vs prefill (compute-bound)	Qwen3-30B-A3B (E=128, shard_intermediate N=1536, hidden H=2048, topk=8, bf16).
+docs/2026-07-22/prefill_vs_decode_bottleneck_report.md	Prefill vs. Decode Bottleneck Analysis — Regimes, Method, and Results	Model / 模型: Qwen3-30B-A3B (bf16) · HW / 硬件: H200 · Engine / 引擎: sglang (Triton fused MoE)
+docs/2026-07-23/high_concurrency_ttft_workload_audit.md	High-concurrency TTFT rerun — recovered workload audit	streaming `/generate` client (`scripts/v51_stream_bench.py`) that:
+docs/2026-07-23/serving_tuning_slide_verified_data.md	Serving-level tuning slide — verified data & source audit	用户记忆中的 "Qwen 长输入 8K/16K/32K/50K ≈ 1.36/1.55/1.47/2.21×" 实际上是 LFM2.5-8B-A1B 的数据，不是 Qwen。
+docs/2026-07-24/qwen_serving_ceiling_methodology.md	Qwen + LFM2.5 serving-ceiling campaign — methodology	Campaign: `results/2026-07-24_serving_ceiling/`
+docs/2026-07-24/qwen_serving_ceiling_results.md	Qwen + LFM2.5 serving-ceiling campaign — results	Date: 2026-07-25 · Campaign: `results/2026-07-24_serving_ceiling/`
+docs/2026-07-24/qwen_serving_ceiling_slide_claims.md	Slide claims — provenance and limits	
+docs/2026-07-24/serving_tuning_data_audit.md	Serving-Tuning Data Audit (Phase 0)	Date: 2026-07-24 · Repo commit at audit time: `915f636`
+docs/2026-07-26/alternative_objective_validation_audit.md	Alternative-objective validation audit (Phases 1–3)	Date: 2026-07-26
+docs/2026-07-26/alternative_serving_objectives.md	Does the serving objective change which configuration wins?	Date: 2026-07-26
+docs/2026-07-26/regime_kernel_experiment_plan.md	Regime-aware Kernel Specialization — experiment plan	Scope: 1–2 weeks, single H200, no new CUDA kernels, no serving-runtime
+docs/2026-07-26/regime_kernel_status.md	Regime-aware Kernel Specialization — repository status (Step 1–2)	Date: 2026-07-26 · read-only audit, no experiments run yet.
+docs/2026-07-27/LFM_KERNEL_OPTIMIZATION_FULL_REPORT.md	LFM2.5 / SGLang 内核优化全纪录（2026-07-26 ~ 07-27）	作者：本轮会话 · 仓库：`gujialiang123/end2end-optimization` @ `main`
+docs/2026-07-27/lfm_fusion_results.md	LFM2.5 kernel-fusion gaps — audit, patch and end-to-end result	Date: 2026-07-27 · Model: LFM2.5-8B-A1B · Control: Qwen3-30B-A3B
+docs/2026-07-27/regime_kernel_results.md	Regime-aware Kernel Specialization — results	Date: 2026-07-26 · Status and plan: `docs/2026-07-26/regime_kernel_status.md`,
+docs/2026-07-28/PR_DRAFT_gemma3_rmsnorm_v1_superseded.md	PR 草稿 — `fix(gemma3): dispatch Gemma3RMSNorm to the fused CUDA kernel`	作废（superseded）。 上游 #32383 已经落地了本文所主张收益的一部分（2-D 与 residual 融合），
+docs/2026-07-28/PR_DRAFT_gemma3_rmsnorm_v2.md	PR 草稿 v2 — `fix(gemma3): fuse high-rank RMSNorm and harden mixed-dtype weights`	目标仓库：`sgl-project/sglang` · PR：https://github.com/sgl-project/sglang/pull/32670（draft）
+docs/2026-07-28/PR_DRAFT_lfm25_h200_moe_config.md	PR 草稿 — LFM2.5 的 H200 MoE tuned config（补 #22791 漏掉的那块）	目标仓库：`sgl-project/sglang` · 状态：✅ 已开 draft → https://github.com/sgl-project/sglang/pull/32687
+docs/2026-07-28/cross_architecture_audit.md	跨架构 fusion 空缺审计 —— 我的假设被自己的数据推翻了，修正后的结论更有用	日期：2026-07-27 · 硬件：1× H200 · BF16 · sglang 0.5.12.post1 @ `17f7a1da1`
+docs/2026-07-28/four_kernel_cases_comparison.md	四个 kernel 级案例的对照报告：调 config vs 重写 vs 补融合 vs 接线	日期：2026-07-28 · 硬件：H200 · bf16 · 所有数字均为本项目实测，非上游自称
+docs/2026-07-28/three_fusion_cases.md	Kernel fusion 案例全集 —— 改了什么、为什么被漏掉、拿到多少（含未兑现的）	日期：2026-07-27 ~ 28 · 硬件：1× NVIDIA H200 · BF16
+docs/2026-07-29/RETRACTION_triton36_baseline_contamination.md	撤回：Triton 3.6 的实验因基线污染而无效	日期：2026-07-29 · 状态：⚠️ 本文撤回 `triton_36_retune_findings.md` 的主要结论
+docs/2026-07-29/triton_36_retune_findings.md	Triton 3.6 重扫：编译器升级吃掉了我们 tuning 的全部收益	本文的主要结论无效。 在 Triton 3.6 上测的"默认基线"，实际加载的是我自己 tune 的那个
+docs/2026-07-30/fusion_discovery_walkthrough.md	融合机会的发现—验证—尝试全流程（结合模型运行流程讲）	日期：2026-07-30
+docs/2026-07-30/fx_vs_profiling_for_fusion_discovery.md	FX graph 还是 profiling？—— 给 agent 设计融合机会发现流程	⚠️ 一处分类错误已纠正（同日）。 本文 §1 的对照表把 LFM2.5 的 MoE config（+23.3%）
+docs/2026-07-30/sglang_model_onboarding_and_backend_dispatch.md	SGLang 如何接入模型、如何选 backend —— 以及和 torch.compile/FX 体系的接口在哪	日期：2026-07-30
+docs/2026-07-31/FINAL_PROJECT_portable_fusion_discovery.md	Final project：可迁移的 kernel fusion 自动发现	日期：2026-07-31 · 硬件：H200 ×2（GPU 4/6）
+docs/2026-07-31/fx_based_fusion_discovery_results.md	用 torch.compile / FX 自动发现 kernel fusion 机会 —— 实验结果	日期：2026-07-31（GPU 4/6）
+docs/2026-07-31/gemma3_fused_qknorm_rope_full_record.md	Gemma-3 fused QK-norm + RoPE：从发现到验证的完整实验记录	日期：2026-07-31 · 硬件：H200（GPU 0–3） · 基线 commit：sglang `89f4a80c1f`（当天 main）
+docs/2026-07-31/two_fusion_cases_full_record.md	两个 kernel fusion case 的完整记录：怎么发现的、怎么验证的、以及什么能自动化	日期：2026-07-31 · 硬件：H200（GPU 4） · 代码基线：sglang main @ `08af5aea57` 之后
+docs/2026-08-02/free_exploration_vs_agent_loop.md	自由探索 vs Agent loop：同一个问题，两种模式的实测对比	日期：2026-08-02 · 硬件：H200（GPU 0–3） · 基线：sglang `89f4a80c1f`
+docs/2026-08-03/HANDOFF_fill_ablation_matrix.md	交接：补全 LFM2.5 消融矩阵的空格	写于：2026-08-03 23:45 · 更新：2026-08-04 00:45
+docs/2026-08-03/HANDOFF_kernel_fusion_agent_loop.md	交接文档：kernel fusion gap 的自由探索 → agent loop 化	写于：2026-08-03 · 用途：上下文过长，换窗口继续
+docs/2026-08-03/HANDOFF_lfm25_layered_experiment.md	交接：LFM2.5 分层实验（autotuning ceiling vs kernel rewrite）	写于：2026-08-03 · 原因：上下文过长，换窗口继续
+docs/2026-08-03/LFM25_FINAL_CASE_full_record.md	LFM2.5-8B-A1B 端到端优化全记录 —— 候选 final case	写于：2026-08-03
+docs/2026-08-03/LFM25_ablation_matrix_EN.md	LFM2.5-8B-A1B — Optimization Ablation Matrix	Model LFM2.5-8B-A1B · Hardware 1×H200 · Precision BF16 · TP 1
+docs/2026-08-03/deliverables_vs_mentor_requirements.md	交付物梳理：mentor 要什么，我们有什么，哪些扣得上	日期：2026-08-03
+docs/2026-08-03/evidence_chain_how_gaps_were_found.md	证据链：这几个 kernel fusion 机会到底是怎么被找到的	日期：2026-08-03
+docs/2026-08-03/exp3_kernel_on_tuned_baseline.md	实验 3：把 kernel 增量重测在装了 tuned MoE config 的干净基线上	日期：2026-08-03 · GPU：H200 #4 · 模型：LFM2.5-8B-A1B (TP1, bf16)
+docs/2026-08-03/serving_ceiling_is_regime_specific.md	regime C 的 autotuning ceiling 不是 cookbook —— 以及这对交付叙事意味着什么	日期：2026-08-03 · 性质：既有数据的重新解读 + 一个新的验证实验
+docs/2026-08-04/METHODOLOGY_three_layer_optimization.md	三级优化方法论：在新模型上复现 LFM2.5 结果的操作手册	日期：2026-08-04
+docs/2026-08-04/ablation_matrix_complete.md	补全 LFM2.5 消融矩阵：6 regime × 8 列，48 格全测	日期：2026-08-04（03:00–03:45 完成最后一批）· GPU：H200 #3 和 #4 并行
+docs/2026-08-04/agent_workflow_evidence_chain.md	Agent 工作流证据链：LFM2.5 的 kernel 机会是怎么被找到、验证、修好的	日期：2026-08-04
+docs/2026-08-04/pipeline_replication_olmo2_falconh1.md	在 OLMo-2 和 Falcon-H1 上复现整套发现流程	日期：2026-08-04 · GPU：H200 #1/#3/#4 · 对照组：Qwen3-30B
+docs/2026-08-05/kernel_level_opportunities.md	kernel 级机会搜索：OLMo-2 与 Falcon-H1	日期：2026-08-05 · GPU：H200 #0–3 · 对照组：Qwen3-30B
+docs/2026-08-07/REAL_WORKLOAD_EXTERNAL_VALIDITY.md	真实 workload 上 L3 的外部有效性：负载扫描 + 数据集扩展	日期：2026-08-07 · 模型：LFM2.5-8B-A1B · GPU：H200 #3/#4
+docs/2026-08-10/RT_L2L3_ablation.md	新真实/agentic workload 上的 L2 / L3 / L2+L3 消融	日期：2026-08-10（夜间，02:40 收尾）· 模型：LFM2.5-8B-A1B · TP1 · bf16
